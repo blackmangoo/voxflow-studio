@@ -2516,8 +2516,7 @@
                         <div class="field-group">
                             <label class="field-label" for="studio-mode-select">Render Engine</label>
                             <select id="studio-mode-select" class="clean-select">
-                                <option value="live" selected>Google Flow 3D Cluster (Uses 1 Credit)</option>
-                                <option value="mock">Fast Pipeline Simulation (0 Credits)</option>
+                                <option value="live" selected>Google Flow 3D Cluster — 4 × 10s Veo 3D Scenes (1 Credit)</option>
                             </select>
                         </div>
 
@@ -4073,12 +4072,18 @@ Credits  : ${data.credits_balance} 3D Episodes`;
                     jobsEl.innerHTML = `<div class="item-row-card"><div class="item-row-sub">No active render jobs. Click "Render Episode Now" to start.</div></div>`;
                 } else {
                     jobsEl.innerHTML = jobs.map(j => {
-                        const stColor = j.status === 'completed' ? 'var(--emerald)' : (j.status === 'failed' ? 'var(--danger)' : 'var(--cerulean-bright)');
+                        const isActive = j.status === 'queued' || j.status === 'running';
+                        const stColor = j.status === 'completed'
+                            ? 'var(--emerald)'
+                            : ((j.status === 'failed' || j.status === 'cancelled') ? 'var(--danger)' : 'var(--cerulean-bright)');
                         return `
                             <div class="item-row-card">
                                 <div class="item-row-top">
-                                    <strong>${j.channel.replace('_', ' ')} · ${j.lang.toUpperCase()} ${j.mock_mode ? '(Sim)' : '(3D)'}</strong>
-                                    <span style="font-family:var(--font-mono);font-size:0.72rem;color:${stColor};">${j.status}</span>
+                                    <strong>${j.channel.replace('_', ' ')} · ${j.lang.toUpperCase()}</strong>
+                                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                                        <span style="font-family:var(--font-mono);font-size:0.72rem;color:${stColor};">${j.status}</span>
+                                        ${isActive ? `<button type="button" class="btn-ghost" style="height:24px;padding:0 0.55rem;font-size:0.7rem;color:var(--danger);border-color:rgba(244,63,94,0.35);" onclick="cancelRenderJob('${j.job_id}')">Cancel</button>` : ''}
+                                    </div>
                                 </div>
                                 <div class="item-row-sub">${j.stage}${j.error ? ' — ' + j.error : ''}</div>
                                 <div class="progress-track">
@@ -4103,6 +4108,21 @@ Credits  : ${data.credits_balance} 3D Episodes`;
                 }
             } catch (e) {
                 console.warn('Telemetry refresh notice:', e);
+            }
+        }
+
+        async function cancelRenderJob(jobId) {
+            if (!jobId) return;
+            const res = await fetch(`/api/jobs/${encodeURIComponent(jobId)}/cancel`, {
+                method: 'POST',
+                headers: buildAuthHeaders()
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok) {
+                showToast(`Cancelled job ${jobId}`);
+                await Promise.all([refreshJobsAndSeries(), loadVault()]);
+            } else {
+                showToast(data.detail || 'Could not cancel job.');
             }
         }
 
