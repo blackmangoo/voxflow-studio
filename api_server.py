@@ -73,7 +73,10 @@ STUDIO_ADMIN_KEY = (
     or "vf_admin_9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c"
 )
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://ouqjlqqgnboytjvudylv.supabase.co").rstrip("/")
-SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")
+SUPABASE_ANON_KEY = os.environ.get(
+    "SUPABASE_ANON_KEY",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91cWpscXFnbmJveXRqdnVkeWx2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4MDA0MzksImV4cCI6MjEwOTM3NjQzOX0.LtANTMFbZrbGP1y1Mqj8hY-5zF0x5G9IV0TZTvGLIQ4",
+)
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 SUPABASE_PROJECT_REF = os.environ.get("SUPABASE_PROJECT_REF", "ouqjlqqgnboytjvudylv")
 
