@@ -283,6 +283,47 @@ class TestSaaSPlatform(unittest.TestCase):
         self.assertEqual(len(prev_data["dialogue_english"]), 4)
         self.assertEqual(len(prev_data["dialogue_urdu"]), 4)
 
+    def test_flow_tokens_telemetry_and_deduction(self):
+        """Flow tokens must decrement on renders and be queryable via /api/pool-status."""
+        from video_engine.pool_manager import FlowPoolManager
+        from api_server import STUDIO_ADMIN_KEY
+
+        pm = FlowPoolManager()
+        # Calibrate account_1 to test value
+        pm.set_account_tokens("account_1", tokens_remaining=950, tokens_total=1000)
+        self.assertEqual(pm.status["account_1"]["tokens_remaining"], 950)
+
+        # Deduct 10 tokens
+        new_val = pm.deduct_tokens("account_1", cost=10)
+        self.assertEqual(new_val, 940)
+        self.assertEqual(pm.status["account_1"]["tokens_remaining"], 940)
+
+        # Fast API endpoint verification
+        client = TestClient(app)
+        r_pool = client.get("/api/pool-status")
+        self.assertEqual(r_pool.status_code, 200)
+        p_data = r_pool.json()
+        self.assertIn("cluster_tokens_remaining", p_data)
+        self.assertIn("cluster_tokens_max", p_data)
+        self.assertGreater(p_data["cluster_tokens_remaining"], 0)
+
+        # Test admin calibration endpoint security
+        # Unauthorized without admin credentials
+        r_unauth = client.post(
+            "/api/pool/set-tokens",
+            json={"account_name": "account_1", "tokens_remaining": 880, "tokens_total": 1000},
+        )
+        self.assertEqual(r_unauth.status_code, 403)
+
+        # Authorized with Studio Admin Key
+        r_auth = client.post(
+            "/api/pool/set-tokens",
+            headers={"X-Studio-Key": STUDIO_ADMIN_KEY},
+            json={"account_name": "account_1", "tokens_remaining": 900, "tokens_total": 1000},
+        )
+        self.assertEqual(r_auth.status_code, 200)
+        self.assertEqual(r_auth.json()["status"], "ok")
+
         # 4. Verify single-palette production UI, zero '//' AI-slop labels, no wheel hijacking, and workspace CSS
         ui_html = client.get("/").text
         self.assertNotIn("setReelTheme", ui_html)
