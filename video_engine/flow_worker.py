@@ -246,7 +246,7 @@ class FlowWorker:
                         acct_item = (
                             page.locator(f"text='{target_email}'").first
                             if target_email
-                            else page.locator("div[data-email], text=@gmail.com").first
+                            else page.locator("div[data-email], [data-identifier]").first
                         )
                         if await acct_item.is_visible():
                             await acct_item.click(force=True)
