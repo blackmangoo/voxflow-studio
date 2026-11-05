@@ -809,9 +809,22 @@ def get_account_pool_telemetry() -> Dict[str, Any]:
             credit_status = {}
 
     workers = []
+    total_cluster_tokens = 0
+    max_cluster_tokens = 0
+
     for idx, acc in enumerate(ACTIVE_ACCOUNTS):
         p_dir = PROFILES_DIR / acc
-        exhausted = credit_status.get(acc, {}).get("exhausted", False)
+        acct_data = credit_status.get(acc, {})
+        exhausted = acct_data.get("exhausted", False)
+        tokens_remaining = acct_data.get("tokens_remaining", 0 if exhausted else 1000)
+        tokens_total = acct_data.get("tokens_total", 1000)
+        if tokens_remaining <= 0:
+            exhausted = True
+
+        tokens_pct = int(round((tokens_remaining / max(1, tokens_total)) * 100)) if tokens_total else 0
+        total_cluster_tokens += tokens_remaining
+        max_cluster_tokens += tokens_total
+
         is_free = try_acquire_profile_nonblocking(acc) if try_acquire_profile_nonblocking else True
         profile_ready = True if is_cloud_control_plane else p_dir.exists()
         role = "Standby Failover Node" if acc == "account_1" else f"Primary Render Node #{idx + 1}"
@@ -819,18 +832,28 @@ def get_account_pool_telemetry() -> Dict[str, Any]:
 
         workers.append({
             "account": f"node_{idx + 1}",
+            "account_id": acc,
             "email": node_label,
             "role": role,
             "profile_ready": profile_ready,
             "exhausted": exhausted,
+            "tokens_remaining": tokens_remaining,
+            "tokens_total": tokens_total,
+            "tokens_percent": tokens_pct,
+            "estimated_scenes_remaining": tokens_remaining // 10,
             "busy": not is_free,
             "status": "EXHAUSTED" if exhausted else ("RENDERING" if not is_free else "READY"),
         })
 
     ready_count = sum(1 for w in workers if not w["exhausted"] and w["profile_ready"])
+    cluster_pct = int(round((total_cluster_tokens / max(1, max_cluster_tokens)) * 100)) if max_cluster_tokens else 0
     return {
         "total_workers": len(workers),
         "ready_workers": ready_count,
         "estimated_monthly_renders": ready_count * 100,
+        "cluster_tokens_remaining": total_cluster_tokens,
+        "cluster_tokens_max": max_cluster_tokens,
+        "cluster_percent": cluster_pct,
+        "cluster_scenes_remaining": total_cluster_tokens // 10,
         "workers": workers,
     }

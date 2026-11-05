@@ -2662,7 +2662,24 @@
                     </div>
                 </div>
 
-                <!-- 6-Node Render Cluster Status -->
+                <!-- 6-Node Google Flow Render Cluster & Live Token Ledger -->
+                <div style="margin-top:2.5rem;margin-bottom:0.85rem;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:0.75rem;">
+                    <div>
+                        <div class="eyebrow" style="margin-bottom:0.25rem;">
+                            <span class="eyebrow-dot"></span>
+                            <span>Google Flow 3D Engine Cluster</span>
+                        </div>
+                        <div style="font-size:1.15rem;font-weight:700;color:var(--text-primary);">
+                            Live Node Token Balances &amp; Render Capacity
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:0.6rem;">
+                        <div class="status-pill" style="font-family:var(--font-mono);font-size:0.78rem;">
+                            <span style="color:var(--text-secondary);">Cluster Balance:</span>
+                            <strong id="cluster-total-tokens-badge" style="color:var(--cerulean-bright);">— / — Tokens</strong>
+                        </div>
+                    </div>
+                </div>
                 <div class="cluster-grid" id="worker-pool-grid"></div>
             </div>
         </section>
@@ -3212,15 +3229,11 @@
         }
 
         async function initSupabaseAuth() {
-            const DEFAULT_SB_URL = 'https://ouqjlqqgnboytjvudylv.supabase.co';
-            const DEFAULT_SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91cWpscXFnbmJveXRqdnVkeWx2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4MDA0MzksImV4cCI6MjEwOTM3NjQzOX0.LtANTMFbZrbGP1y1Mqj8hY-5zF0x5G9IV0TZTvGLIQ4';
             try {
                 const cfgRes = await fetch('/api/config/public');
                 const cfg = await cfgRes.json().catch(() => ({}));
-                const sbUrl = cfg.supabase_url || DEFAULT_SB_URL;
-                const sbAnon = cfg.supabase_anon_key || DEFAULT_SB_ANON;
-                if (sbUrl && sbAnon && window.supabase) {
-                    supabaseClient = window.supabase.createClient(sbUrl, sbAnon);
+                if (cfg.supabase_url && cfg.supabase_anon_key && window.supabase) {
+                    supabaseClient = window.supabase.createClient(cfg.supabase_url, cfg.supabase_anon_key);
                     const { data: { session } } = await supabaseClient.auth.getSession();
                     await applyAuthSession(session);
                     supabaseClient.auth.onAuthStateChange(async (_event, sessionNow) => {
@@ -3231,9 +3244,6 @@
                 }
             } catch (e) {
                 console.warn('Supabase init notice:', e);
-                if (window.supabase && !supabaseClient) {
-                    supabaseClient = window.supabase.createClient(DEFAULT_SB_URL, DEFAULT_SB_ANON);
-                }
                 await applyAuthSession(null);
             }
         }
@@ -3742,20 +3752,46 @@ Credits  : ${data.credits_balance} 3D Episodes`;
 
         function renderWorkerPool(pool) {
             if (!pool || !pool.workers) return;
-            document.getElementById('header-pool-text').textContent =
-                `${pool.ready_workers}/${pool.total_workers} Nodes Ready`;
+            const headerPool = document.getElementById('header-pool-text');
+            if (headerPool) {
+                if (pool.cluster_tokens_remaining !== undefined) {
+                    headerPool.textContent = `${pool.cluster_tokens_remaining.toLocaleString()} Flow Tokens (${pool.cluster_percent}%)`;
+                } else {
+                    headerPool.textContent = `${pool.ready_workers}/${pool.total_workers} Nodes Ready`;
+                }
+            }
+
+            const clusterBadge = document.getElementById('cluster-total-tokens-badge');
+            if (clusterBadge && pool.cluster_tokens_remaining !== undefined) {
+                clusterBadge.textContent = `${pool.cluster_tokens_remaining.toLocaleString()} / ${pool.cluster_tokens_max?.toLocaleString() || '6,000'} (${pool.cluster_scenes_remaining || 0} scenes)`;
+            }
 
             const grid = document.getElementById('worker-pool-grid');
             if (!grid) return;
             grid.innerHTML = pool.workers.map((w, i) => {
                 const color = w.status === 'READY' ? 'var(--emerald)' : (w.status === 'RENDERING' ? 'var(--cerulean-bright)' : 'var(--danger)');
+                const pct = w.tokens_percent ?? 100;
+                const tokens = (w.tokens_remaining ?? 1000).toLocaleString();
+                const total = (w.tokens_total ?? 1000).toLocaleString();
+                const barColor = pct > 40 ? 'var(--emerald)' : (pct > 15 ? 'var(--cerulean-bright)' : 'var(--rose)');
+                const shortRole = (w.role || '').split('·')[0].trim();
                 return `
                     <div class="node-card surface-card">
                         <div class="node-top">
                             <span>Node 0${i + 1}</span>
-                            <span style="color:${color};">● ${w.status}</span>
+                            <span style="color:${color};font-weight:600;">● ${w.status}</span>
                         </div>
-                        <div class="node-sub">${w.role}</div>
+                        <div style="display:flex;justify-content:space-between;align-items:baseline;margin:0.35rem 0 0.2rem;font-family:var(--font-mono);font-size:0.75rem;">
+                            <span style="color:var(--text-primary);font-weight:700;">${tokens}</span>
+                            <span style="color:var(--text-muted);font-size:0.68rem;">/ ${total} tokens</span>
+                        </div>
+                        <div style="height:4px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;margin-bottom:0.35rem;">
+                            <div style="width:${pct}%;height:100%;background:${barColor};transition:width 0.4s ease;"></div>
+                        </div>
+                        <div class="node-sub" style="display:flex;justify-content:space-between;align-items:center;color:var(--text-secondary);font-size:0.7rem;">
+                            <span>${shortRole}</span>
+                            <span style="color:var(--cerulean-bright);font-family:var(--font-mono);font-weight:600;">${pct}%</span>
+                        </div>
                     </div>
                 `;
             }).join('');

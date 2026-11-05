@@ -1,3 +1,39 @@
 {
-  "_last_reset_month": "2026-11"
+  "_last_reset_month": "2026-11",
+  "account_2": {
+    "tokens_remaining": 880,
+    "tokens_total": 1000,
+    "exhausted": false,
+    "last_synced_at": "2026-11-05T19:30:00"
+  },
+  "account_3": {
+    "tokens_remaining": 920,
+    "tokens_total": 1000,
+    "exhausted": false,
+    "last_synced_at": "2026-11-05T19:30:00"
+  },
+  "account_4": {
+    "tokens_remaining": 790,
+    "tokens_total": 1000,
+    "exhausted": false,
+    "last_synced_at": "2026-11-05T19:30:00"
+  },
+  "account_5": {
+    "tokens_remaining": 840,
+    "tokens_total": 1000,
+    "exhausted": false,
+    "last_synced_at": "2026-11-05T19:30:00"
+  },
+  "account_6": {
+    "tokens_remaining": 910,
+    "tokens_total": 1000,
+    "exhausted": false,
+    "last_synced_at": "2026-11-05T19:30:00"
+  },
+  "account_1": {
+    "tokens_remaining": 1000,
+    "tokens_total": 1000,
+    "exhausted": false,
+    "last_synced_at": "2026-11-05T19:30:00"
+  }
 }

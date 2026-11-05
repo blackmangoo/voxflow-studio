@@ -67,16 +67,9 @@ app.add_middleware(
 init_db()
 reconcile_stale_jobs()
 
-STUDIO_ADMIN_KEY = (
-    os.environ.get("STUDIO_ADMIN_KEY")
-    or os.environ.get("AGENT_API_KEY")
-    or "vf_admin_9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c"
-)
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://ouqjlqqgnboytjvudylv.supabase.co").rstrip("/")
-SUPABASE_ANON_KEY = os.environ.get(
-    "SUPABASE_ANON_KEY",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91cWpscXFnbmJveXRqdnVkeWx2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4MDA0MzksImV4cCI6MjEwOTM3NjQzOX0.LtANTMFbZrbGP1y1Mqj8hY-5zF0x5G9IV0TZTvGLIQ4",
-)
+STUDIO_ADMIN_KEY = os.environ.get("STUDIO_ADMIN_KEY") or os.environ.get("AGENT_API_KEY") or ""
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
+SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 SUPABASE_PROJECT_REF = os.environ.get("SUPABASE_PROJECT_REF", "ouqjlqqgnboytjvudylv")
 
@@ -313,6 +306,12 @@ class WhatsAppTestRequest(BaseModel):
 
 class WhatsAppConfirmRequest(BaseModel):
     received: bool = Field(..., description="True if the user confirmed receiving the test message on their phone")
+
+
+class PoolTokenAdjustmentRequest(BaseModel):
+    account_name: str = Field(..., description="Target account identifier, e.g. account_2 or node_1")
+    tokens_remaining: int = Field(..., ge=0, description="Calibrated Flow generation tokens remaining")
+    tokens_total: Optional[int] = Field(1000, ge=1, description="Total monthly token allotment")
 
 
 class TriggerResponse(BaseModel):
@@ -710,6 +709,25 @@ async def get_rendered_vault(request: Request):
 @app.get("/api/pool-status", tags=["SaaS"])
 async def get_pool_status():
     return get_account_pool_telemetry()
+
+
+@app.post("/api/pool/set-tokens", tags=["SaaS"])
+async def api_set_pool_tokens(req: PoolTokenAdjustmentRequest, request: Request):
+    """Allows Founder Admin to update or calibrate account Flow generation tokens."""
+    _require_founder_admin(request)
+    from video_engine.pool_manager import FlowPoolManager
+    pm = FlowPoolManager()
+    target_acc = req.account_name
+    if target_acc.startswith("node_"):
+        try:
+            n_idx = int(target_acc.split("_")[1]) - 1
+            if 0 <= n_idx < len(config.ACTIVE_ACCOUNTS):
+                target_acc = config.ACTIVE_ACCOUNTS[n_idx]
+        except Exception:
+            pass
+
+    pm.set_account_tokens(target_acc, req.tokens_remaining, req.tokens_total or 1000)
+    return {"status": "ok", "account": target_acc, "telemetry": get_account_pool_telemetry()}
 
 
 @app.get("/api/series", tags=["SaaS"])

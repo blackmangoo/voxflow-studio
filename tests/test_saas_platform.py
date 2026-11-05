@@ -144,6 +144,14 @@ class TestSaaSPlatform(unittest.TestCase):
         pool = get_account_pool_telemetry()
         self.assertEqual(pool["total_workers"], 6)
         self.assertEqual(len(CHANNEL_CATALOG), 6)
+        self.assertIn("cluster_tokens_remaining", pool)
+        self.assertIn("cluster_tokens_max", pool)
+        self.assertIn("cluster_percent", pool)
+        self.assertGreater(pool["cluster_tokens_remaining"], 0)
+        for w in pool["workers"]:
+            self.assertIn("tokens_remaining", w)
+            self.assertIn("tokens_total", w)
+            self.assertIn("tokens_percent", w)
 
     def test_fastapi_endpoints_and_media_streaming(self):
         """FastAPI routes must serve UI, catalog, pricing, vault, and stream real MP4s safely."""
