@@ -1,0 +1,3255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0A0A0A">
+    <title>VoxFlow Studio — Autonomous 3D Video Platform</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+
+    <style>
+        /* ============================================================
+           VOXFLOW STUDIO — Production Design System
+           60% Jet Black (#0A0A0A) · 30% Cerulean (#007BA7) · 10% Neon Rose (#FF2D95)
+           Native 120Hz Compositor Scrolling · Zero Wheel Hijacking · Zero Slop
+           ============================================================ */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-canvas:        #0A0A0A;
+            --bg-surface:       #0F131A;
+            --bg-elevated:      #141A24;
+            --bg-input:         #0B0E14;
+
+            --cerulean:         #007BA7;
+            --cerulean-bright:  #24B0E6;
+            --cerulean-subtle:  rgba(0, 123, 167, 0.14);
+            --cerulean-border:  rgba(36, 176, 230, 0.34);
+
+            --rose:             #FF2D95;
+            --rose-soft:        #FF66B2;
+            --rose-subtle:      rgba(255, 45, 149, 0.12);
+            --rose-border:      rgba(255, 45, 149, 0.38);
+
+            --text-primary:     #F5F7FA;
+            --text-secondary:   #94A3B8;
+            --text-muted:       #64748B;
+
+            --border-subtle:    rgba(255, 255, 255, 0.075);
+            --border-strong:    rgba(255, 255, 255, 0.14);
+            --grid-line:        rgba(255, 255, 255, 0.028);
+
+            --emerald:          #10B981;
+            --danger:           #F43F5E;
+
+            --font-sans:        'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-serif:       'Instrument Serif', Georgia, serif;
+            --font-mono:        'JetBrains Mono', monospace;
+
+            --radius-sm:        6px;
+            --radius-md:        8px;
+            --radius-lg:        12px;
+        }
+
+        html {
+            color-scheme: dark;
+            scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            min-height: 100vh;
+            background-color: var(--bg-canvas);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        /* Subtle 6-Column Architectural Guide Lines (Zero Paint Overhead) */
+        .arch-grid {
+            position: fixed;
+            inset: 0;
+            max-width: 1380px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .arch-grid span {
+            border-left: 1px solid var(--grid-line);
+        }
+
+        .arch-grid span:last-child {
+            border-right: 1px solid var(--grid-line);
+        }
+
+        /* ─── Strict Public Marketing vs. Authenticated Workspace Routing ─── */
+        body:not(.authenticated-workspace) #studio-sec,
+        body:not(.authenticated-workspace) #admin-provision-sec,
+        body:not(.authenticated-workspace) .workspace-only {
+            display: none !important;
+        }
+
+        body.authenticated-workspace #hero-sec,
+        body.authenticated-workspace #pipeline-sec,
+        body.authenticated-workspace #pricing-sec,
+        body.authenticated-workspace .marketing-only {
+            display: none !important;
+        }
+
+        /* ─── Fixed Header (Only Element Using Backdrop Blur) ─── */
+        .site-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 68px;
+            z-index: 1000;
+            background: rgba(10, 10, 10, 0.84);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .nav-container {
+            max-width: 1380px;
+            height: 100%;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.5rem;
+        }
+
+        .brand-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.7rem;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .brand-mark {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--cerulean);
+            border: 1px solid var(--cerulean-bright);
+            display: grid;
+            place-items: center;
+            color: #FFFFFF;
+        }
+
+        .brand-mark svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            stroke-width: 2.2;
+        }
+
+        .brand-name {
+            font-weight: 700;
+            font-size: 0.98rem;
+            letter-spacing: -0.01em;
+        }
+
+        .brand-tag {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            margin-left: 0.35rem;
+        }
+
+        .desktop-nav {
+            display: flex;
+            align-items: center;
+            gap: 1.75rem;
+        }
+
+        .nav-link {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-family: var(--font-sans);
+            font-size: 0.86rem;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 0.4rem 0;
+            position: relative;
+            transition: color 0.18s ease;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: var(--text-primary);
+        }
+
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -1px;
+            height: 2px;
+            background: var(--rose);
+            border-radius: 2px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.36rem 0.75rem;
+            border-radius: var(--radius-sm);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--emerald);
+        }
+
+        /* ─── Minimalist Production Buttons (Linear / Stripe Proportions) ─── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            font-family: var(--font-sans);
+            font-weight: 500;
+            font-size: 0.8125rem;
+            height: 36px;
+            padding: 0 0.95rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+            text-decoration: none;
+            white-space: nowrap;
+            border: 1px solid transparent;
+            letter-spacing: -0.005em;
+        }
+
+        .btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .btn svg {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+        }
+
+        .btn-primary {
+            background: #F5F7FA;
+            color: #0A0A0A;
+            border-color: #FFFFFF;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #FFFFFF;
+        }
+
+        .btn-cerulean {
+            background: var(--cerulean);
+            color: #FFFFFF;
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .btn-cerulean:hover:not(:disabled) {
+            background: #008CC0;
+        }
+
+        .btn-secondary {
+            background: #131822;
+            color: var(--text-primary);
+            border-color: rgba(255, 255, 255, 0.11);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            border-color: rgba(255, 255, 255, 0.24);
+            background: #171E2A;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
+            height: 28px;
+            padding: 0 0.65rem;
+            font-size: 0.75rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-family: var(--font-sans);
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+
+        .btn-ghost:hover {
+            color: var(--text-primary);
+            border-color: var(--border-strong);
+            background: var(--bg-elevated);
+        }
+
+        /* ─── Architectural Surface Card (Zero Backdrop-Blur Lag) ─── */
+        .surface-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            transition: border-color 0.2s ease;
+        }
+
+        .surface-card:hover {
+            border-color: var(--border-strong);
+        }
+
+        /* ─── Layout Containers & Typography ─── */
+        main {
+            position: relative;
+            z-index: 1;
+        }
+
+        .section {
+            padding: 5.5rem 2rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .container {
+            max-width: 1320px;
+            margin: 0 auto;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            font-weight: 500;
+            color: var(--cerulean-bright);
+            margin-bottom: 0.85rem;
+        }
+
+        .eyebrow-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--rose);
+        }
+
+        .section-heading {
+            font-weight: 800;
+            font-size: clamp(2rem, 3.4vw, 2.85rem);
+            line-height: 1.08;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.85rem;
+        }
+
+        .section-heading em {
+            font-family: var(--font-serif);
+            font-style: italic;
+            font-weight: 400;
+            color: var(--cerulean-bright);
+        }
+
+        .section-desc {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            max-width: 64ch;
+            line-height: 1.65;
+        }
+
+        .section-header {
+            margin-bottom: 2.75rem;
+        }
+
+        /* ─── 1. PUBLIC HERO SECTION ─── */
+        .hero-section {
+            position: relative;
+            min-height: 92vh;
+            padding: 7.5rem 2rem 4.5rem;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            border-bottom: 1px solid var(--border-subtle);
+            background:
+                radial-gradient(circle 580px at 74% 45%, rgba(255, 45, 149, 0.09) 0%, transparent 65%),
+                radial-gradient(circle 580px at 52% 40%, rgba(0, 123, 167, 0.14) 0%, transparent 65%),
+                var(--bg-canvas);
+        }
+
+        #webgl-hero-canvas {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .hero-container {
+            position: relative;
+            z-index: 2;
+            max-width: 1320px;
+            width: 100%;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 3.5rem;
+            align-items: center;
+        }
+
+        .hero-title {
+            font-weight: 800;
+            font-size: clamp(2.85rem, 5.2vw, 4.5rem);
+            line-height: 1.02;
+            letter-spacing: -0.035em;
+            margin-bottom: 1.25rem;
+        }
+
+        .hero-title .accent-cerulean {
+            color: var(--cerulean-bright);
+        }
+
+        .hero-title .accent-rose {
+            color: var(--rose);
+        }
+
+        .hero-lead {
+            font-size: 1.06rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            max-width: 56ch;
+            margin-bottom: 2rem;
+        }
+
+        .hero-cta-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.85rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .hero-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.9rem;
+        }
+
+        .metric-card {
+            padding: 1.1rem 1.2rem;
+        }
+
+        .metric-label {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--cerulean-bright);
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-val {
+            font-weight: 700;
+            font-size: 1.02rem;
+            margin-bottom: 0.18rem;
+        }
+
+        .metric-sub {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+
+        /* 9:16 Reference Monitor */
+        .monitor-wrap {
+            display: flex;
+            justify-content: center;
+        }
+
+        .monitor-deck {
+            width: 100%;
+            max-width: 390px;
+            background: var(--bg-surface);
+            border: 1px solid var(--cerulean-border);
+            border-radius: 22px;
+            padding: 0.95rem;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.75);
+        }
+
+        .deck-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .chip-row {
+            display: flex;
+            gap: 0.3rem;
+        }
+
+        .chip-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            padding: 0.32rem 0.6rem;
+            border-radius: 7px;
+            font-size: 0.74rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.16s ease;
+        }
+
+        .chip-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--border-strong);
+        }
+
+        .chip-btn.active {
+            color: var(--text-primary);
+            border-color: var(--cerulean-bright);
+            background: var(--cerulean-subtle);
+        }
+
+        .stream-toggle {
+            display: inline-flex;
+            background: var(--bg-input);
+            padding: 0.18rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .stream-pill {
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            font-weight: 600;
+            padding: 0.3rem 0.55rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.16s ease;
+        }
+
+        .stream-pill.active-en {
+            background: var(--cerulean);
+            color: #FFFFFF;
+        }
+
+        .stream-pill.active-ur {
+            background: var(--rose);
+            color: #FFFFFF;
+        }
+
+        .monitor-screen {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 9 / 16;
+            max-height: 490px;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #050608;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .monitor-screen video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .screen-overlay-top {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+
+        .hud-badge {
+            background: rgba(10, 10, 10, 0.82);
+            border: 1px solid var(--border-strong);
+            padding: 0.24rem 0.55rem;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.66rem;
+            color: var(--text-primary);
+        }
+
+        .deck-footer {
+            margin-top: 0.75rem;
+            padding-top: 0.65rem;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .deck-title {
+            font-size: 0.82rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ─── 2. PIPELINE ARCHITECTURE ─── */
+        .pipeline-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.1fr;
+            gap: 1.5rem;
+        }
+
+        .stage-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .stage-btn {
+            width: 100%;
+            text-align: left;
+            padding: 1rem 1.2rem;
+            border-radius: var(--radius-md);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            transition: border-color 0.16s ease, background-color 0.16s ease;
+        }
+
+        .stage-btn:hover {
+            border-color: var(--border-strong);
+        }
+
+        .stage-btn.active {
+            background: var(--bg-elevated);
+            border-color: var(--cerulean-bright);
+        }
+
+        .stage-index {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            color: var(--cerulean-bright);
+            margin-bottom: 0.2rem;
+        }
+
+        .stage-name {
+            font-weight: 600;
+            font-size: 0.94rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .stage-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .stage-time {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .inspector-panel {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-family: var(--font-mono);
+        }
+
+        .inspector-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 0.9rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 0.74rem;
+        }
+
+        .inspector-pre {
+            font-size: 0.8rem;
+            line-height: 1.7;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            flex: 1;
+        }
+
+        .inspector-foot {
+            margin-top: 1rem;
+            padding-top: 0.9rem;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        /* ─── 3. PRICING & RPM CALCULATOR (Public Only) ─── */
+        .pricing-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 1.5rem;
+            margin-bottom: 2.25rem;
+            flex-wrap: wrap;
+        }
+
+        .segmented-control {
+            display: inline-flex;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-strong);
+            padding: 0.25rem;
+            border-radius: var(--radius-md);
+            gap: 0.25rem;
+        }
+
+        .seg-btn {
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            padding: 0.55rem 1rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-sans);
+            font-weight: 600;
+            font-size: 0.84rem;
+            cursor: pointer;
+            transition: all 0.16s ease;
+        }
+
+        .seg-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .seg-btn.active {
+            background: var(--cerulean);
+            color: #FFFFFF;
+        }
+
+        .pricing-layout {
+            display: grid;
+            grid-template-columns: 1.32fr 0.88fr;
+            gap: 1.5rem;
+        }
+
+        .plan-pair {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.25rem;
+        }
+
+        .plan-card {
+            padding: 1.75rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .plan-card.featured {
+            border-color: var(--cerulean-border);
+            background: linear-gradient(180deg, rgba(0, 123, 167, 0.08) 0%, var(--bg-surface) 100%);
+        }
+
+        .plan-badge {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            color: var(--cerulean-bright);
+            background: var(--cerulean-subtle);
+            border: 1px solid var(--cerulean-border);
+            padding: 0.22rem 0.6rem;
+            border-radius: 6px;
+            margin-bottom: 0.85rem;
+        }
+
+        .plan-name {
+            font-weight: 700;
+            font-size: 1.25rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .plan-market {
+            font-size: 0.83rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.25rem;
+        }
+
+        .plan-price-row {
+            display: flex;
+            align-items: baseline;
+            gap: 0.35rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .plan-price {
+            font-family: var(--font-mono);
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .plan-unit {
+            font-family: var(--font-mono);
+            font-size: 0.74rem;
+            color: var(--cerulean-bright);
+            margin-bottom: 1.35rem;
+        }
+
+        .plan-features {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.58rem;
+            margin-bottom: 1.6rem;
+        }
+
+        .plan-features li {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            padding-left: 1.2rem;
+            position: relative;
+        }
+
+        .plan-features li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.52rem;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--cerulean-bright);
+        }
+
+        .calc-card {
+            padding: 1.75rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        input[type="range"].clean-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 5px;
+            background: var(--bg-elevated);
+            border-radius: 99px;
+            outline: none;
+            cursor: pointer;
+            margin-top: 0.6rem;
+        }
+
+        input[type="range"].clean-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--cerulean-bright);
+            border: 2px solid var(--bg-canvas);
+            cursor: pointer;
+        }
+
+        .kpi-grid-2x2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin: 1.25rem 0;
+        }
+
+        .kpi-box {
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 0.9rem 1rem;
+        }
+
+        .kpi-box-label {
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .kpi-box-val {
+            font-family: var(--font-mono);
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        /* ─── 4. AUTHENTICATED STUDIO WORKSPACE ─── */
+        body.authenticated-workspace #studio-sec {
+            padding-top: 6.2rem;
+        }
+
+        .workspace-banner {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 1.15rem 1.4rem;
+            border-radius: var(--radius-lg);
+            background: var(--bg-surface);
+            border: 1px solid var(--cerulean-border);
+        }
+
+        .ws-stat-label {
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.2rem;
+        }
+
+        .ws-stat-val {
+            font-family: var(--font-mono);
+            font-size: 0.96rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: 1.08fr 0.92fr;
+            gap: 1.5rem;
+            align-items: start;
+        }
+
+        .panel-box {
+            padding: 1.75rem;
+        }
+
+        .panel-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .panel-title {
+            font-size: 1.12rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        /* 3-Way Segmented Mode Switcher */
+        .mode-tabs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.35rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 0.28rem;
+            margin-bottom: 1.35rem;
+        }
+
+        .mode-tab {
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-secondary);
+            padding: 0.55rem 0.5rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-sans);
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.16s ease;
+        }
+
+        .mode-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .mode-tab.active {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            border-color: var(--cerulean-border);
+        }
+
+        .field-group {
+            margin-bottom: 1.15rem;
+        }
+
+        .field-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.42rem;
+        }
+
+        .clean-input,
+        .clean-select,
+        .clean-textarea {
+            width: 100%;
+            padding: 0.55rem 0.78rem;
+            border-radius: var(--radius-sm);
+            background: var(--bg-input);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 0.84rem;
+            transition: border-color 0.15s ease;
+        }
+
+        .clean-textarea {
+            min-height: 96px;
+            resize: vertical;
+            line-height: 1.55;
+        }
+
+        .clean-input:focus,
+        .clean-select:focus,
+        .clean-textarea:focus {
+            outline: none;
+            border-color: var(--cerulean-bright);
+        }
+
+        .tile-grid-2col {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.55rem;
+        }
+
+        .select-tile {
+            text-align: left;
+            padding: 0.72rem 0.9rem;
+            border-radius: var(--radius-sm);
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: border-color 0.16s ease, background-color 0.16s ease;
+        }
+
+        .select-tile:hover {
+            border-color: var(--border-strong);
+        }
+
+        .select-tile.selected {
+            border-color: var(--cerulean-bright);
+            background: var(--cerulean-subtle);
+        }
+
+        .select-tile-title {
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .select-tile-sub {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            color: var(--text-secondary);
+            margin-top: 0.15rem;
+        }
+
+        .preset-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: 0.5rem;
+        }
+
+        .preset-chip {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            padding: 0.28rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.74rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .preset-chip:hover {
+            color: var(--text-primary);
+            border-color: var(--cerulean-bright);
+        }
+
+        .scene-editor-card {
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 0.9rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .scene-editor-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--cerulean-bright);
+            margin-bottom: 0.5rem;
+        }
+
+        .preview-card {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            background: var(--bg-input);
+            border: 1px solid var(--cerulean-border);
+            display: none;
+        }
+
+        /* Queue & Customer Lists (Natural Document Scroll — No Inner Wheel Traps) */
+        .stack-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+        }
+
+        .item-row-card {
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 0.9rem 1rem;
+        }
+
+        .item-row-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .item-row-sub {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+
+        .progress-track {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 99px;
+            overflow: hidden;
+            margin-top: 0.55rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--cerulean-bright);
+            transition: width 0.3s ease;
+        }
+
+        /* 6-Node Worker Cluster Strip */
+        .cluster-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .node-card {
+            padding: 0.9rem;
+        }
+
+        .node-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .node-sub {
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+        }
+
+        /* ─── 5. VAULT GRID ─── */
+        .vault-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(295px, 1fr));
+            gap: 1.35rem;
+        }
+
+        .vault-card {
+            padding: 0.85rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .vault-video-box {
+            aspect-ratio: 9 / 14;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            background: #040507;
+            border: 1px solid var(--border-subtle);
+            margin-bottom: 0.85rem;
+        }
+
+        .vault-video-box video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .vault-meta-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.45rem;
+        }
+
+        .vault-channel {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--cerulean-bright);
+            text-transform: uppercase;
+        }
+
+        .vault-title {
+            font-weight: 600;
+            font-size: 0.92rem;
+            line-height: 1.38;
+            margin-bottom: 0.55rem;
+        }
+
+        .vault-tags {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-top: auto;
+        }
+
+        /* ─── Auth Modal ─── */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 9500;
+            background: rgba(5, 7, 11, 0.82);
+            backdrop-filter: blur(12px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .modal-backdrop.open {
+            display: flex;
+        }
+
+        .modal-card {
+            width: 100%;
+            max-width: 440px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-lg);
+            padding: 1.85rem;
+            box-shadow: 0 28px 80px rgba(0, 0, 0, 0.85);
+        }
+
+        /* ─── Toast ─── */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--cerulean-bright);
+            color: var(--text-primary);
+            padding: 0.85rem 1.2rem;
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75);
+            z-index: 9800;
+            display: none;
+            max-width: 420px;
+        }
+
+        .site-footer {
+            padding: 2.75rem 2rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .footer-inner {
+            max-width: 1320px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        @media (max-width: 1080px) {
+            .hero-container,
+            .pipeline-grid,
+            .pricing-layout,
+            .workspace-grid {
+                grid-template-columns: 1fr;
+            }
+            .workspace-banner {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .cluster-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .desktop-nav {
+                display: none;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .hero-metrics,
+            .plan-pair,
+            .cluster-grid,
+            .tile-grid-2col,
+            .workspace-banner {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="arch-grid" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+
+    <!-- Header -->
+    <header class="site-header">
+        <div class="nav-container">
+            <a href="#" class="brand-logo">
+                <div class="brand-mark">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                </div>
+                <div>
+                    <span class="brand-name">VoxFlow Studio</span>
+                    <span class="brand-tag">3D Cinema</span>
+                </div>
+            </a>
+
+            <nav class="desktop-nav" aria-label="Primary Navigation">
+                <!-- Public Visitors -->
+                <button class="nav-link active marketing-only" onclick="jumpTo('#hero-sec')">Overview</button>
+                <button class="nav-link marketing-only" onclick="jumpTo('#pipeline-sec')">Architecture</button>
+                <button class="nav-link marketing-only" onclick="jumpTo('#pricing-sec')">Pricing</button>
+
+                <!-- Logged-In Clients & Founder -->
+                <button class="nav-link active workspace-only" onclick="jumpTo('#studio-sec')">Studio Workspace</button>
+                <button class="nav-link workspace-only" id="nav-admin-provision" style="display:none;" onclick="jumpTo('#admin-provision-sec')">Client Accounts</button>
+
+                <!-- Shared -->
+                <button class="nav-link" onclick="jumpTo('#vault-sec')">Episode Vault</button>
+            </nav>
+
+            <div class="header-right">
+                <div class="status-pill" title="Render Cluster Status">
+                    <span class="status-dot"></span>
+                    <span id="header-pool-text">6 Nodes Online</span>
+                </div>
+
+                <div class="status-pill workspace-only" id="header-credit-pill">
+                    <span id="auth-status-badge">9,999 credits</span>
+                </div>
+
+                <button type="button" class="btn-secondary btn" style="padding:0.44rem 0.9rem;font-size:0.8rem;" id="header-auth-btn" onclick="openAuthModal()">
+                    <span id="header-auth-label">Client Sign In</span>
+                </button>
+
+                <button type="button" class="btn-ghost workspace-only" id="header-signout-btn" onclick="handleSupabaseSignOut()">
+                    Sign out
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- ============================================================
+             1. PUBLIC MARKETING HERO (Hidden After Login)
+             ============================================================ -->
+        <section class="hero-section" id="hero-sec">
+            <div id="webgl-hero-canvas" aria-hidden="true"></div>
+
+            <div class="hero-container">
+                <div>
+                    <div class="eyebrow">
+                        <span class="eyebrow-dot"></span>
+                        <span>Autonomous 3D Short-Form Production</span>
+                    </div>
+
+                    <h1 class="hero-title">
+                        True-Motion <span class="accent-cerulean">3D Cinema.</span><br>
+                        Dual-Market <span class="accent-rose">Arbitrage.</span>
+                    </h1>
+
+                    <p class="hero-lead">
+                        Standard faceless video tools charge $69/mo to pan across static images with monotone audio.
+                        VoxFlow Studio renders four 10-second Google Flow 3D scenes, directs 19 character voices, and masters frame-accurate audio ducking—delivering both
+                        <strong>US/UK High-RPM English</strong> and <strong>South Asian Urdu</strong> from a single render pass.
+                    </p>
+
+                    <div class="hero-cta-row">
+                        <button class="btn btn-primary" onclick="openAuthModal()">
+                            <span>Sign In to Studio</span>
+                        </button>
+                        <button class="btn btn-secondary" onclick="jumpTo('#pricing-sec')">
+                            <span>View Stream Pricing</span>
+                        </button>
+                    </div>
+
+                    <div class="hero-metrics">
+                        <div class="metric-card surface-card">
+                            <div class="metric-label">Motion Engine</div>
+                            <div class="metric-val">4 × 10s 3D Scenes</div>
+                            <div class="metric-sub">Vision-verified camera motion</div>
+                        </div>
+                        <div class="metric-card surface-card">
+                            <div class="metric-label">Audio Mastering</div>
+                            <div class="metric-val">-18 dB Ducking</div>
+                            <div class="metric-sub">19 character personas + EBU R128</div>
+                        </div>
+                        <div class="metric-card surface-card">
+                            <div class="metric-label">Unit Economics</div>
+                            <div class="metric-val">2 Videos / Render</div>
+                            <div class="metric-sub">English + Urdu from shared 3D clips</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: 9:16 Reference Monitor -->
+                <div class="monitor-wrap">
+                    <div class="monitor-deck">
+                        <div class="deck-toolbar">
+                            <div class="chip-row" id="hero-show-pills">
+                                <button class="chip-btn active" onclick="selectHeroChannel('body_simulator', this)">Body 3D</button>
+                                <button class="chip-btn" onclick="selectHeroChannel('xray_mechanics', this)">X-Ray</button>
+                                <button class="chip-btn" onclick="selectHeroChannel('crazy_characters', this)">Sitcom</button>
+                            </div>
+
+                            <div class="stream-toggle" role="group" aria-label="Language Stream">
+                                <button id="hero-btn-en" class="stream-pill active-en" onclick="setHeroLanguage('english')">EN</button>
+                                <button id="hero-btn-ur" class="stream-pill" onclick="setHeroLanguage('urdu')">UR</button>
+                            </div>
+                        </div>
+
+                        <div class="monitor-screen">
+                            <video id="hero-video" autoplay muted loop playsinline preload="metadata"></video>
+                            <div class="screen-overlay-top">
+                                <span class="hud-badge" id="hero-hud-channel">Body Simulator</span>
+                                <span class="hud-badge" id="hero-hud-lang">English · Tier-1 RPM</span>
+                            </div>
+                            <button type="button" id="hero-mute-btn" onclick="toggleHeroMute()"
+                                    style="position:absolute;bottom:10px;right:10px;z-index:5;background:rgba(10,10,10,0.85);border:1px solid var(--border-strong);color:var(--text-primary);padding:0.28rem 0.6rem;border-radius:6px;font-family:var(--font-mono);font-size:0.66rem;cursor:pointer;">
+                                Unmute
+                            </button>
+                        </div>
+
+                        <div class="deck-footer">
+                            <span class="deck-title" id="hero-episode-title">Loading master episode...</span>
+                            <span style="font-family:var(--font-mono);font-size:0.68rem;color:var(--text-muted);">1080×1920</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================
+             2. PRODUCTION PIPELINE ARCHITECTURE (Hidden After Login)
+             ============================================================ -->
+        <section class="section" id="pipeline-sec">
+            <div class="container">
+                <div class="section-header">
+                    <div class="eyebrow">
+                        <span class="eyebrow-dot"></span>
+                        <span>Production Architecture</span>
+                    </div>
+                    <h2 class="section-heading">Six automated stages. <em>Zero manual editing.</em></h2>
+                    <p class="section-desc">
+                        Every episode moves deterministically from custom or autonomous script direction through multi-node 3D rendering, Gemini Vision quality scoring, and broadcast loudness normalization.
+                    </p>
+                </div>
+
+                <div class="pipeline-grid">
+                    <div class="stage-list" id="pipeline-steps-list"></div>
+
+                    <div class="inspector-panel surface-card">
+                        <div>
+                            <div class="inspector-head">
+                                <span id="term-stage-code" style="color:var(--cerulean-bright);">Stage 1 · AI Showrunner</span>
+                                <span style="color:var(--emerald);">Verified</span>
+                            </div>
+                            <pre class="inspector-pre" id="term-json-payload"></pre>
+                        </div>
+                        <div class="inspector-foot">
+                            <span id="term-latency-readout">Avg latency: 420ms</span>
+                            <span>1080×1920 Vertical Master</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================
+             3. RPM-CALIBRATED PRICING (Hidden After Login)
+             ============================================================ -->
+        <section class="section" id="pricing-sec">
+            <div class="container">
+                <div class="pricing-top-bar">
+                    <div>
+                        <div class="eyebrow">
+                            <span class="eyebrow-dot"></span>
+                            <span>Subscription Plans</span>
+                        </div>
+                        <h2 class="section-heading">Calibrated to <em>Regional Ad Yield.</em></h2>
+                        <p class="section-desc">
+                            US &amp; UK English channels earn 5×–8× higher ad RPMs than South Asian streams. Choose a single language plan or activate Dual-Stream Arbitrage to export both languages from every 3D render.
+                        </p>
+                    </div>
+
+                    <div class="segmented-control" role="tablist">
+                        <button id="tab-tier-urdu" class="seg-btn" onclick="switchPricingTier('urdu')">Urdu / Hindi</button>
+                        <button id="tab-tier-english" class="seg-btn" onclick="switchPricingTier('english')">English (Tier-1)</button>
+                        <button id="tab-tier-both" class="seg-btn active" onclick="switchPricingTier('both')">Dual-Stream (EN + UR)</button>
+                    </div>
+                </div>
+
+                <div class="pricing-layout">
+                    <div class="plan-pair" id="pricing-cards-container"></div>
+
+                    <div class="calc-card surface-card">
+                        <div>
+                            <span class="plan-badge">Payout &amp; Margin Estimator</span>
+                            <h3 style="font-size:1.2rem;font-weight:700;margin-bottom:0.4rem;">Channel Revenue vs. Plan Cost</h3>
+                            <p style="font-size:0.84rem;color:var(--text-secondary);">
+                                Compare estimated monthly creator ad revenue across Urdu ($0.04/1k), US/UK English ($0.24/1k), and Dual-Stream channels.
+                            </p>
+
+                            <div style="margin:1.35rem 0;">
+                                <div style="display:flex;justify-content:space-between;font-size:0.84rem;">
+                                    <span>Projected Monthly Views</span>
+                                    <span style="font-family:var(--font-mono);font-weight:600;color:var(--cerulean-bright);" id="views-readout">500,000 views</span>
+                                </div>
+                                <input type="range" class="clean-slider" id="views-slider" min="50000" max="5000000" step="50000" value="500000" oninput="updateRoiCalculator()">
+                            </div>
+
+                            <div class="kpi-grid-2x2">
+                                <div class="kpi-box">
+                                    <div class="kpi-box-label">Est. Ad Revenue</div>
+                                    <div class="kpi-box-val" id="roi-est-rev" style="color:var(--cerulean-bright);">$150.00</div>
+                                </div>
+                                <div class="kpi-box">
+                                    <div class="kpi-box-label">Cost per 3D Video</div>
+                                    <div class="kpi-box-val" id="roi-cost-vid">$1.48</div>
+                                </div>
+                                <div class="kpi-box">
+                                    <div class="kpi-box-label">Daily Plan Cost</div>
+                                    <div class="kpi-box-val" id="roi-sub-cost">$89/mo</div>
+                                </div>
+                                <div class="kpi-box">
+                                    <div class="kpi-box-label">Est. Net Profit</div>
+                                    <div class="kpi-box-val" id="roi-net-profit" style="color:var(--emerald);">+$61.00</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="font-size:0.78rem;color:var(--text-muted);border-top:1px solid var(--border-subtle);padding-top:0.9rem;">
+                            Upon subscription activation, you receive dedicated client login credentials pre-loaded with your monthly 3D render quota.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================
+             4. AUTHENTICATED STUDIO WORKSPACE (Shown ONLY After Login)
+             ============================================================ -->
+        <section class="section" id="studio-sec">
+            <div class="container">
+                <div class="workspace-banner">
+                    <div>
+                        <div class="ws-stat-label">Signed-In Account</div>
+                        <div class="ws-stat-val" id="ws-user-email">—</div>
+                    </div>
+                    <div>
+                        <div class="ws-stat-label">Active Subscription</div>
+                        <div class="ws-stat-val" id="ws-plan-name" style="color:var(--cerulean-bright);">—</div>
+                    </div>
+                    <div>
+                        <div class="ws-stat-label">Authorized Stream</div>
+                        <div class="ws-stat-val" id="ws-allowed-stream">—</div>
+                    </div>
+                    <div>
+                        <div class="ws-stat-label">Available 3D Credits</div>
+                        <div class="ws-stat-val" id="ws-credits-remaining" style="color:var(--emerald);">—</div>
+                    </div>
+                </div>
+
+                <div class="workspace-grid">
+                    <!-- Left: Episode Director & Dispatch -->
+                    <div class="panel-box surface-card">
+                        <div class="panel-head">
+                            <h2 class="panel-title">Episode Director</h2>
+                            <span id="console-credit-pill" style="font-family:var(--font-mono);font-size:0.72rem;color:var(--cerulean-bright);">
+                                Ready
+                            </span>
+                        </div>
+
+                        <div class="mode-tabs" role="tablist">
+                            <button type="button" class="mode-tab active" id="mode-tab-prebuilt" onclick="switchCreationMode('prebuilt')">
+                                Preset Shows
+                            </button>
+                            <button type="button" class="mode-tab" id="mode-tab-custom_director" onclick="switchCreationMode('custom_director')">
+                                Custom Prompt
+                            </button>
+                            <button type="button" class="mode-tab" id="mode-tab-manual_scenes" onclick="switchCreationMode('manual_scenes')">
+                                Scene Editor
+                            </button>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="series-name-input">Episode or Series Title</label>
+                            <input id="series-name-input" class="clean-input" type="text" value="Anatomy Panic Daily" placeholder="e.g. Anatomy Panic Daily">
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" id="channel-picker-label">Show Format &amp; Character Cast</label>
+                            <div class="tile-grid-2col" id="studio-channel-picker"></div>
+                        </div>
+
+                        <!-- Custom Prompt Director -->
+                        <div id="custom-director-pane" style="display:none;">
+                            <div class="field-group">
+                                <label class="field-label" for="custom-prompt-input">Custom Concept or Story Prompt</label>
+                                <textarea id="custom-prompt-input" class="clean-textarea" placeholder="Describe any story idea, mechanical breakdown, comedy skit, or topic. The AI Director will generate 4× 10-second 3D camera shots and dual-language voiceover lines."></textarea>
+                                <div class="preset-chips">
+                                    <button type="button" class="preset-chip" onclick="fillSamplePrompt('What happens inside an EV lithium-ion battery cell during fast-charging thermal runaway at 800 volts', 'xray_cutaway')">
+                                        EV Battery Thermal Runaway
+                                    </button>
+                                    <button type="button" class="preset-chip" onclick="fillSamplePrompt('Two dramatic Lahori street cats arguing like food critics over a steaming plate of spicy chicken biryani', 'pixar_3d')">
+                                        Lahori Cats Biryani Skit
+                                    </button>
+                                    <button type="button" class="preset-chip" onclick="fillSamplePrompt('Inside your brain 12 minutes after drinking a double espresso as caffeine blocks adenosine receptors', 'pixar_3d')">
+                                        Espresso vs. Brain Receptors
+                                    </button>
+                                    <button type="button" class="preset-chip" onclick="fillSamplePrompt('Why a C++ dangling pointer corrupts production server memory while the developer blames the compiler', 'cyberpunk_neon')">
+                                        C++ Memory Corruption
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">3D Visual Style</label>
+                                <div class="tile-grid-2col" id="visual-style-picker"></div>
+                            </div>
+
+                            <div style="display:flex;justify-content:space-between;align-items:center;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap;">
+                                <button type="button" class="btn btn-secondary" style="padding:0.55rem 0.95rem;font-size:0.8rem;" onclick="compileDirectorPreview()" id="btn-compile-preview">
+                                    <span>Preview 4-Scene Storyboard</span>
+                                </button>
+                                <span style="font-size:0.76rem;color:var(--text-muted);">Generates 4 camera prompts + EN/UR dialogue</span>
+                            </div>
+
+                            <div class="preview-card" id="storyboard-preview-box">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.65rem;">
+                                    <span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--cerulean-bright);font-weight:600;" id="preview-compiler-tag">Compiled Storyboard</span>
+                                    <button type="button" class="btn-ghost" onclick="transferPreviewToManualMatrix()">
+                                        Open in Scene Editor →
+                                    </button>
+                                </div>
+                                <div id="storyboard-preview-content" style="font-size:0.82rem;color:var(--text-secondary);line-height:1.55;"></div>
+                            </div>
+                        </div>
+
+                        <!-- 4-Scene Manual Editor -->
+                        <div id="manual-scenes-pane" style="display:none;margin-bottom:1.15rem;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.55rem;">
+                                <label class="field-label" style="margin:0;">4-Scene Camera &amp; Dialogue Editor (4 × 10s)</label>
+                                <span style="font-family:var(--font-mono);font-size:0.7rem;color:var(--cerulean-bright);">Manual Mode</span>
+                            </div>
+                            <div id="manual-scenes-list"></div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="studio-lang-select">Output Language Stream</label>
+                            <select id="studio-lang-select" class="clean-select">
+                                <option value="both">Dual-Stream — English + Urdu/Hindi (2 Videos)</option>
+                                <option value="english">English Only — US/UK Tier-1 Stream</option>
+                                <option value="urdu">Urdu / Hindi Only — South Asian Stream</option>
+                            </select>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="studio-mode-select">Render Engine</label>
+                            <select id="studio-mode-select" class="clean-select">
+                                <option value="live" selected>Google Flow 3D Cluster (Uses 1 Credit)</option>
+                                <option value="mock">Fast Pipeline Simulation (0 Credits)</option>
+                            </select>
+                        </div>
+
+                        <div style="display:flex;gap:0.75rem;align-items:center;margin-top:1.35rem;flex-wrap:wrap;">
+                            <button type="button" class="btn btn-primary" onclick="triggerEpisodeRender()">
+                                <span>Render Episode Now</span>
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="createAutopilotSeries()">
+                                <span>Save Recurring Series</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right: Live Render Queue & Saved Series -->
+                    <div class="panel-box surface-card">
+                        <div class="panel-head">
+                            <h2 class="panel-title">Render Queue</h2>
+                            <button type="button" class="btn-ghost" onclick="refreshJobsAndSeries()">Refresh</button>
+                        </div>
+
+                        <div class="stack-list" id="jobs-container"></div>
+
+                        <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--border-subtle);">
+                            <div class="field-label" style="margin-bottom:0.65rem;">Saved Recurring Series</div>
+                            <div id="series-list-container" class="stack-list"></div>
+                        </div>
+
+                        <!-- Personal WhatsApp Delivery & Verification Handshake -->
+                        <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--border-subtle);">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                                <span style="font-size:0.86rem;font-weight:600;color:var(--text-primary);">Personal WhatsApp Delivery</span>
+                                <span id="wa-status-badge" style="font-family:var(--font-mono);font-size:0.68rem;color:var(--text-muted);">Not connected</span>
+                            </div>
+                            <p style="font-size:0.78rem;color:var(--text-secondary);line-height:1.5;margin-bottom:0.75rem;">
+                                Connect your own WhatsApp Agent key so completed video links and hashtags are delivered directly to your personal number.
+                            </p>
+
+                            <details style="background:var(--bg-input);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:0.65rem 0.8rem;margin-bottom:0.85rem;font-size:0.76rem;color:var(--text-secondary);">
+                                <summary style="cursor:pointer;font-weight:500;color:var(--cerulean-bright);outline:none;">
+                                    How to get your WhatsApp Agent Key &amp; User ID
+                                </summary>
+                                <ol style="margin:0.6rem 0 0 1.1rem;line-height:1.65;display:flex;flex-direction:column;gap:0.3rem;">
+                                    <li>Open the <strong>WhatsApp Agent Portal</strong> (or Meta Cloud WhatsApp API setup) and generate your personal Bearer Token (starts with <code>WAA...</code>).</li>
+                                    <li>Copy your personal <strong>Recipient User ID</strong> (formatted as <code>user:140986...</code> or your international WhatsApp phone number).</li>
+                                    <li>Paste both below and click <strong>Send Test Message</strong>. Once you confirm receiving the test message on your phone, all future video renders will message your number automatically.</li>
+                                </ol>
+                            </details>
+
+                            <div class="field-group" style="margin-bottom:0.7rem;">
+                                <label class="field-label" for="wa-token-input">Your WhatsApp Agent Token</label>
+                                <input id="wa-token-input" class="clean-input" type="password" placeholder="WAA_your_whatsapp_agent_token">
+                            </div>
+
+                            <div class="field-group" style="margin-bottom:0.85rem;">
+                                <label class="field-label" for="wa-userid-input">Your WhatsApp User ID or Phone Number</label>
+                                <input id="wa-userid-input" class="clean-input" type="text" placeholder="user:your_recipient_id or +923001234567">
+                            </div>
+
+                            <div style="display:flex;gap:0.5rem;align-items:center;">
+                                <button type="button" class="btn btn-secondary" id="btn-wa-test" onclick="sendWhatsAppTest()">
+                                    <span>Send Test Message</span>
+                                </button>
+                            </div>
+
+                            <!-- Live Confirmation Handshake Prompt (Shown after test message is sent) -->
+                            <div id="wa-confirm-box" style="display:none;margin-top:0.85rem;padding:0.85rem;background:var(--bg-input);border:1px solid var(--cerulean-border);border-radius:var(--radius-sm);">
+                                <div style="font-size:0.8rem;font-weight:500;color:var(--text-primary);margin-bottom:0.55rem;" id="wa-confirm-prompt-text">
+                                    We just sent a verification message to your WhatsApp. Did you receive it on your phone?
+                                </div>
+                                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                                    <button type="button" class="btn btn-primary" id="btn-wa-confirm-yes" onclick="confirmWhatsAppReceipt(true)">
+                                        <span>Yes, I received it — Activate</span>
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" id="btn-wa-confirm-no" onclick="confirmWhatsAppReceipt(false)">
+                                        <span>No, check my key</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6-Node Render Cluster Status -->
+                <div class="cluster-grid" id="worker-pool-grid"></div>
+            </div>
+        </section>
+
+        <!-- ============================================================
+             4B. FOUNDER ADMIN: CLIENT ACCOUNT PROVISIONING (Admin Only)
+             ============================================================ -->
+        <section class="section" id="admin-provision-sec" style="display:none;">
+            <div class="container">
+                <div class="section-header">
+                    <div class="eyebrow">
+                        <span class="eyebrow-dot"></span>
+                        <span>Founder Administration</span>
+                    </div>
+                    <h2 class="section-heading">Client Accounts &amp; <em>Credit Quotas.</em></h2>
+                    <p class="section-desc">
+                        Create or update client login credentials when a customer purchases a subscription plan. Updating an existing email resets their password and sets their new credit balance.
+                    </p>
+                </div>
+
+                <div class="workspace-grid">
+                    <!-- Left: Provision Client Form -->
+                    <div class="panel-box surface-card">
+                        <div class="panel-head">
+                            <h3 class="panel-title">Issue Client Credentials</h3>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="prov-name-input">Client or Channel Name</label>
+                            <input id="prov-name-input" class="clean-input" type="text" placeholder="e.g. Arsal Media">
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="prov-email-input">Client Login Email</label>
+                            <input id="prov-email-input" class="clean-input" type="email" placeholder="client@gmail.com">
+                        </div>
+
+                        <div class="field-group">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">
+                                <label class="field-label" for="prov-pass-input" style="margin:0;">Issued Password (min 6 characters)</label>
+                                <button type="button" class="btn-ghost" style="padding:0.2rem 0.55rem;font-size:0.72rem;" onclick="generateClientPassword()">Generate Password</button>
+                            </div>
+                            <input id="prov-pass-input" class="clean-input" type="text" value="VoxClient#2026!" placeholder="Minimum 6 characters">
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="prov-plan-select">Subscribed Plan</label>
+                            <select id="prov-plan-select" class="clean-select" onchange="syncProvisionCredits()">
+                                <option value="both_daily" data-credits="30">Global Dual-Stream Autopilot — $89/mo (30 Dual Renders)</option>
+                                <option value="both_starter" data-credits="12">Dual-Channel Arbitrage Starter — $49/mo (12 Dual Renders)</option>
+                                <option value="english_daily" data-credits="30">US/UK Monetizer Pro (English) — $69/mo (30 Renders)</option>
+                                <option value="english_starter" data-credits="12">US/UK Monetizer Starter (English) — $39/mo (12 Renders)</option>
+                                <option value="urdu_daily" data-credits="30">Desi Viral Daily (Urdu/Hindi) — $35/mo (30 Renders)</option>
+                                <option value="urdu_starter" data-credits="12">Desi Creator Starter (Urdu/Hindi) — $19/mo (12 Renders)</option>
+                            </select>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="prov-credits-input">3D Render Credits</label>
+                            <input id="prov-credits-input" class="clean-input" type="number" min="0" max="10000" value="30">
+                        </div>
+
+                        <button type="button" class="btn btn-primary" style="width:100%;" id="btn-issue-client" onclick="provisionCustomerAccount()">
+                            <span>Issue Client Login &amp; Activate Credits</span>
+                        </button>
+
+                        <div id="issued-credentials-box" class="preview-card">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                                <span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--emerald);font-weight:600;">Credentials Activated</span>
+                                <button type="button" class="btn-ghost" style="padding:0.22rem 0.6rem;font-size:0.72rem;" onclick="copyIssuedCredentials()">Copy</button>
+                            </div>
+                            <pre id="issued-credentials-text" style="font-family:var(--font-mono);font-size:0.78rem;color:var(--text-primary);white-space:pre-wrap;line-height:1.6;"></pre>
+                        </div>
+                    </div>
+
+                    <!-- Right: Active Accounts List -->
+                    <div class="panel-box surface-card">
+                        <div class="panel-head">
+                            <h3 class="panel-title">Provisioned Accounts</h3>
+                            <button type="button" class="btn-ghost" onclick="loadProvisionedCustomers()">Refresh</button>
+                        </div>
+                        <div class="stack-list" id="admin-customers-list">
+                            <div class="item-row-card"><div class="item-row-sub">Loading accounts from Supabase...</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================
+             5. RENDERED EPISODE VAULT
+             ============================================================ -->
+        <section class="section" id="vault-sec" style="border-bottom:none;">
+            <div class="container">
+                <div class="section-header">
+                    <div class="eyebrow">
+                        <span class="eyebrow-dot"></span>
+                        <span id="vault-eyebrow-text">Master Output Archive</span>
+                    </div>
+                    <h2 class="section-heading" id="vault-heading-text">Rendered <em>Episode Vault.</em></h2>
+                    <p class="section-desc" id="vault-desc-text">
+                        Completed 1080×1920 vertical episodes paired across English and Urdu streams.
+                    </p>
+                </div>
+
+                <div class="vault-grid" id="vault-grid-container"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <span>VoxFlow Studio · Autonomous 3D Video Platform</span>
+            <span style="font-family:var(--font-mono);">blackmangoo</span>
+        </div>
+    </footer>
+
+    <!-- Client Sign-In Modal -->
+    <div class="modal-backdrop" id="auth-modal-backdrop" onclick="if(event.target===this) closeAuthModal()">
+        <div class="modal-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.15rem;">
+                <div>
+                    <div style="font-family:var(--font-mono);font-size:0.68rem;color:var(--cerulean-bright);">VoxFlow Studio</div>
+                    <h3 style="font-size:1.2rem;font-weight:700;margin-top:0.15rem;">Workspace Sign In</h3>
+                </div>
+                <button type="button" class="btn-ghost" onclick="closeAuthModal()">Close</button>
+            </div>
+
+            <!-- Signed-In View -->
+            <div id="auth-signed-in-panel" style="display:none;">
+                <div style="background:var(--bg-input);border:1px solid var(--border-subtle);border-radius:10px;padding:1rem;margin-bottom:1rem;">
+                    <div style="font-family:var(--font-mono);font-size:0.7rem;color:var(--cerulean-bright);margin-bottom:0.25rem;" id="profile-role-line">Admin</div>
+                    <div style="font-weight:600;font-size:0.94rem;margin-bottom:0.3rem;" id="profile-email-line"></div>
+                    <div style="font-size:0.8rem;color:var(--text-secondary);" id="profile-credits-line"></div>
+                </div>
+                <button type="button" class="btn btn-secondary" style="width:100%;" onclick="handleSupabaseSignOut()">
+                    <span>Sign Out</span>
+                </button>
+            </div>
+
+            <!-- Sign-In Form -->
+            <div id="auth-form-panel">
+                <div id="auth-plan-notice" style="display:none;background:var(--cerulean-subtle);border:1px solid var(--cerulean-border);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:1rem;font-size:0.8rem;color:var(--text-primary);line-height:1.45;"></div>
+
+                <div class="mode-tabs" style="grid-template-columns:repeat(2,1fr);margin-bottom:1.1rem;">
+                    <button type="button" class="mode-tab active" id="auth-tab-signin" onclick="switchAuthTab('signin')">Account Login</button>
+                    <button type="button" class="mode-tab" id="auth-tab-key" onclick="switchAuthTab('key')">Workstation Key</button>
+                </div>
+
+                <div id="auth-email-fields">
+                    <div class="field-group">
+                        <label class="field-label" for="auth-email-input">Email</label>
+                        <input id="auth-email-input" class="clean-input" type="email" placeholder="you@domain.com">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label" for="auth-password-input">Password</label>
+                        <input id="auth-password-input" class="clean-input" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter') submitSupabaseAuth()">
+                    </div>
+                    <button type="button" class="btn btn-primary" style="width:100%;margin-top:0.35rem;" onclick="submitSupabaseAuth()" id="auth-submit-btn">
+                        <span>Sign In</span>
+                    </button>
+                </div>
+
+                <div id="auth-key-fields" style="display:none;">
+                    <div class="field-group">
+                        <label class="field-label" for="studio-admin-key">Local Workstation Key</label>
+                        <input id="studio-admin-key" class="clean-input" type="password" placeholder="Enter STUDIO_ADMIN_KEY">
+                    </div>
+                    <button type="button" class="btn btn-primary" style="width:100%;" onclick="saveWorkstationKey()">
+                        <span>Activate Key</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="app-toast" role="status" aria-live="polite"></div>
+
+    <script>
+        const PIPELINE_STAGES = [
+            {
+                step: 'Stage 01',
+                code: 'Stage 01 · Dual-Language AI Director',
+                name: 'Showrunner & Camera Choreography',
+                sub: 'Compiles custom prompts or show concepts into 4 camera-motion shots with 1:1 English & Urdu scripts.',
+                latency: '420ms',
+                payload: {
+                    module: 'brain/multi_channel_director.py',
+                    modes: ['Preset Shows', 'Custom Prompt Director', '4-Scene Manual Editor'],
+                    alignment: 'Strict 4-scene English + Urdu dialogue sync'
+                }
+            },
+            {
+                step: 'Stage 02',
+                code: 'Stage 02 · Multi-Node 3D Render Cluster',
+                name: '6-Node Google Flow Veo 3D Engine',
+                sub: 'File-locked isolated browser profiles with automatic scene failover across nodes.',
+                latency: '68s',
+                payload: {
+                    module: 'video_engine/pool_manager.py',
+                    concurrency: '4 parallel 10-second 3D renders',
+                    locking: 'Cross-process profile lock + orphan process cleanup'
+                }
+            },
+            {
+                step: 'Stage 03',
+                code: 'Stage 03 · Vision Quality Gate',
+                name: 'Gemini Vision Motion & Framing Check',
+                sub: 'Scores rendered clips for composition lighting and motion dynamics while keeping timeline sync.',
+                latency: '890ms',
+                payload: {
+                    module: 'video_engine/clip_quality_scorer.py',
+                    metrics: ['cinematic_quality', 'motion_presence']
+                }
+            },
+            {
+                step: 'Stage 04',
+                code: 'Stage 04 · Multi-Persona Voice Engine',
+                name: '19 Character Voices & 24 kHz DSP',
+                sub: '8-key Gemini TTS rotation + Edge-TTS fallback with 70 Hz high-pass and soft-knee limiting.',
+                latency: '3.2s',
+                payload: {
+                    module: 'voice/voxstudio_engine.py',
+                    sample_rate: '24000 Hz Mono PCM',
+                    crossfade: '15ms cosine boundary smoothing'
+                }
+            },
+            {
+                step: 'Stage 05',
+                code: 'Stage 05 · FFmpeg Vertical Compositor',
+                name: 'Frame-Accurate Ducking & Subtitles',
+                sub: 'Ducks stereo BGM during speech, restores in pauses, and burns per-channel ASS subtitles.',
+                latency: '9.8s',
+                payload: {
+                    module: 'compositor/video_editor.py',
+                    loudness: 'EBU R128 (-16 LUFS, -1.5 dBTP)',
+                    output: '1080x1920 @ 30fps H.264'
+                }
+            },
+            {
+                step: 'Stage 06',
+                code: 'Stage 06 · Cloud Archive & Alerts',
+                name: 'Google Drive & Webhook Delivery',
+                sub: 'Packages MP4, thumbnail, and metadata sidecars without blocking the API event loop.',
+                latency: '4.1s',
+                payload: {
+                    module: 'drive_uploader.py + notifications.py',
+                    execution: 'Non-blocking background worker thread'
+                }
+            }
+        ];
+
+        let catalogData = { channels: [], visual_styles: [], plans: [], pool: {} };
+        let vaultEpisodes = [];
+        let vaultScope = 'public_showcase';
+        let selectedHeroChannel = 'body_simulator';
+        let selectedHeroLang = 'english';
+        let selectedPricingTier = 'both';
+        let selectedStudioChannel = 'body_simulator';
+        let selectedCreationMode = 'prebuilt';
+        let selectedVisualStyle = 'pixar_3d';
+        let lastCompiledPreview = null;
+        let activeStageIdx = 0;
+
+        // WebGL pause/resume controller so Workspace scrolling uses 0% GPU
+        let webglActive = false;
+        let webglRafId = null;
+        let webglRenderFn = null;
+
+        // Supabase Auth state
+        let supabaseClient = null;
+        let currentSession = null;
+        let currentUserProfile = null;
+        let currentAuthTab = 'signin';
+
+        const DEFAULT_MANUAL_SCENES = [
+            {
+                flow_prompt: "Extreme close-up Dutch angle push-in inside the glowing 3D environment as shockwaves ripple across translucent surfaces, volumetric rim light",
+                speaker: "brain",
+                english_line: "Emergency alert! Why did we just overload the entire system in three seconds flat?!",
+                urdu_line: "Emergency alert! Hum ne teen second mein poora system overload kyun kar diya?!"
+            },
+            {
+                flow_prompt: "Fast low-angle tracking shot following the panicked 3D characters sprinting past flashing warning gauges and flying sparks",
+                speaker: "stomach",
+                english_line: "Don't look at me, the pressure valve is spinning at ten thousand RPM right now!",
+                urdu_line: "Mujhe mat dekho, pressure valve is waqt das hazaar RPM par ghoom raha hai!"
+            },
+            {
+                flow_prompt: "360-degree orbital macro shot as cooling jets fire across the core in slow-motion, cerulean and rose reflections",
+                speaker: "heart",
+                english_line: "I'm rerouting reserve energy to stabilize the core before total meltdown!",
+                urdu_line: "Main meltdown se pehle core ko sambhalne ke liye reserve energy bhej raha hoon!"
+            },
+            {
+                flow_prompt: "Dramatic crane pull-back reveal as steam clears and the characters stare directly into the camera lens in exhaustion",
+                speaker: "brain",
+                english_line: "We survived by one millisecond—would you dare test this in real life? Drop a comment!",
+                urdu_line: "Hum ek millisecond se bache hain—kya aap yeh asal zindagi mein try karenge? Comment karein!"
+            }
+        ];
+
+        function jumpTo(selector) {
+            const el = document.querySelector(selector);
+            if (!el) return;
+            const y = el.getBoundingClientRect().top + window.scrollY - 76;
+            window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+        }
+
+        function showToast(msg) {
+            const el = document.getElementById('app-toast');
+            el.textContent = msg;
+            el.style.display = 'block';
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => { el.style.display = 'none'; }, 4400);
+        }
+
+        /* ─── Lightweight Pauseable Hero WebGL (Zero Overhead in Workspace) ─── */
+        function initThreeHero() {
+            const container = document.getElementById('webgl-hero-canvas');
+            if (!container || !window.THREE) return;
+
+            let renderer;
+            try {
+                renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' });
+            } catch (e) {
+                return;
+            }
+
+            const width = container.offsetWidth || window.innerWidth;
+            const height = container.offsetHeight || window.innerHeight;
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.35;
+            container.appendChild(renderer.domElement);
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 200);
+            camera.position.set(0, 1.0, 23);
+
+            scene.add(new THREE.AmbientLight(0x111827, 0.75));
+            const keyLight = new THREE.DirectionalLight(0x007ba7, 3.0);
+            keyLight.position.set(-14, 14, 14);
+            scene.add(keyLight);
+
+            const rimLight = new THREE.DirectionalLight(0xff2d95, 2.6);
+            rimLight.position.set(16, -10, 12);
+            scene.add(rimLight);
+
+            const rig = new THREE.Group();
+            rig.position.set(3.8, 0.2, -2);
+            scene.add(rig);
+
+            const chromeMat = new THREE.MeshStandardMaterial({ color: 0xe5e4e2, metalness: 0.94, roughness: 0.16 });
+            const coreMat = new THREE.MeshStandardMaterial({ color: 0x1ca3de, metalness: 0.9, roughness: 0.2 });
+
+            const knot = new THREE.Mesh(new THREE.TorusKnotGeometry(2.6, 0.4, 120, 24, 2, 3), chromeMat);
+            const ring = new THREE.Mesh(new THREE.TorusGeometry(6.2, 0.05, 16, 90), coreMat);
+            rig.add(knot, ring);
+
+            window.addEventListener('resize', () => {
+                if (!webglActive) return;
+                const w = container.offsetWidth || window.innerWidth;
+                const h = container.offsetHeight || window.innerHeight;
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+            }, { passive: true });
+
+            webglRenderFn = function loop() {
+                if (!webglActive) return;
+                webglRafId = requestAnimationFrame(loop);
+                knot.rotation.x += 0.003;
+                knot.rotation.y += 0.004;
+                ring.rotation.z += 0.0018;
+                renderer.render(scene, camera);
+            };
+
+            setWebGLRunning(!document.body.classList.contains('authenticated-workspace'));
+        }
+
+        function setWebGLRunning(shouldRun) {
+            if (shouldRun && !webglActive && webglRenderFn) {
+                webglActive = true;
+                webglRafId = requestAnimationFrame(webglRenderFn);
+            } else if (!shouldRun && webglActive) {
+                webglActive = false;
+                if (webglRafId) cancelAnimationFrame(webglRafId);
+                webglRafId = null;
+            }
+        }
+
+        function renderPipelineStages() {
+            const list = document.getElementById('pipeline-steps-list');
+            if (!list) return;
+            list.innerHTML = PIPELINE_STAGES.map((st, idx) => `
+                <button type="button" class="stage-btn ${idx === activeStageIdx ? 'active' : ''}"
+                        onclick="selectPipelineStage(${idx})">
+                    <div>
+                        <div class="stage-index">${st.step}</div>
+                        <div class="stage-name">${st.name}</div>
+                        <div class="stage-desc">${st.sub}</div>
+                    </div>
+                    <span class="stage-time">${st.latency}</span>
+                </button>
+            `).join('');
+            const cur = PIPELINE_STAGES[activeStageIdx];
+            document.getElementById('term-stage-code').textContent = cur.code;
+            document.getElementById('term-latency-readout').textContent = `Avg latency: ${cur.latency}`;
+            document.getElementById('term-json-payload').textContent = JSON.stringify(cur.payload, null, 2);
+        }
+
+        function selectPipelineStage(idx) {
+            activeStageIdx = idx;
+            renderPipelineStages();
+        }
+
+        async function bootApp() {
+            renderPipelineStages();
+            renderManualSceneInputs(DEFAULT_MANUAL_SCENES);
+            await initSupabaseAuth();
+            initThreeHero();
+            await Promise.all([
+                loadCatalog(),
+                switchPricingTier('both')
+            ]);
+            setInterval(refreshJobsAndSeries, 6000);
+        }
+
+        async function initSupabaseAuth() {
+            try {
+                const cfgRes = await fetch('/api/config/public');
+                const cfg = await cfgRes.json();
+                if (cfg.supabase_url && cfg.supabase_anon_key && window.supabase) {
+                    supabaseClient = window.supabase.createClient(cfg.supabase_url, cfg.supabase_anon_key);
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    await applyAuthSession(session);
+                    supabaseClient.auth.onAuthStateChange(async (_event, sessionNow) => {
+                        await applyAuthSession(sessionNow);
+                    });
+                } else {
+                    await applyAuthSession(null);
+                }
+            } catch (e) {
+                console.warn('Supabase init notice:', e);
+                await applyAuthSession(null);
+            }
+        }
+
+        async function applyAuthSession(session) {
+            currentSession = session;
+            currentUserProfile = null;
+
+            const badgeEl = document.getElementById('auth-status-badge');
+            const labelEl = document.getElementById('header-auth-label');
+            const creditPill = document.getElementById('console-credit-pill');
+            const signedInPanel = document.getElementById('auth-signed-in-panel');
+            const formPanel = document.getElementById('auth-form-panel');
+            const adminSec = document.getElementById('admin-provision-sec');
+            const adminNav = document.getElementById('nav-admin-provision');
+            const langSelect = document.getElementById('studio-lang-select');
+
+            const savedKey = (localStorage.getItem('voxflow_workstation_key') || '').trim();
+            if (savedKey && document.getElementById('studio-admin-key')) {
+                document.getElementById('studio-admin-key').value = savedKey;
+            }
+
+            if (session && session.user && supabaseClient) {
+                const { data: prof } = await supabaseClient
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', session.user.id)
+                    .single();
+
+                currentUserProfile = prof || {
+                    email: session.user.email,
+                    role: 'user',
+                    plan_tier: 'both_daily',
+                    credits_balance: 0
+                };
+                const isAdmin = currentUserProfile.role === 'admin';
+                const credits = Number(currentUserProfile.credits_balance ?? 0);
+                const planTier = currentUserProfile.plan_tier || 'both_daily';
+
+                document.body.classList.add('authenticated-workspace');
+                setWebGLRunning(false);
+                const heroVid = document.getElementById('hero-video');
+                if (heroVid) heroVid.pause();
+
+                const planMap = {
+                    urdu_starter: ['Desi Creator Starter ($19)', 'Urdu / Hindi Stream', 'urdu'],
+                    urdu_daily: ['Desi Viral Daily ($35)', 'Urdu / Hindi Stream', 'urdu'],
+                    english_starter: ['US/UK Monetizer Starter ($39)', 'English Tier-1 Stream', 'english'],
+                    english_daily: ['US/UK Monetizer Pro ($69)', 'English Tier-1 Stream', 'english'],
+                    both_starter: ['Dual-Stream Starter ($49)', 'English + Urdu (Dual)', 'both'],
+                    both_daily: ['Global Dual-Stream ($89)', 'English + Urdu (Dual)', 'both'],
+                    free: ['Unactivated Account', 'Simulation Only', 'both']
+                };
+                const [planTitle, streamTitle, allowedLang] = isAdmin
+                    ? ['Founder Admin', 'All Streams (EN + UR)', 'both']
+                    : (planMap[planTier] || planMap.both_daily);
+
+                document.getElementById('ws-user-email').textContent = session.user.email;
+                document.getElementById('ws-plan-name').textContent = planTitle;
+                document.getElementById('ws-allowed-stream').textContent = streamTitle;
+                document.getElementById('ws-credits-remaining').textContent = `${credits.toLocaleString()} episodes`;
+
+                if (langSelect) {
+                    Array.from(langSelect.options).forEach(opt => {
+                        opt.disabled = !(isAdmin || allowedLang === 'both' || opt.value === allowedLang);
+                    });
+                    langSelect.value = allowedLang;
+                }
+
+                badgeEl.textContent = isAdmin
+                    ? `Admin · ${credits.toLocaleString()} credits`
+                    : `${credits.toLocaleString()} credits`;
+                labelEl.textContent = session.user.email.split('@')[0];
+                creditPill.textContent = `${credits.toLocaleString()} credits available`;
+
+                signedInPanel.style.display = 'block';
+                formPanel.style.display = 'none';
+                document.getElementById('profile-role-line').textContent = `${isAdmin ? 'Founder Admin' : 'Client Account'} · ${planTitle}`;
+                document.getElementById('profile-email-line').textContent = session.user.email;
+                document.getElementById('profile-credits-line').textContent = `Available 3D Render Credits: ${credits.toLocaleString()}`;
+
+                syncWhatsAppUIState(currentUserProfile);
+
+                if (isAdmin) {
+                    vaultScope = 'founder_master';
+                    updateVaultHeaderByScope();
+                    adminSec.style.display = 'block';
+                    adminNav.style.display = 'inline-block';
+                    loadProvisionedCustomers();
+                } else {
+                    vaultScope = 'client_private';
+                    vaultEpisodes = [];
+                    updateVaultHeaderByScope();
+                    renderVaultGrid();
+                    adminSec.style.display = 'none';
+                    adminNav.style.display = 'none';
+                }
+            } else if (savedKey) {
+                document.body.classList.add('authenticated-workspace');
+                setWebGLRunning(false);
+                vaultScope = 'founder_master';
+                updateVaultHeaderByScope();
+                document.getElementById('ws-user-email').textContent = 'Local Workstation';
+                document.getElementById('ws-plan-name').textContent = 'Workstation Admin Key';
+                document.getElementById('ws-allowed-stream').textContent = 'All Streams (EN + UR)';
+                document.getElementById('ws-credits-remaining').textContent = 'Unlimited';
+
+                badgeEl.textContent = 'Workstation Admin';
+                labelEl.textContent = 'Workstation';
+                creditPill.textContent = 'Workstation Key Active';
+                signedInPanel.style.display = 'block';
+                formPanel.style.display = 'none';
+                document.getElementById('profile-role-line').textContent = 'Workstation Key Active';
+                document.getElementById('profile-email-line').textContent = 'Direct Local Pipeline Control';
+                document.getElementById('profile-credits-line').textContent = 'Unlimited local renders';
+                adminSec.style.display = 'block';
+                adminNav.style.display = 'inline-block';
+                loadProvisionedCustomers();
+            } else {
+                document.body.classList.remove('authenticated-workspace');
+                setWebGLRunning(true);
+                vaultScope = 'public_showcase';
+                updateVaultHeaderByScope();
+                labelEl.textContent = 'Client Sign In';
+                signedInPanel.style.display = 'none';
+                formPanel.style.display = 'block';
+                adminSec.style.display = 'none';
+                adminNav.style.display = 'none';
+            }
+
+            await Promise.all([
+                loadVault(),
+                refreshJobsAndSeries()
+            ]);
+        }
+
+        function updateVaultHeaderByScope() {
+            const eyeEl = document.getElementById('vault-eyebrow-text');
+            const headEl = document.getElementById('vault-heading-text');
+            const descEl = document.getElementById('vault-desc-text');
+            if (vaultScope === 'client_private') {
+                if (eyeEl) eyeEl.textContent = 'Private Client Archive';
+                if (headEl) headEl.innerHTML = 'Your Personal <em>Episode Vault.</em>';
+                if (descEl) descEl.textContent = 'Only 3D episodes rendered under your account appear in this private archive.';
+            } else if (vaultScope === 'founder_master') {
+                if (eyeEl) eyeEl.textContent = 'Founder Master Archive';
+                if (headEl) headEl.innerHTML = 'Master Studio <em>Episode Vault.</em>';
+                if (descEl) descEl.textContent = 'All 1080×1920 vertical episodes rendered across your Founder Studio and client accounts.';
+            } else {
+                if (eyeEl) eyeEl.textContent = 'Showcase Output Archive';
+                if (headEl) headEl.innerHTML = 'Sample <em>Episode Vault.</em>';
+                if (descEl) descEl.textContent = 'Completed 1080×1920 vertical episodes paired across English and Urdu streams.';
+            }
+        }
+
+        function openAuthModal(planNoticeText) {
+            const noticeEl = document.getElementById('auth-plan-notice');
+            if (noticeEl) {
+                if (planNoticeText && typeof planNoticeText === 'string') {
+                    noticeEl.textContent = planNoticeText;
+                    noticeEl.style.display = 'block';
+                } else {
+                    noticeEl.style.display = 'none';
+                }
+            }
+            document.getElementById('auth-modal-backdrop').classList.add('open');
+        }
+
+        function closeAuthModal() {
+            document.getElementById('auth-modal-backdrop').classList.remove('open');
+        }
+
+        function switchAuthTab(tab) {
+            currentAuthTab = tab;
+            ['signin', 'key'].forEach(t => {
+                const btn = document.getElementById(`auth-tab-${t}`);
+                if (btn) btn.classList.toggle('active', t === tab);
+            });
+            document.getElementById('auth-email-fields').style.display = tab === 'key' ? 'none' : 'block';
+            document.getElementById('auth-key-fields').style.display = tab === 'key' ? 'block' : 'none';
+        }
+
+        async function submitSupabaseAuth() {
+            if (!supabaseClient) {
+                showToast('Authentication service is still loading—please try again.');
+                return;
+            }
+            const email = (document.getElementById('auth-email-input').value || '').trim();
+            const password = (document.getElementById('auth-password-input').value || '').trim();
+            if (!email || password.length < 6) {
+                showToast('Please enter your issued email and password (at least 6 characters).');
+                return;
+            }
+            const btn = document.getElementById('auth-submit-btn');
+            btn.disabled = true;
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) {
+                    showToast(`Sign-in error: ${error.message}`);
+                    return;
+                }
+                closeAuthModal();
+                window.scrollTo({ top: 0, behavior: 'instant' });
+                showToast(`Signed in as ${data.user.email}`);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function handleSupabaseSignOut() {
+            localStorage.removeItem('voxflow_workstation_key');
+            if (document.getElementById('studio-admin-key')) {
+                document.getElementById('studio-admin-key').value = '';
+            }
+            if (supabaseClient) {
+                await supabaseClient.auth.signOut();
+            }
+            await applyAuthSession(null);
+            closeAuthModal();
+            window.scrollTo({ top: 0, behavior: 'instant' });
+            showToast('Signed out.');
+        }
+
+        function saveWorkstationKey() {
+            const k = (document.getElementById('studio-admin-key').value || '').trim();
+            if (k) {
+                localStorage.setItem('voxflow_workstation_key', k);
+                showToast('Workstation Admin Key activated.');
+            } else {
+                localStorage.removeItem('voxflow_workstation_key');
+                showToast('Workstation Admin Key cleared.');
+            }
+            applyAuthSession(currentSession);
+            closeAuthModal();
+        }
+
+        function buildAuthHeaders() {
+            const headers = { 'Content-Type': 'application/json' };
+            const adminKey = (document.getElementById('studio-admin-key')?.value || localStorage.getItem('voxflow_workstation_key') || '').trim();
+            if (adminKey) {
+                headers['X-Studio-Key'] = adminKey;
+            }
+            if (currentSession && currentSession.access_token) {
+                headers['Authorization'] = `Bearer ${currentSession.access_token}`;
+            }
+            return headers;
+        }
+
+        /* ─── Per-User WhatsApp Setup & Verification Handshake ─── */
+        function syncWhatsAppUIState(profile) {
+            const badge = document.getElementById('wa-status-badge');
+            const tokInput = document.getElementById('wa-token-input');
+            const uidInput = document.getElementById('wa-userid-input');
+            const confirmBox = document.getElementById('wa-confirm-box');
+            if (!badge || !tokInput || !uidInput) return;
+
+            const tok = (profile?.wa_agent_token || '').trim();
+            const uid = (profile?.wa_user_id || '').trim();
+            const verified = Boolean(profile?.wa_verified);
+
+            tokInput.value = tok;
+            uidInput.value = uid;
+            if (confirmBox) confirmBox.style.display = 'none';
+
+            if (verified && tok && uid) {
+                badge.textContent = `Verified · ${uid}`;
+                badge.style.color = 'var(--emerald)';
+            } else if (tok && uid) {
+                badge.textContent = 'Pending confirmation';
+                badge.style.color = 'var(--cerulean-bright)';
+                if (confirmBox) confirmBox.style.display = 'block';
+            } else {
+                badge.textContent = 'Not connected';
+                badge.style.color = 'var(--text-muted)';
+            }
+        }
+
+        async function sendWhatsAppTest() {
+            const tok = (document.getElementById('wa-token-input')?.value || '').trim();
+            const uid = (document.getElementById('wa-userid-input')?.value || '').trim();
+            if (tok.length < 6 || uid.length < 3) {
+                showToast('Please paste both your WhatsApp Agent Token and your WhatsApp User ID.');
+                return;
+            }
+            const btn = document.getElementById('btn-wa-test');
+            btn.disabled = true;
+            btn.querySelector('span').textContent = 'Sending Test Message...';
+            try {
+                const res = await fetch('/api/whatsapp/test', {
+                    method: 'POST',
+                    headers: buildAuthHeaders(),
+                    body: JSON.stringify({ wa_agent_token: tok, wa_user_id: uid })
+                });
+                const data = await res.json().catch(() => ({}));
+                // Always display the confirmation handshake prompt so the user can confirm whether it arrived on their phone
+                document.getElementById('wa-confirm-box').style.display = 'block';
+                const badge = document.getElementById('wa-status-badge');
+                badge.textContent = 'Awaiting your confirmation';
+                badge.style.color = 'var(--cerulean-bright)';
+
+                if (res.ok) {
+                    showToast('Test message sent to your WhatsApp. Please confirm below if you received it.');
+                } else {
+                    showToast(data.detail || 'Check your WhatsApp or verify your token below.');
+                }
+            } finally {
+                btn.disabled = false;
+                btn.querySelector('span').textContent = 'Send Test Message';
+            }
+        }
+
+        async function confirmWhatsAppReceipt(received) {
+            const badge = document.getElementById('wa-status-badge');
+            const uid = (document.getElementById('wa-userid-input')?.value || '').trim();
+            const confirmBox = document.getElementById('wa-confirm-box');
+
+            if (received) {
+                badge.textContent = `Verified · ${uid}`;
+                badge.style.color = 'var(--emerald)';
+                if (confirmBox) confirmBox.style.display = 'none';
+            } else {
+                badge.textContent = 'Not verified — check key';
+                badge.style.color = 'var(--danger)';
+                if (confirmBox) confirmBox.style.display = 'none';
+                document.getElementById('wa-token-input')?.focus();
+            }
+
+            const res = await fetch('/api/whatsapp/confirm', {
+                method: 'POST',
+                headers: buildAuthHeaders(),
+                body: JSON.stringify({ received: Boolean(received) })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                showToast(data.detail || 'Could not update WhatsApp verification status.');
+                return;
+            }
+            showToast(
+                received
+                    ? 'WhatsApp verified! Future completed videos will be sent to your number.'
+                    : 'Please check your WhatsApp Agent Token and User ID, then send a new test message.'
+            );
+        }
+
+        /* ─── Admin Client Provisioning ─── */
+        function generateClientPassword() {
+            const rand = Math.random().toString(36).slice(2, 6).toUpperCase() + Math.floor(100 + Math.random() * 900);
+            document.getElementById('prov-pass-input').value = `VoxFlow#${rand}!`;
+        }
+
+        function syncProvisionCredits() {
+            const sel = document.getElementById('prov-plan-select');
+            const opt = sel.options[sel.selectedIndex];
+            document.getElementById('prov-credits-input').value = opt.getAttribute('data-credits') || '30';
+        }
+
+        async function provisionCustomerAccount() {
+            const fullName = (document.getElementById('prov-name-input').value || '').trim();
+            const email = (document.getElementById('prov-email-input').value || '').trim();
+            const password = (document.getElementById('prov-pass-input').value || '').trim();
+            const planTier = document.getElementById('prov-plan-select').value;
+            const credits = parseInt(document.getElementById('prov-credits-input').value, 10);
+
+            if (!email || !email.includes('@')) {
+                showToast('Please enter a valid client email address.');
+                return;
+            }
+            if (password.length < 6) {
+                showToast('Password must be at least 6 characters.');
+                return;
+            }
+
+            const btn = document.getElementById('btn-issue-client');
+            const origText = btn.querySelector('span').textContent;
+            btn.disabled = true;
+            btn.querySelector('span').textContent = 'Provisioning Account...';
+
+            try {
+                const res = await fetch('/api/admin/provision-customer', {
+                    method: 'POST',
+                    headers: buildAuthHeaders(),
+                    body: JSON.stringify({
+                        email,
+                        password,
+                        full_name: fullName,
+                        plan_tier: planTier,
+                        credits_balance: isNaN(credits) ? 30 : credits
+                    })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    showToast(`Provisioning failed: ${data.detail || res.statusText}`);
+                    return;
+                }
+
+                const box = document.getElementById('issued-credentials-box');
+                const txt = document.getElementById('issued-credentials-text');
+                txt.textContent =
+`VoxFlow Studio — Client Login
+URL      : ${window.location.origin}
+Email    : ${data.email}
+Password : ${data.password}
+Plan     : ${data.plan_name} (${data.language_tier.toUpperCase()})
+Credits  : ${data.credits_balance} 3D Episodes`;
+                await loadProvisionedCustomers();
+                box.style.display = 'block';
+                showToast(`Client ${data.email} provisioned with ${data.credits_balance} credits.`);
+            } catch (err) {
+                showToast(`Network error while provisioning: ${err.message}`);
+            } finally {
+                btn.disabled = false;
+                btn.querySelector('span').textContent = origText;
+            }
+        }
+
+        function copyIssuedCredentials() {
+            const text = document.getElementById('issued-credentials-text')?.textContent || '';
+            if (!text) return;
+            navigator.clipboard.writeText(text).then(() => showToast('Client credentials copied to clipboard.'));
+        }
+
+        async function loadProvisionedCustomers() {
+            const container = document.getElementById('admin-customers-list');
+            if (!container) return;
+            try {
+                const res = await fetch('/api/admin/customers', { headers: buildAuthHeaders() });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    container.innerHTML = `<div class="item-row-card"><div class="item-row-sub">${err.detail || 'Unable to load customer accounts.'}</div></div>`;
+                    return;
+                }
+                const data = await res.json();
+                const list = data.customers || [];
+                if (!list.length) {
+                    container.innerHTML = `<div class="item-row-card"><div class="item-row-sub">No accounts provisioned yet.</div></div>`;
+                    return;
+                }
+                container.innerHTML = list.map(c => {
+                    const isAdmin = c.role === 'admin';
+                    return `
+                        <div class="item-row-card">
+                            <div class="item-row-top">
+                                <strong>${c.email}</strong>
+                                <span style="font-family:var(--font-mono);font-size:0.72rem;color:${isAdmin ? 'var(--rose-soft)' : 'var(--cerulean-bright)'};">
+                                    ${isAdmin ? 'Admin' : c.plan_tier}
+                                </span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;margin-top:0.35rem;">
+                                <span class="item-row-sub">
+                                    ${c.full_name || 'Client'} · <strong style="color:var(--emerald);">${c.credits_balance}</strong> credits remaining
+                                </span>
+                                ${!isAdmin ? `<button type="button" class="btn-ghost" style="padding:0.2rem 0.55rem;font-size:0.72rem;color:var(--danger);" onclick="deleteCustomerAccount('${c.id}', '${c.email}')">Remove</button>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                container.innerHTML = `<div class="item-row-card"><div class="item-row-sub">Connection error loading accounts.</div></div>`;
+            }
+        }
+
+        async function deleteCustomerAccount(userId, email) {
+            if (!confirm(`Remove client account ${email}?`)) return;
+            const res = await fetch(`/api/admin/customers/${userId}`, {
+                method: 'DELETE',
+                headers: buildAuthHeaders()
+            });
+            if (res.ok) {
+                showToast(`Removed ${email}`);
+                await loadProvisionedCustomers();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                showToast(`Could not remove user: ${err.detail || 'Error'}`);
+            }
+        }
+
+        /* ─── Catalog, Custom Prompt Director & Manual Matrix ─── */
+        async function loadCatalog() {
+            const res = await fetch('/api/catalog');
+            catalogData = await res.json();
+
+            const picker = document.getElementById('studio-channel-picker');
+            if (picker) {
+                picker.innerHTML = catalogData.channels.map(ch => `
+                    <button type="button" class="select-tile ${ch.id === selectedStudioChannel ? 'selected' : ''}"
+                            onclick="selectStudioChannel('${ch.id}', this)">
+                        <div class="select-tile-title">${ch.name}</div>
+                        <div class="select-tile-sub">${ch.style_badge}</div>
+                    </button>
+                `).join('');
+            }
+
+            const stylePicker = document.getElementById('visual-style-picker');
+            if (stylePicker && catalogData.visual_styles) {
+                stylePicker.innerHTML = catalogData.visual_styles.map(st => `
+                    <button type="button" class="select-tile ${st.id === selectedVisualStyle ? 'selected' : ''}"
+                            onclick="selectVisualStyle('${st.id}', this)">
+                        <div class="select-tile-title">${st.name}</div>
+                        <div class="select-tile-sub">${st.badge}</div>
+                    </button>
+                `).join('');
+            }
+
+            renderWorkerPool(catalogData.pool);
+        }
+
+        function renderWorkerPool(pool) {
+            if (!pool || !pool.workers) return;
+            document.getElementById('header-pool-text').textContent =
+                `${pool.ready_workers}/${pool.total_workers} Nodes Ready`;
+
+            const grid = document.getElementById('worker-pool-grid');
+            if (!grid) return;
+            grid.innerHTML = pool.workers.map((w, i) => {
+                const color = w.status === 'READY' ? 'var(--emerald)' : (w.status === 'RENDERING' ? 'var(--cerulean-bright)' : 'var(--danger)');
+                return `
+                    <div class="node-card surface-card">
+                        <div class="node-top">
+                            <span>Node 0${i + 1}</span>
+                            <span style="color:${color};">● ${w.status}</span>
+                        </div>
+                        <div class="node-sub">${w.role}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectStudioChannel(chId, btnEl) {
+            selectedStudioChannel = chId;
+            document.querySelectorAll('#studio-channel-picker .select-tile').forEach(b => b.classList.remove('selected'));
+            if (btnEl) btnEl.classList.add('selected');
+        }
+
+        function selectVisualStyle(styleId, btnEl) {
+            selectedVisualStyle = styleId;
+            document.querySelectorAll('#visual-style-picker .select-tile').forEach(b => b.classList.remove('selected'));
+            if (btnEl) btnEl.classList.add('selected');
+        }
+
+        function switchCreationMode(mode) {
+            selectedCreationMode = mode;
+            ['prebuilt', 'custom_director', 'manual_scenes'].forEach(m => {
+                const tab = document.getElementById(`mode-tab-${m}`);
+                if (tab) tab.classList.toggle('active', m === mode);
+            });
+            document.getElementById('custom-director-pane').style.display = mode === 'custom_director' ? 'block' : 'none';
+            document.getElementById('manual-scenes-pane').style.display = mode === 'manual_scenes' ? 'block' : 'none';
+            const lbl = document.getElementById('channel-picker-label');
+            if (lbl) {
+                lbl.textContent = mode === 'prebuilt'
+                    ? 'Show Format & Autonomous Concept Engine'
+                    : 'Voice Cast & Audio Profile';
+            }
+        }
+
+        function fillSamplePrompt(promptText, styleId) {
+            document.getElementById('custom-prompt-input').value = promptText;
+            document.getElementById('series-name-input').value = promptText.slice(0, 42);
+            if (styleId) {
+                selectedVisualStyle = styleId;
+                document.querySelectorAll('#visual-style-picker .select-tile').forEach(btn => {
+                    btn.classList.toggle('selected', btn.getAttribute('onclick')?.includes(`'${styleId}'`));
+                });
+            }
+        }
+
+        function renderManualSceneInputs(scenesArray) {
+            const container = document.getElementById('manual-scenes-list');
+            if (!container) return;
+            const shotLabels = [
+                'Scene 1 (0:00–0:10) · Hook',
+                'Scene 2 (0:10–0:20) · Escalation',
+                'Scene 3 (0:20–0:30) · Climax',
+                'Scene 4 (0:30–0:40) · Payoff'
+            ];
+            container.innerHTML = scenesArray.slice(0, 4).map((sc, idx) => `
+                <div class="scene-editor-card">
+                    <div class="scene-editor-head">
+                        <span>${shotLabels[idx]}</span>
+                        <input id="manual-speaker-${idx}" class="clean-input" style="width:125px;padding:0.24rem 0.5rem;font-size:0.74rem;font-family:var(--font-mono);" value="${sc.speaker || 'narrator'}" placeholder="Speaker">
+                    </div>
+                    <div style="margin-bottom:0.45rem;">
+                        <textarea id="manual-prompt-${idx}" class="clean-textarea" style="min-height:58px;font-size:0.82rem;padding:0.55rem 0.75rem;" placeholder="10s 3D Camera & Motion Prompt">${sc.flow_prompt || ''}</textarea>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.45rem;">
+                        <input id="manual-en-${idx}" class="clean-input" style="padding:0.45rem 0.65rem;font-size:0.8rem;" value="${(sc.english_line || '').replace(/"/g, '&quot;')}" placeholder="English line">
+                        <input id="manual-ur-${idx}" class="clean-input" style="padding:0.45rem 0.65rem;font-size:0.8rem;" value="${(sc.urdu_line || '').replace(/"/g, '&quot;')}" placeholder="Urdu / Roman Urdu line">
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function collectManualScenesFromDOM() {
+            const out = [];
+            for (let i = 0; i < 4; i++) {
+                const fp = (document.getElementById(`manual-prompt-${i}`)?.value || '').trim();
+                const sp = (document.getElementById(`manual-speaker-${i}`)?.value || 'narrator').trim();
+                const en = (document.getElementById(`manual-en-${i}`)?.value || '').trim();
+                const ur = (document.getElementById(`manual-ur-${i}`)?.value || '').trim();
+                if (fp) {
+                    out.push({ flow_prompt: fp, speaker: sp, english_line: en, urdu_line: ur });
+                }
+            }
+            return out;
+        }
+
+        async function compileDirectorPreview() {
+            const promptText = (document.getElementById('custom-prompt-input').value || '').trim();
+            if (promptText.length < 4) {
+                showToast('Enter a custom concept (at least 4 characters) first.');
+                return;
+            }
+            const btn = document.getElementById('btn-compile-preview');
+            btn.disabled = true;
+            btn.querySelector('span').textContent = 'Compiling Storyboard...';
+            try {
+                const res = await fetch('/api/director/preview', {
+                    method: 'POST',
+                    headers: buildAuthHeaders(),
+                    body: JSON.stringify({
+                        creation_mode: 'custom_director',
+                        channel: selectedStudioChannel,
+                        custom_prompt: promptText,
+                        visual_style: selectedVisualStyle
+                    })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    showToast(data.detail || 'Could not compile storyboard.');
+                    return;
+                }
+                lastCompiledPreview = data;
+                const box = document.getElementById('storyboard-preview-box');
+                const content = document.getElementById('storyboard-preview-content');
+                document.getElementById('preview-compiler-tag').textContent = `Storyboard · ${data.title_english}`;
+                content.innerHTML = data.scenes.map((sc, i) => {
+                    const enObj = data.dialogue_english[i] || { speaker: 'narrator', line: '' };
+                    const urObj = data.dialogue_urdu[i] || { speaker: 'narrator', line: '' };
+                    return `
+                        <div style="padding:0.55rem 0;border-bottom:1px solid var(--border-subtle);">
+                            <div style="font-family:var(--font-mono);font-size:0.7rem;color:var(--cerulean-bright);margin-bottom:0.2rem;">
+                                Scene ${i + 1} · ${enObj.speaker}
+                            </div>
+                            <div style="color:var(--text-primary);font-size:0.8rem;margin-bottom:0.22rem;">${sc}</div>
+                            <div style="font-size:0.76rem;color:var(--text-secondary);">EN: "${enObj.line}"</div>
+                            <div style="font-size:0.76rem;color:var(--rose-soft);">UR: "${urObj.line}"</div>
+                        </div>
+                    `;
+                }).join('');
+                box.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.querySelector('span').textContent = 'Preview 4-Scene Storyboard';
+            }
+        }
+
+        function transferPreviewToManualMatrix() {
+            if (!lastCompiledPreview) return;
+            const mapped = lastCompiledPreview.scenes.map((sc, i) => ({
+                flow_prompt: sc,
+                speaker: (lastCompiledPreview.dialogue_english[i] || {}).speaker || 'narrator',
+                english_line: (lastCompiledPreview.dialogue_english[i] || {}).line || '',
+                urdu_line: (lastCompiledPreview.dialogue_urdu[i] || {}).line || ''
+            }));
+            renderManualSceneInputs(mapped);
+            switchCreationMode('manual_scenes');
+        }
+
+        /* ─── Vault & Hero Video ─── */
+        async function loadVault() {
+            const res = await fetch('/api/vault', { headers: buildAuthHeaders() });
+            const data = await res.json();
+            vaultEpisodes = data.episodes || [];
+            vaultScope = data.scope || vaultScope || 'public_showcase';
+            updateVaultHeaderByScope();
+            updateHeroMonitor();
+            renderVaultGrid();
+        }
+
+        function selectHeroChannel(ch, btnEl) {
+            selectedHeroChannel = ch;
+            document.querySelectorAll('#hero-show-pills .chip-btn').forEach(b => b.classList.remove('active'));
+            if (btnEl) btnEl.classList.add('active');
+            updateHeroMonitor();
+        }
+
+        function setHeroLanguage(lang) {
+            selectedHeroLang = lang;
+            document.getElementById('hero-btn-en').className = 'stream-pill ' + (lang === 'english' ? 'active-en' : '');
+            document.getElementById('hero-btn-ur').className = 'stream-pill ' + (lang === 'urdu' ? 'active-ur' : '');
+            updateHeroMonitor();
+        }
+
+        function toggleHeroMute() {
+            const videoEl = document.getElementById('hero-video');
+            const btn = document.getElementById('hero-mute-btn');
+            videoEl.muted = !videoEl.muted;
+            btn.textContent = videoEl.muted ? 'Unmute' : 'Mute';
+        }
+
+        function updateHeroMonitor() {
+            if (document.body.classList.contains('authenticated-workspace')) return;
+            const match = vaultEpisodes.find(ep => ep.channel === selectedHeroChannel && ep.english && ep.urdu)
+                       || vaultEpisodes.find(ep => ep.channel === selectedHeroChannel && ep[selectedHeroLang])
+                       || vaultEpisodes.find(ep => ep.channel === selectedHeroChannel)
+                       || vaultEpisodes[0];
+            if (!match) return;
+
+            const streamObj = match[selectedHeroLang] || match.english || match.urdu;
+            if (!streamObj) return;
+
+            const videoEl = document.getElementById('hero-video');
+            if (streamObj.thumb_url) videoEl.poster = streamObj.thumb_url;
+            if (videoEl.getAttribute('src') !== streamObj.video_url) {
+                videoEl.src = streamObj.video_url;
+                videoEl.play().catch(() => {});
+            }
+            document.getElementById('hero-hud-channel').textContent = streamObj.channel.replace('_', ' ');
+            document.getElementById('hero-hud-lang').textContent = streamObj.lang === 'english' ? 'English · Tier-1 RPM' : 'Urdu · Viral Stream';
+            document.getElementById('hero-episode-title').textContent = streamObj.title;
+        }
+
+        /* ─── Pricing & ROI Calculator ─── */
+        async function switchPricingTier(tier) {
+            selectedPricingTier = tier;
+            document.getElementById('tab-tier-urdu').className = 'seg-btn' + (tier === 'urdu' ? ' active' : '');
+            document.getElementById('tab-tier-english').className = 'seg-btn' + (tier === 'english' ? ' active' : '');
+            document.getElementById('tab-tier-both').className = 'seg-btn' + (tier === 'both' ? ' active' : '');
+            await updateRoiCalculator();
+        }
+
+        async function updateRoiCalculator() {
+            const slider = document.getElementById('views-slider');
+            if (!slider) return;
+            const views = parseInt(slider.value, 10);
+            document.getElementById('views-readout').textContent = `${views.toLocaleString()} views`;
+
+            const res = await fetch(`/api/pricing?language_tier=${selectedPricingTier}&monthly_views=${views}`);
+            const data = await res.json();
+
+            const container = document.getElementById('pricing-cards-container');
+            container.innerHTML = data.plans.map((p, idx) => {
+                const perVid = (p.price_usd / p.videos_delivered_per_month).toFixed(2);
+                return `
+                    <div class="plan-card surface-card ${idx === 1 ? 'featured' : ''}">
+                        <div>
+                            <span class="plan-badge">${p.language_label}</span>
+                            <div class="plan-name">${p.name}</div>
+                            <div class="plan-market">${p.target_market}</div>
+                            <div class="plan-price-row">
+                                <span class="plan-price">$${p.price_usd}</span>
+                                <span style="color:var(--text-secondary);font-size:0.85rem;">/ ${p.billing_period}</span>
+                            </div>
+                            <div class="plan-unit">
+                                $${perVid} per finished 3D Short · ${p.videos_delivered_per_month} videos/mo
+                            </div>
+                            <ul class="plan-features">
+                                ${p.features.map(f => `<li>${f}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <button type="button" class="btn ${idx === 1 ? 'btn-primary' : 'btn-secondary'}" style="width:100%;"
+                                onclick="selectPlanForStudio('${p.language_tier}', '${p.name}')">
+                            <span>Get ${p.name}</span>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('roi-est-rev').textContent = `$${data.estimated_creator_ad_revenue_usd.toFixed(2)}`;
+            document.getElementById('roi-cost-vid').textContent = `$${data.effective_cost_per_video_usd.toFixed(2)}`;
+            document.getElementById('roi-sub-cost').textContent = `$${data.daily_plan_price_usd}/mo`;
+            const net = data.net_creator_profit_usd;
+            const netEl = document.getElementById('roi-net-profit');
+            netEl.textContent = (net >= 0 ? `+$${net.toFixed(2)}` : `-$${Math.abs(net).toFixed(2)}`);
+            netEl.style.color = net >= 0 ? 'var(--emerald)' : 'var(--danger)';
+        }
+
+        function selectPlanForStudio(langTier, planName) {
+            openAuthModal(`Plan: ${planName} (${langTier.toUpperCase()} Stream). Sign in below with the credentials issued upon purchase.`);
+        }
+
+        /* ─── Dispatch Series & Render Jobs ─── */
+        async function createAutopilotSeries() {
+            const name = document.getElementById('series-name-input').value.trim() || 'Autopilot 3D Series';
+            const lang = document.getElementById('studio-lang-select').value;
+            const customPrompt = (document.getElementById('custom-prompt-input')?.value || '').trim();
+            const res = await fetch('/api/series', {
+                method: 'POST',
+                headers: buildAuthHeaders(),
+                body: JSON.stringify({
+                    name,
+                    channel: selectedStudioChannel,
+                    language_tier: lang,
+                    creation_mode: selectedCreationMode,
+                    custom_prompt: customPrompt,
+                    visual_style: selectedVisualStyle
+                })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok) {
+                showToast(`Series "${data.name}" saved (${data.cadence}).`);
+                await refreshJobsAndSeries();
+            } else {
+                showToast(data.detail || 'Could not save series.');
+            }
+        }
+
+        async function triggerEpisodeRender() {
+            const lang = document.getElementById('studio-lang-select').value;
+            const mode = document.getElementById('studio-mode-select').value;
+            const customPrompt = (document.getElementById('custom-prompt-input')?.value || '').trim();
+
+            if (selectedCreationMode === 'custom_director' && customPrompt.length < 4) {
+                showToast('Please enter a custom episode prompt before rendering.');
+                return;
+            }
+
+            const payload = {
+                channel: selectedStudioChannel,
+                lang,
+                mock: mode === 'mock',
+                scenes: mode === 'mock' ? 2 : 4,
+                creation_mode: selectedCreationMode,
+                custom_prompt: customPrompt,
+                visual_style: selectedVisualStyle,
+                custom_scenes: selectedCreationMode === 'manual_scenes' ? collectManualScenesFromDOM() : null
+            };
+
+            const res = await fetch('/api/generate', {
+                method: 'POST',
+                headers: buildAuthHeaders(),
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok) {
+                showToast(`Queued ${data.job_id} (${lang.toUpperCase()})`);
+                if (currentSession) await applyAuthSession(currentSession);
+                await refreshJobsAndSeries();
+            } else {
+                showToast(data.detail || 'Authorization required.');
+                if (res.status === 401 || res.status === 402) openAuthModal();
+            }
+        }
+
+        async function refreshJobsAndSeries() {
+            try {
+                const authHdrs = buildAuthHeaders();
+                const [jobsRes, serRes, poolRes] = await Promise.all([
+                    fetch('/api/jobs', { headers: authHdrs }),
+                    fetch('/api/series', { headers: authHdrs }),
+                    fetch('/api/pool-status')
+                ]);
+                const [jobsData, serData, poolData] = await Promise.all([
+                    jobsRes.json(),
+                    serRes.json(),
+                    poolRes.json()
+                ]);
+
+                renderWorkerPool(poolData);
+
+                const jobsEl = document.getElementById('jobs-container');
+                const jobs = (jobsData.jobs || []).slice(0, 8);
+                if (!jobs.length) {
+                    jobsEl.innerHTML = `<div class="item-row-card"><div class="item-row-sub">No active render jobs. Click "Render Episode Now" to start.</div></div>`;
+                } else {
+                    jobsEl.innerHTML = jobs.map(j => {
+                        const stColor = j.status === 'completed' ? 'var(--emerald)' : (j.status === 'failed' ? 'var(--danger)' : 'var(--cerulean-bright)');
+                        return `
+                            <div class="item-row-card">
+                                <div class="item-row-top">
+                                    <strong>${j.channel.replace('_', ' ')} · ${j.lang.toUpperCase()} ${j.mock_mode ? '(Sim)' : '(3D)'}</strong>
+                                    <span style="font-family:var(--font-mono);font-size:0.72rem;color:${stColor};">${j.status}</span>
+                                </div>
+                                <div class="item-row-sub">${j.stage}${j.error ? ' — ' + j.error : ''}</div>
+                                <div class="progress-track">
+                                    <div class="progress-fill" style="width:${j.progress || 10}%;"></div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                const serEl = document.getElementById('series-list-container');
+                const series = (serData.series || []).slice(0, 6);
+                if (!series.length) {
+                    serEl.innerHTML = `<div class="item-row-sub">No recurring series saved yet.</div>`;
+                } else {
+                    serEl.innerHTML = series.map(s => `
+                        <div class="item-row-card" style="padding:0.7rem 0.9rem;display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-size:0.84rem;"><strong>${s.name}</strong> · ${s.channel.replace('_', ' ')} (${s.language_tier.toUpperCase()})</span>
+                            <span style="font-family:var(--font-mono);font-size:0.74rem;color:var(--cerulean-bright);">$${s.price_usd}/mo</span>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) {
+                console.warn('Telemetry refresh notice:', e);
+            }
+        }
+
+        function renderVaultGrid() {
+            const grid = document.getElementById('vault-grid-container');
+            if (!grid) return;
+            if (!vaultEpisodes.length) {
+                if (vaultScope === 'client_private') {
+                    grid.innerHTML = `
+                        <div class="panel-box surface-card" style="grid-column: 1 / -1; text-align: center; padding: 2.5rem 1.5rem;">
+                            <div style="font-weight: 600; font-size: 1rem; margin-bottom: 0.4rem;">Your Personal Episode Vault is Empty</div>
+                            <div style="font-size: 0.86rem; color: var(--text-secondary); max-width: 52ch; margin: 0 auto;">
+                                Episodes you render in the Episode Director above are private to your account and will appear here automatically upon completion.
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    grid.innerHTML = `<div class="panel-box surface-card">No rendered videos found in output/ yet.</div>`;
+                }
+                return;
+            }
+            grid.innerHTML = vaultEpisodes.map((pair, idx) => {
+                const defaultStream = pair.english || pair.urdu;
+                const hasBoth = Boolean(pair.english && pair.urdu);
+                return `
+                    <div class="vault-card surface-card">
+                        <div class="vault-video-box" style="position:relative;cursor:pointer;" onclick="activateVaultVideo(${idx})">
+                            <video id="vault-vid-${idx}" data-src="${defaultStream.video_url}" ${defaultStream.thumb_url ? `poster="${defaultStream.thumb_url}"` : ''} preload="none" playsinline></video>
+                            <div id="vault-play-badge-${idx}" style="position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,0.28);transition:opacity 0.2s ease;">
+                                <div style="width:48px;height:48px;border-radius:50%;background:rgba(10,10,10,0.85);border:1px solid var(--cerulean-bright);display:grid;place-items:center;color:#FFF;font-size:1rem;">▶</div>
+                            </div>
+                        </div>
+                        <div class="vault-meta-row">
+                            <span class="vault-channel">${pair.channel.replace('_', ' ')}</span>
+                            <div class="stream-toggle">
+                                ${pair.english ? `<button class="stream-pill active-en" id="vbtn-en-${idx}" onclick="switchVaultCardLang(${idx}, 'english')">EN</button>` : ''}
+                                ${pair.urdu ? `<button class="stream-pill ${!pair.english ? 'active-ur' : ''}" id="vbtn-ur-${idx}" onclick="switchVaultCardLang(${idx}, 'urdu')">UR</button>` : ''}
+                            </div>
+                        </div>
+                        <div class="vault-title" id="vtitle-${idx}">${defaultStream.title}</div>
+                        <div class="vault-tags">${defaultStream.hashtags || '#VoxFlowStudio'}</div>
+                        <div style="font-family:var(--font-mono);font-size:0.68rem;color:${hasBoth ? 'var(--cerulean-bright)' : 'var(--text-muted)'};margin-top:0.55rem;">
+                            ${hasBoth ? 'Dual-Stream Pair (EN + UR)' : 'Single-Stream Master'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function activateVaultVideo(idx) {
+            const vid = document.getElementById(`vault-vid-${idx}`);
+            const badge = document.getElementById(`vault-play-badge-${idx}`);
+            if (!vid) return;
+            if (!vid.getAttribute('src') && vid.dataset.src) {
+                // Pause any other playing vault video so only 1 decoder runs at a time
+                document.querySelectorAll('.vault-video-box video[src]').forEach(other => {
+                    if (other !== vid) other.pause();
+                });
+                vid.src = vid.dataset.src;
+                vid.controls = true;
+            }
+            if (badge) badge.style.display = 'none';
+            if (vid.paused) {
+                vid.play().catch(() => {});
+            }
+        }
+
+        function switchVaultCardLang(idx, lang) {
+            const pair = vaultEpisodes[idx];
+            if (!pair || !pair[lang]) return;
+            const vid = document.getElementById(`vault-vid-${idx}`);
+            const badge = document.getElementById(`vault-play-badge-${idx}`);
+            const t = vid.currentTime || 0;
+            vid.dataset.src = pair[lang].video_url;
+            if (pair[lang].thumb_url) vid.poster = pair[lang].thumb_url;
+            vid.src = pair[lang].video_url;
+            vid.controls = true;
+            if (badge) badge.style.display = 'none';
+            vid.currentTime = t;
+            vid.play().catch(() => {});
+            document.getElementById(`vtitle-${idx}`).textContent = pair[lang].title;
+
+            const btnEn = document.getElementById(`vbtn-en-${idx}`);
+            const btnUr = document.getElementById(`vbtn-ur-${idx}`);
+            if (btnEn) btnEn.className = 'stream-pill ' + (lang === 'english' ? 'active-en' : '');
+            if (btnUr) btnUr.className = 'stream-pill ' + (lang === 'urdu' ? 'active-ur' : '');
+        }
+
+        window.addEventListener('DOMContentLoaded', bootApp);
+    </script>
+</body>
+</html>

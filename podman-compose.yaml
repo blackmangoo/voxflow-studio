@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  agent-api:
+    build:
+      context: .
+      dockerfile: Containerfile
+    container_name: autonomous-video-agent
+    ports:
+      - "8000:8000"
+    environment:
+      - AGENT_API_KEY=your-secure-api-key-here
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+      - WA_AGENT_TOKEN=${WA_AGENT_TOKEN}
+      - WA_USER_ID=${WA_USER_ID}
+    volumes:
+      - ./output:/app/output
+      - ./accounts:/app/accounts
+      - ./client_secrets.json:/app/client_secrets.json:ro
+    restart: unless-stopped
+    shm_size: '2gb' # Recommended for Playwright headless browsers

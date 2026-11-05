@@ -1,0 +1,21 @@
+# CRITICAL ZERO-TRUST VERCEL IGNORE
+# Never upload local Chrome profiles, OAuth tokens, .env secrets, or multi-GB local renders
+.env
+.env.*
+accounts/
+output/
+temp/
+logs/
+assets/
+*secret*.json
+token*.json
+credentials*.json
+*.lock
+*.log
+*.db
+__pycache__/
+.pytest_cache/
+.git/
+venv/
+.venv/
+tests/

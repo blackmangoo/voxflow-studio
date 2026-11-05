@@ -1,0 +1,40 @@
+# Environment & Secrets (CRITICAL: Never commit)
+.env
+.env.*
+!.env.example
+
+# Google OAuth & Chrome Session Profiles (CRITICAL: Never commit)
+*secret*.json
+token*.json
+credentials*.json
+accounts/
+*.lock
+
+# Runtime Databases, Temp & Local Rendered Videos
+output/
+temp/
+logs/
+assets/music/
+assets/sfx/
+*.db
+*.mp4
+*.wav
+*.ass
+*.log
+
+# Python & IDE & Local Scratch Files
+__pycache__/
+*.pyc
+venv/
+.venv/
+.pytest_cache/
+.claude/
+temp_sound_repo/
+showcase-site/
+showcase.html
+whatsapp_api_docs*
+read_pdf*.py
+setup_wa.py
+test_wa.py
+check_youtube_channels.txt
+
