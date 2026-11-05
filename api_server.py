@@ -735,6 +735,29 @@ async def api_list_series(request: Request):
     auth = _resolve_caller_authorization(request)
     sb_user = auth.get("user")
     is_admin = bool(auth["mode"] == "studio_key" or (sb_user and sb_user.get("role") == "admin"))
+
+    # Query Supabase public.series when user is authenticated via Supabase
+    if sb_user and SUPABASE_URL and SUPABASE_ANON_KEY:
+        try:
+            hdrs = (
+                {"apikey": SUPABASE_SERVICE_ROLE_KEY, "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}"}
+                if (is_admin and SUPABASE_SERVICE_ROLE_KEY)
+                else {"apikey": SUPABASE_ANON_KEY, "Authorization": f"Bearer {sb_user['jwt']}"}
+            )
+            q_url = f"{SUPABASE_URL}/rest/v1/series?order=created_at.desc&limit=25"
+            if not is_admin:
+                q_url += f"&user_id=eq.{sb_user['id']}"
+            sb_res = await asyncio.to_thread(_http_session.get, q_url, headers=hdrs, timeout=6)
+            if sb_res.status_code == 200:
+                rows = sb_res.json()
+                for item in rows:
+                    plan = PRICING_PLANS.get(item.get("plan_id", ""), {})
+                    item["price_usd"] = plan.get("price_usd", 0)
+                if rows or os.environ.get("VERCEL"):
+                    return {"series": rows}
+        except Exception:
+            pass
+
     if is_admin:
         return {"series": list_series_records(is_admin=True)}
     if sb_user:
@@ -760,6 +783,32 @@ async def api_create_series(req: SeriesCreateRequest, request: Request):
             user_id=uid,
             user_email=uemail,
         )
+        if sb_user and SUPABASE_URL and SUPABASE_ANON_KEY:
+            try:
+                await asyncio.to_thread(
+                    _http_session.post,
+                    f"{SUPABASE_URL}/rest/v1/series",
+                    headers={
+                        "apikey": SUPABASE_ANON_KEY,
+                        "Authorization": f"Bearer {sb_user['jwt']}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "user_id": sb_user["id"],
+                        "name": record["name"],
+                        "creation_mode": record["creation_mode"],
+                        "channel": record["channel"],
+                        "language_tier": record["language_tier"],
+                        "custom_prompt": record["custom_prompt"],
+                        "visual_style_dna": record["visual_style_dna"],
+                        "plan_id": record["plan_id"],
+                        "cadence": record["cadence"],
+                        "status": "active",
+                    },
+                    timeout=6,
+                )
+            except Exception:
+                pass
         return record
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -770,6 +819,43 @@ async def api_list_jobs(request: Request):
     auth = _resolve_caller_authorization(request)
     sb_user = auth.get("user")
     is_admin = bool(auth["mode"] == "studio_key" or (sb_user and sb_user.get("role") == "admin"))
+
+    # Query live Supabase public.render_jobs so Vercel & local UI always reflect real-time worker progress
+    if sb_user and SUPABASE_URL and SUPABASE_ANON_KEY:
+        try:
+            hdrs = (
+                {"apikey": SUPABASE_SERVICE_ROLE_KEY, "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}"}
+                if (is_admin and SUPABASE_SERVICE_ROLE_KEY)
+                else {"apikey": SUPABASE_ANON_KEY, "Authorization": f"Bearer {sb_user['jwt']}"}
+            )
+            q_url = f"{SUPABASE_URL}/rest/v1/render_jobs?order=created_at.desc&limit=25"
+            if not is_admin:
+                q_url += f"&user_id=eq.{sb_user['id']}"
+            sb_res = await asyncio.to_thread(_http_session.get, q_url, headers=hdrs, timeout=6)
+            if sb_res.status_code == 200:
+                sb_rows = sb_res.json()
+                normalized = []
+                for r in sb_rows:
+                    normalized.append({
+                        "job_id": r.get("job_code") or r.get("id", "")[:12],
+                        "user_id": r.get("user_id", ""),
+                        "channel": r.get("channel", "body_simulator"),
+                        "lang": r.get("lang", "both"),
+                        "creation_mode": r.get("creation_mode", "prebuilt"),
+                        "mock_mode": 1 if r.get("mock_mode") else 0,
+                        "status": r.get("status", "queued"),
+                        "stage": r.get("stage", ""),
+                        "progress": r.get("progress", 10),
+                        "concept": r.get("concept", ""),
+                        "english_video": r.get("english_video", ""),
+                        "urdu_video": r.get("urdu_video", ""),
+                        "error": r.get("error", ""),
+                    })
+                if normalized or os.environ.get("VERCEL"):
+                    return {"jobs": normalized}
+        except Exception:
+            pass
+
     if is_admin:
         return {"jobs": list_job_records(limit=25, is_admin=True)}
     if sb_user:
