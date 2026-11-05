@@ -95,7 +95,7 @@ async def process_supabase_job(job: Dict[str, Any]) -> None:
     user_id = job.get("user_id", "")
     channel = job.get("channel") or "body_simulator"
     lang = job.get("lang") or "both"
-    mock_mode = bool(job.get("mock_mode", True))
+    mock_mode = bool(job.get("mock_mode", False))
     creation_mode = job.get("creation_mode") or "prebuilt"
     custom_prompt = (job.get("custom_prompt") or "").strip()
     visual_style = (job.get("visual_style_dna") or "pixar_3d").strip()
@@ -141,19 +141,45 @@ async def process_supabase_job(job: Dict[str, Any]) -> None:
             print(f"   ⚠️ Telemetry patch warning: {exc}")
 
     try:
-        urdu_final, english_final = await produce_dual_language_episode(
-            channel=channel,
-            mock_video=mock_mode,
-            max_scenes=4,
-            target_lang=lang,
-            custom_prompt=custom_prompt if creation_mode in ("custom_director", "manual_scenes") else None,
-            visual_style=visual_style,
-            custom_scenes=raw_scenes if creation_mode == "manual_scenes" else None,
-            progress_callback=_on_progress,
-            wa_token=wa_token,
-            wa_user_id=wa_user_id,
-            allow_owner_wa_fallback=is_admin_owner,
+        render_task = asyncio.create_task(
+            produce_dual_language_episode(
+                channel=channel,
+                mock_video=mock_mode,
+                max_scenes=4,
+                target_lang=lang,
+                custom_prompt=custom_prompt if creation_mode in ("custom_director", "manual_scenes") else None,
+                visual_style=visual_style,
+                custom_scenes=raw_scenes if creation_mode == "manual_scenes" else None,
+                progress_callback=_on_progress,
+                wa_token=wa_token,
+                wa_user_id=wa_user_id,
+                allow_owner_wa_fallback=is_admin_owner,
+            )
         )
+
+        async def _watch_cancellation():
+            while not render_task.done():
+                await asyncio.sleep(3.0)
+                try:
+                    st_res = await asyncio.to_thread(
+                        requests.get,
+                        f"{SUPABASE_URL}/rest/v1/render_jobs?id=eq.{job_uuid}&select=status",
+                        headers=_supabase_headers(),
+                        timeout=6,
+                    )
+                    if st_res.status_code == 200 and st_res.json():
+                        if st_res.json()[0].get("status") == "cancelled":
+                            print(f"🛑 [SUPABASE WORKER] Job {job_code} cancelled by user — halting pipeline...")
+                            render_task.cancel()
+                            return
+                except Exception:
+                    pass
+
+        watcher = asyncio.create_task(_watch_cancellation())
+        try:
+            urdu_final, english_final = await render_task
+        finally:
+            watcher.cancel()
 
         en_url = (
             await asyncio.to_thread(upload_video_to_supabase_cdn, Path(english_final), channel, "english")
@@ -176,6 +202,12 @@ async def process_supabase_job(job: Dict[str, Any]) -> None:
         )
         print(f"✅ [SUPABASE WORKER] Completed Job {job_code} -> EN: {en_url} | UR: {ur_url}")
 
+    except asyncio.CancelledError:
+        print(f"🛑 [SUPABASE WORKER] Job {job_code} halted cleanly after user cancellation.")
+        try:
+            update_supabase_job(job_uuid, status="cancelled", stage="Cancelled by user", error="")
+        except Exception:
+            pass
     except Exception as exc:
         err_msg = str(exc)[:300]
         print(f"❌ [SUPABASE WORKER] Failed Job {job_code}: {err_msg}")

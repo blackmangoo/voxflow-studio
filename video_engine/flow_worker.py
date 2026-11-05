@@ -414,28 +414,32 @@ class FlowWorker:
                             print(f"[{self.account_name.upper()}] Render completed!")
                             break
 
-                    await page.wait_for_timeout(5000)
-
-                    # 8. Locate the new video tile
-                    video_tiles = await page.locator("flow-grid-tile-container:has(flow-video-tile)").all()
+                    # 8. Poll up to 30s for the new video tile to mount on the canvas after 100%
                     target_tile = None
-                    for vt in video_tiles:
-                        aria = (await vt.get_attribute("aria-label") or "").lower().strip()
-                        if aria and aria not in existing_labels:
-                            target_tile = vt
-                            print(f"[{self.account_name.upper()}] Identified new video tile: '{aria}'")
+                    video_tiles = []
+                    for _ in range(15):
+                        await page.wait_for_timeout(2000)
+                        video_tiles = await page.locator("flow-grid-tile-container:has(flow-video-tile)").all()
+                        for vt in video_tiles:
+                            aria = (await vt.get_attribute("aria-label") or "").lower().strip()
+                            if aria and aria not in existing_labels:
+                                target_tile = vt
+                                print(f"[{self.account_name.upper()}] Identified new video tile: '{aria}'")
+                                break
+                        if target_tile or video_cdn_url:
                             break
 
                     if not target_tile and video_tiles:
                         target_tile = video_tiles[0]
 
-                    if not target_tile:
+                    if not target_tile and not video_cdn_url:
                         await self._safe_screenshot(page, "no_tile_error")
                         raise RuntimeError(f"[{self.account_name.upper()}] No video tile found on canvas after generation.")
 
-                    print(f"[{self.account_name.upper()}] Opening video card...")
-                    await target_tile.click(force=True)
-                    await page.wait_for_timeout(3500)
+                    if target_tile:
+                        print(f"[{self.account_name.upper()}] Opening video card...")
+                        await target_tile.click(force=True)
+                        await page.wait_for_timeout(3500)
 
                     # 9. Wait for Download button to become enabled
                     dl_btn = page.locator("button[aria-label*='Download media'], button[aria-label*='Download']").first

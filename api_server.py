@@ -838,10 +838,11 @@ async def api_list_series(request: Request):
                 if (is_admin and SUPABASE_SERVICE_ROLE_KEY)
                 else {"apikey": SUPABASE_ANON_KEY, "Authorization": f"Bearer {sb_user['jwt']}"}
             )
+            enc_uid = urllib.parse.quote(str(sb_user["id"]), safe="")
             q_url = f"{SUPABASE_URL}/rest/v1/series?order=created_at.desc&limit=25"
             if not is_admin:
-                q_url += f"&user_id=eq.{sb_user['id']}"
-            sb_res = await asyncio.to_thread(_http_session.get, q_url, headers=hdrs, timeout=6)
+                q_url += f"&user_id=eq.{enc_uid}"
+            sb_res = await asyncio.to_thread(lambda: _get_http_session().get(q_url, headers=hdrs, timeout=6))
             if sb_res.status_code == 200:
                 rows = sb_res.json()
                 for item in rows:
@@ -856,14 +857,19 @@ async def api_list_series(request: Request):
         return {"series": list_series_records(is_admin=True)}
     if sb_user:
         return {"series": list_series_records(user_id=sb_user["id"], is_admin=False)}
-    return {"series": list_series_records(user_id="anonymous", is_admin=False)}
+    return {"series": []}
 
 
 @app.post("/api/series", tags=["SaaS"])
 async def api_create_series(req: SeriesCreateRequest, request: Request):
     auth = _resolve_caller_authorization(request)
+    if not auth["is_authenticated"]:
+        raise HTTPException(
+            status_code=401,
+            detail="Please sign in with your account before saving a recurring series.",
+        )
     sb_user = auth.get("user")
-    uid = sb_user["id"] if sb_user else ("admin" if auth["can_live_render"] else "anonymous")
+    uid = sb_user["id"] if sb_user else "admin"
     uemail = sb_user["email"] if sb_user else ""
     try:
         record = create_series_record(
@@ -880,26 +886,27 @@ async def api_create_series(req: SeriesCreateRequest, request: Request):
         if sb_user and SUPABASE_URL and SUPABASE_ANON_KEY:
             try:
                 await asyncio.to_thread(
-                    _http_session.post,
-                    f"{SUPABASE_URL}/rest/v1/series",
-                    headers={
-                        "apikey": SUPABASE_ANON_KEY,
-                        "Authorization": f"Bearer {sb_user['jwt']}",
-                        "Content-Type": "application/json",
-                    },
-                    json={
-                        "user_id": sb_user["id"],
-                        "name": record["name"],
-                        "creation_mode": record["creation_mode"],
-                        "channel": record["channel"],
-                        "language_tier": record["language_tier"],
-                        "custom_prompt": record["custom_prompt"],
-                        "visual_style_dna": record["visual_style_dna"],
-                        "plan_id": record["plan_id"],
-                        "cadence": record["cadence"],
-                        "status": "active",
-                    },
-                    timeout=6,
+                    lambda: _get_http_session().post(
+                        f"{SUPABASE_URL}/rest/v1/series",
+                        headers={
+                            "apikey": SUPABASE_ANON_KEY,
+                            "Authorization": f"Bearer {sb_user['jwt']}",
+                            "Content-Type": "application/json",
+                        },
+                        json={
+                            "user_id": sb_user["id"],
+                            "name": record["name"],
+                            "creation_mode": record["creation_mode"],
+                            "channel": record["channel"],
+                            "language_tier": record["language_tier"],
+                            "custom_prompt": record["custom_prompt"],
+                            "visual_style_dna": record["visual_style_dna"],
+                            "plan_id": record["plan_id"],
+                            "cadence": record["cadence"],
+                            "status": "active",
+                        },
+                        timeout=6,
+                    )
                 )
             except Exception:
                 pass
@@ -922,10 +929,11 @@ async def api_list_jobs(request: Request):
                 if (is_admin and SUPABASE_SERVICE_ROLE_KEY)
                 else {"apikey": SUPABASE_ANON_KEY, "Authorization": f"Bearer {sb_user['jwt']}"}
             )
+            enc_uid = urllib.parse.quote(str(sb_user["id"]), safe="")
             q_url = f"{SUPABASE_URL}/rest/v1/render_jobs?order=created_at.desc&limit=25"
             if not is_admin:
-                q_url += f"&user_id=eq.{sb_user['id']}"
-            sb_res = await asyncio.to_thread(_http_session.get, q_url, headers=hdrs, timeout=6)
+                q_url += f"&user_id=eq.{enc_uid}"
+            sb_res = await asyncio.to_thread(lambda: _get_http_session().get(q_url, headers=hdrs, timeout=6))
             if sb_res.status_code == 200:
                 sb_rows = sb_res.json()
                 normalized = []
@@ -955,6 +963,62 @@ async def api_list_jobs(request: Request):
     if sb_user:
         return {"jobs": list_job_records(limit=25, user_id=sb_user["id"], is_admin=False)}
     return {"jobs": list_job_records(limit=25, user_id="anonymous", is_admin=False)}
+
+
+@app.post("/api/jobs/{job_id}/cancel", tags=["SaaS"])
+async def api_cancel_job(job_id: str, request: Request):
+    """
+    Cancels a queued or running render job in both local execution and Supabase public.render_jobs.
+    """
+    auth = _resolve_caller_authorization(request)
+    if not auth["is_authenticated"]:
+        raise HTTPException(status_code=401, detail="Sign in required to cancel a render job.")
+
+    _cancelled_jobs.add(job_id)
+
+    # Cancel active local ProactorEventLoop task if running in this process
+    active_pair = _active_job_threads.get(job_id)
+    if active_pair:
+        loop_obj, task_obj = active_pair
+        try:
+            loop_obj.call_soon_threadsafe(task_obj.cancel)
+        except Exception:
+            pass
+
+    update_job_record(
+        job_id,
+        status="cancelled",
+        stage="Cancelled by user",
+        error="",
+    )
+
+    sb_user = auth.get("user")
+    is_admin = bool(auth["mode"] == "studio_key" or (sb_user and sb_user.get("role") == "admin"))
+    if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
+        enc_code = urllib.parse.quote(str(job_id), safe="")
+        q = f"{SUPABASE_URL}/rest/v1/render_jobs?job_code=eq.{enc_code}"
+        if sb_user and not is_admin:
+            enc_uid = urllib.parse.quote(str(sb_user["id"]), safe="")
+            q += f"&user_id=eq.{enc_uid}"
+        await asyncio.to_thread(
+            lambda: _get_http_session().patch(
+                q,
+                headers={
+                    "apikey": SUPABASE_SERVICE_ROLE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "status": "cancelled",
+                    "stage": "Cancelled by user",
+                    "error": "",
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                },
+                timeout=8,
+            )
+        )
+
+    return {"status": "cancelled", "job_id": job_id}
 
 
 @app.post("/api/generate", tags=["SaaS"])
@@ -1009,35 +1073,48 @@ async def api_trigger_generate(
         user_email=uemail,
     )
 
-    # If authenticated via Supabase JWT, also persist to Supabase public.render_jobs
-    # (which runs the PostgreSQL atomic credit-deduction trigger `enforce_render_job_credit_gate`).
+    # Coordinate single execution between cloud/worker queue vs local direct execution:
+    # - On Vercel, jobs are queued in Supabase (`status = 'queued'`) and claimed by `supabase_worker.py`.
+    # - Locally, if `api_server.py` executes the job directly, it inserts the Supabase record as
+    #   `status = 'running'` so `supabase_worker.py` never claims or double-renders the same job.
+    is_vercel = bool(os.environ.get("VERCEL"))
+    will_run_locally = bool(auth["can_live_render"] and not is_vercel)
+    initial_sb_status = "running" if will_run_locally else "queued"
+    initial_sb_stage = (
+        "[1/6] Claimed by Local Studio Server — Initializing AI Director..."
+        if will_run_locally
+        else "[0/6] Queued in Flow Worker Pool"
+    )
+
     sb_user = auth.get("user")
     if sb_user and SUPABASE_URL and SUPABASE_ANON_KEY:
         try:
-            sb_resp = requests.post(
-                f"{SUPABASE_URL}/rest/v1/render_jobs",
-                headers={
-                    "apikey": SUPABASE_ANON_KEY,
-                    "Authorization": f"Bearer {sb_user['jwt']}",
-                    "Content-Type": "application/json",
-                    "Prefer": "return=representation",
-                },
-                json={
-                    "job_code": job["job_id"],
-                    "user_id": sb_user["id"],
-                    "creation_mode": req.creation_mode,
-                    "channel": req.channel,
-                    "lang": req.lang,
-                    "custom_prompt": req.custom_prompt,
-                    "visual_style_dna": req.visual_style,
-                    "custom_scenes": serialized_scenes,
-                    "mock_mode": req.mock,
-                    "status": "queued",
-                    "stage": "[0/6] Queued in Flow Worker Pool",
-                    "progress": 5,
-                    "concept": (req.custom_prompt or req.channel)[:160],
-                },
-                timeout=8,
+            sb_resp = await asyncio.to_thread(
+                lambda: _get_http_session().post(
+                    f"{SUPABASE_URL}/rest/v1/render_jobs",
+                    headers={
+                        "apikey": SUPABASE_ANON_KEY,
+                        "Authorization": f"Bearer {sb_user['jwt']}",
+                        "Content-Type": "application/json",
+                        "Prefer": "return=representation",
+                    },
+                    json={
+                        "job_code": job["job_id"],
+                        "user_id": sb_user["id"],
+                        "creation_mode": req.creation_mode,
+                        "channel": req.channel,
+                        "lang": req.lang,
+                        "custom_prompt": req.custom_prompt,
+                        "visual_style_dna": req.visual_style,
+                        "custom_scenes": serialized_scenes,
+                        "mock_mode": req.mock,
+                        "status": initial_sb_status,
+                        "stage": initial_sb_stage,
+                        "progress": 15 if will_run_locally else 5,
+                        "concept": (req.custom_prompt or req.channel)[:160],
+                    },
+                    timeout=8,
+                )
             )
             if sb_resp.status_code >= 400:
                 raise HTTPException(
@@ -1046,8 +1123,15 @@ async def api_trigger_generate(
                 )
         except HTTPException:
             raise
-        except Exception:
-            pass
+        except Exception as exc:
+            if is_vercel:
+                raise HTTPException(
+                    status_code=502,
+                    detail=f"Failed to enqueue job in Supabase worker queue: {str(exc)[:160]}",
+                )
+
+    if is_vercel and sb_user:
+        return job
 
     if auth["can_live_render"]:
         is_owner = bool(auth["mode"] == "studio_key" or (sb_user and sb_user.get("role") == "admin"))
@@ -1114,21 +1198,23 @@ async def api_whatsapp_test(req: WhatsAppTestRequest, request: Request):
     )
 
     if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
+        enc_uid = urllib.parse.quote(str(sb_user["id"]), safe="")
         await asyncio.to_thread(
-            _http_session.patch,
-            f"{SUPABASE_URL}/rest/v1/profiles?id=eq.{sb_user['id']}",
-            headers={
-                "apikey": SUPABASE_SERVICE_ROLE_KEY,
-                "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "wa_agent_token": req.wa_agent_token.strip(),
-                "wa_user_id": req.wa_user_id.strip(),
-                "wa_verified": False,
-                "updated_at": datetime.now(timezone.utc).isoformat(),
-            },
-            timeout=8,
+            lambda: _get_http_session().patch(
+                f"{SUPABASE_URL}/rest/v1/profiles?id=eq.{enc_uid}",
+                headers={
+                    "apikey": SUPABASE_SERVICE_ROLE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "wa_agent_token": req.wa_agent_token.strip(),
+                    "wa_user_id": req.wa_user_id.strip(),
+                    "wa_verified": False,
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                },
+                timeout=8,
+            )
         )
         _jwt_profile_cache.clear()
 
@@ -1153,20 +1239,22 @@ async def api_whatsapp_confirm(req: WhatsAppConfirmRequest, request: Request):
         raise HTTPException(status_code=401, detail="Please sign in to confirm your WhatsApp settings.")
 
     if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
+        enc_uid = urllib.parse.quote(str(sb_user["id"]), safe="")
         resp = await asyncio.to_thread(
-            _http_session.patch,
-            f"{SUPABASE_URL}/rest/v1/profiles?id=eq.{sb_user['id']}",
-            headers={
-                "apikey": SUPABASE_SERVICE_ROLE_KEY,
-                "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
-                "Content-Type": "application/json",
-                "Prefer": "return=representation",
-            },
-            json={
-                "wa_verified": bool(req.received),
-                "updated_at": datetime.now(timezone.utc).isoformat(),
-            },
-            timeout=8,
+            lambda: _get_http_session().patch(
+                f"{SUPABASE_URL}/rest/v1/profiles?id=eq.{enc_uid}",
+                headers={
+                    "apikey": SUPABASE_SERVICE_ROLE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                    "Content-Type": "application/json",
+                    "Prefer": "return=representation",
+                },
+                json={
+                    "wa_verified": bool(req.received),
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                },
+                timeout=8,
+            )
         )
         _jwt_profile_cache.clear()
         if resp.status_code >= 400:
@@ -1204,7 +1292,7 @@ async def api_list_customers(request: Request):
         raise HTTPException(status_code=500, detail="Supabase service role key not configured")
 
     def _fetch_sync():
-        return _http_session.get(
+        return _get_http_session().get(
             f"{SUPABASE_URL}/rest/v1/profiles?select=*&order=created_at.desc",
             headers={
                 "apikey": SUPABASE_SERVICE_ROLE_KEY,
@@ -1226,9 +1314,11 @@ async def api_delete_customer(user_id: str, request: Request):
     if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
         raise HTTPException(status_code=500, detail="Supabase service role key not configured")
 
+    enc_uid = urllib.parse.quote(str(user_id).strip(), safe="")
+
     def _del_sync():
-        return requests.delete(
-            f"{SUPABASE_URL}/auth/v1/admin/users/{user_id}",
+        return _get_http_session().delete(
+            f"{SUPABASE_URL}/auth/v1/admin/users/{enc_uid}",
             headers={
                 "apikey": SUPABASE_SERVICE_ROLE_KEY,
                 "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
@@ -1267,16 +1357,18 @@ async def api_provision_customer(req: ProvisionCustomerRequest, request: Request
     clean_name = req.full_name.strip() or clean_email.split("@")[0]
 
     def _provision_sync() -> Dict[str, Any]:
+        sess = _get_http_session()
         headers = {
             "apikey": SUPABASE_SERVICE_ROLE_KEY,
             "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
             "Content-Type": "application/json",
         }
         user_id = None
+        encoded_email = urllib.parse.quote(clean_email, safe="")
 
         # 1. Check public.profiles first
-        prof_check = _http_session.get(
-            f"{SUPABASE_URL}/rest/v1/profiles?email=eq.{clean_email}&select=id,email",
+        prof_check = sess.get(
+            f"{SUPABASE_URL}/rest/v1/profiles?email=eq.{encoded_email}&select=id,email",
             headers=headers,
             timeout=10,
         )
@@ -1285,7 +1377,7 @@ async def api_provision_customer(req: ProvisionCustomerRequest, request: Request
 
         # 2. Create or update Auth user
         if not user_id:
-            create_res = _http_session.post(
+            create_res = sess.post(
                 f"{SUPABASE_URL}/auth/v1/admin/users",
                 headers=headers,
                 json={
@@ -1300,7 +1392,7 @@ async def api_provision_customer(req: ProvisionCustomerRequest, request: Request
                 user_id = create_res.json()["id"]
             else:
                 # Fallback if email already exists in auth.users
-                users_res = _http_session.get(
+                users_res = sess.get(
                     f"{SUPABASE_URL}/auth/v1/admin/users?per_page=200",
                     headers=headers,
                     timeout=10,
@@ -1317,8 +1409,9 @@ async def api_provision_customer(req: ProvisionCustomerRequest, request: Request
                     )
 
         # Always ensure password & email_confirm are synced on existing user
-        upd_auth = _http_session.put(
-            f"{SUPABASE_URL}/auth/v1/admin/users/{user_id}",
+        enc_uid = urllib.parse.quote(str(user_id), safe="")
+        upd_auth = sess.put(
+            f"{SUPABASE_URL}/auth/v1/admin/users/{enc_uid}",
             headers=headers,
             json={
                 "password": req.password,
@@ -1332,7 +1425,7 @@ async def api_provision_customer(req: ProvisionCustomerRequest, request: Request
 
         # 3. Upsert public.profiles row with purchased plan_tier & credits_balance
         is_owner = clean_email in ("ammar.akbar2002@gmail.com", "ammar.akbar2069@gmail.com")
-        upsert_res = _http_session.post(
+        upsert_res = sess.post(
             f"{SUPABASE_URL}/rest/v1/profiles",
             headers={**headers, "Prefer": "resolution=merge-duplicates,return=representation"},
             json={

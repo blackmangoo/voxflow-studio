@@ -740,7 +740,8 @@ def discover_rendered_vault(
             if not lang_dir.exists():
                 continue
             for mp4 in sorted(lang_dir.glob("*.mp4"), key=lambda p: p.stat().st_mtime, reverse=True):
-                if mp4.stat().st_size < 100_000:
+                # Exclude tiny (<2.5 MB) mock color-bar test clips so only real 3D Flow renders appear in the Vault
+                if mp4.stat().st_size < 2_500_000:
                     continue
                 video_url = f"/media/{ch}/{lang}/{mp4.name}"
                 if allowed_filenames is not None and mp4.name not in allowed_filenames and video_url not in allowed_video_urls:
