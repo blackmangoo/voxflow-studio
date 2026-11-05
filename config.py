@@ -3,13 +3,14 @@ from pathlib import Path
 
 # Base Paths
 BASE_DIR = Path(__file__).parent.resolve()
-ACCOUNTS_DIR = BASE_DIR / "accounts"
+_IS_SERVERLESS = bool(os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"))
+ACCOUNTS_DIR = Path("/tmp/accounts") if _IS_SERVERLESS else BASE_DIR / "accounts"
 PROFILES_DIR = ACCOUNTS_DIR / "browser_profiles"
 BRAIN_DIR = BASE_DIR / "brain"
 VOICE_DIR = BASE_DIR / "voice"
 VIDEO_ENGINE_DIR = BASE_DIR / "video_engine"
 COMPOSITOR_DIR = BASE_DIR / "compositor"
-OUTPUT_DIR = BASE_DIR / "output"
+OUTPUT_DIR = Path("/tmp/output") if _IS_SERVERLESS else BASE_DIR / "output"
 TEMP_DIR = OUTPUT_DIR / "temp"
 READY_TO_POST_DIR = OUTPUT_DIR / "ready_to_post"
 
@@ -22,9 +23,12 @@ if _ENV_FILE.exists():
             _k, _v = _s.split("=", 1)
             os.environ.setdefault(_k.strip(), _v.strip())
 
-# Ensure runtime directories exist
+# Ensure runtime directories exist (safe on read-only serverless filesystems)
 for p in [PROFILES_DIR, TEMP_DIR, READY_TO_POST_DIR]:
-    p.mkdir(parents=True, exist_ok=True)
+    try:
+        p.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        pass
 
 # Google Flow / Multi-Account Worker Pool Settings
 # (No personal emails stored in source code — Chrome profiles live locally in accounts/browser_profiles/)
