@@ -578,11 +578,13 @@ def reconcile_stale_jobs(db_path: Path = DB_PATH) -> int:
     """
     Called on server startup to clean up any orphan 'running' or 'queued' jobs
     left behind by a previous terminated server process.
+    Only marks jobs as 'completed' if an output video path was recorded; otherwise
+    marks them as 'failed' so aborted jobs are never shown as 100% completed.
     """
     init_db(db_path)
     now = int(time.time())
     with contextlib.closing(sqlite3.connect(str(db_path))) as conn:
-        cur = conn.execute(
+        cur1 = conn.execute(
             """
             UPDATE render_jobs
             SET status = 'completed',
@@ -590,11 +592,25 @@ def reconcile_stale_jobs(db_path: Path = DB_PATH) -> int:
                 progress = 100,
                 updated_at = ?
             WHERE status IN ('running', 'queued')
+              AND (coalesce(english_video, '') <> '' OR coalesce(urdu_video, '') <> '')
+            """,
+            (now,),
+        )
+        cur2 = conn.execute(
+            """
+            UPDATE render_jobs
+            SET status = 'failed',
+                stage = 'Interrupted by server restart',
+                error = 'Server restarted before render completed',
+                updated_at = ?
+            WHERE status IN ('running', 'queued')
+              AND coalesce(english_video, '') = ''
+              AND coalesce(urdu_video, '') = ''
             """,
             (now,),
         )
         conn.commit()
-        return cur.rowcount
+        return (cur1.rowcount or 0) + (cur2.rowcount or 0)
 
 
 def list_job_records(
@@ -757,20 +773,77 @@ def discover_rendered_vault(
     # Cloud fallback (e.g. Vercel Serverless where local output/ directory is not bundled)
     if not items:
         manifest_file = BASE_DIR / "cloud_vault_manifest.json"
+        cloud_pairs: List[Dict[str, Any]] = []
         if manifest_file.exists():
             try:
                 cloud_pairs = json.loads(manifest_file.read_text(encoding="utf-8"))
-                if allowed_filenames is None:
-                    return cloud_pairs
-                filtered_pairs = []
-                for p in cloud_pairs:
-                    en_ok = p.get("english") and p["english"].get("filename") in allowed_filenames
-                    ur_ok = p.get("urdu") and p["urdu"].get("filename") in allowed_filenames
-                    if en_ok or ur_ok:
-                        filtered_pairs.append(p)
-                return filtered_pairs
             except Exception:
-                pass
+                cloud_pairs = []
+
+        if allowed_filenames is None:
+            return cloud_pairs
+
+        filtered_pairs = []
+        matched_filenames = set()
+        for p in cloud_pairs:
+            en_fn = p.get("english", {}).get("filename") if p.get("english") else None
+            ur_fn = p.get("urdu", {}).get("filename") if p.get("urdu") else None
+            if (en_fn and en_fn in allowed_filenames) or (ur_fn and ur_fn in allowed_filenames):
+                filtered_pairs.append(p)
+                if en_fn:
+                    matched_filenames.add(en_fn)
+                if ur_fn:
+                    matched_filenames.add(ur_fn)
+
+        # Synthesize vault entries for newly rendered Supabase Storage URLs not in static manifest
+        dynamic_map: Dict[str, Dict[str, Any]] = {}
+        for url_str in (allowed_video_urls or set()):
+            if not url_str:
+                continue
+            parts = url_str.rstrip("/").split("/")
+            fn = parts[-1]
+            if not fn.endswith(".mp4") or fn in matched_filenames:
+                continue
+            lang = parts[-2] if len(parts) >= 2 and parts[-2] in ("english", "urdu") else "english"
+            ch = parts[-3] if len(parts) >= 3 and parts[-3] in channels else "body_simulator"
+            stem = fn[:-4]
+            stem_parts = stem.split("_")
+            ts = stem_parts[-1] if stem_parts and stem_parts[-1].isdigit() else "0"
+            prefix = f"{ch}_{lang}_"
+            slug = stem[len(prefix):] if stem.startswith(prefix) else stem
+            if slug.endswith(f"_{ts}"):
+                slug = slug[: -(len(ts) + 1)]
+            thumb_url = url_str[:-4] + ".jpg" if url_str.startswith("http") else ""
+            entry = {
+                "id": f"{ch}_{lang}_{stem}",
+                "channel": ch,
+                "lang": lang,
+                "filename": fn,
+                "slug": slug,
+                "timestamp": ts,
+                "size_mb": 12.0,
+                "video_url": url_str,
+                "thumb_url": thumb_url,
+                "title": slug.replace("_", " ").title(),
+                "caption": "",
+                "hashtags": "#VoxFlowStudio",
+                "dialogue": "",
+            }
+            key = f"{ch}::{ts}"
+            if key not in dynamic_map:
+                dynamic_map[key] = {
+                    "pair_key": key,
+                    "channel": ch,
+                    "slug": slug,
+                    "timestamp": ts,
+                    "english": None,
+                    "urdu": None,
+                }
+            dynamic_map[key][lang] = entry
+
+        combined = list(dynamic_map.values()) + filtered_pairs
+        combined.sort(key=lambda x: str(x.get("timestamp", "")), reverse=True)
+        return combined
 
     # Pair English + Urdu episodes that share the same channel + timestamp (or slug)
     paired_map: Dict[str, Dict[str, Any]] = {}

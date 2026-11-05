@@ -4,7 +4,9 @@ import json
 import os
 import secrets
 import sys
+import threading
 import time
+import urllib.parse
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -77,9 +79,21 @@ SAAS_WEB_DIR = ROOT_DIR / "saas_web"
 
 # Concurrency lock: at most 1 active real Playwright/TTS pipeline job at a time
 _pipeline_semaphore = asyncio.Semaphore(1)
+_cancelled_jobs: set = set()
+_active_job_threads: Dict[str, Any] = {}
 
-# Persistent HTTP Keep-Alive session to Supabase (avoids 800ms TLS handshakes per call)
-_http_session = requests.Session()
+# Thread-local HTTP Keep-Alive session to Supabase (avoids TLS handshakes while staying thread-safe)
+_thread_local = threading.local()
+
+
+def _get_http_session() -> requests.Session:
+    sess = getattr(_thread_local, "session", None)
+    if sess is None:
+        sess = requests.Session()
+        _thread_local.session = sess
+    return sess
+
+
 _jwt_profile_cache: Dict[str, Any] = {}
 JWT_CACHE_TTL_SECONDS = 30.0
 
@@ -148,7 +162,8 @@ def _verify_supabase_user_token(request: Request) -> Optional[Dict[str, Any]]:
         return cached[1]
 
     try:
-        user_resp = _http_session.get(
+        sess = _get_http_session()
+        user_resp = sess.get(
             f"{SUPABASE_URL}/auth/v1/user",
             headers={
                 "apikey": SUPABASE_ANON_KEY,
@@ -165,8 +180,9 @@ def _verify_supabase_user_token(request: Request) -> Optional[Dict[str, Any]]:
             return None
 
         # Fetch profile via RLS using user's JWT
-        prof_resp = _http_session.get(
-            f"{SUPABASE_URL}/rest/v1/profiles?id=eq.{user_id}&select=*",
+        enc_uid = urllib.parse.quote(str(user_id), safe="")
+        prof_resp = sess.get(
+            f"{SUPABASE_URL}/rest/v1/profiles?id=eq.{enc_uid}&select=*",
             headers={
                 "apikey": SUPABASE_ANON_KEY,
                 "Authorization": f"Bearer {jwt_token}",
@@ -358,20 +374,42 @@ async def _execute_sandbox_demo_job(
         )
 
 
-def _run_pipeline_in_proactor_loop(target, *args, **kwargs):
+def _patch_supabase_job_by_code(job_id: str, **fields) -> None:
+    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+        return
+    try:
+        payload = {**fields, "updated_at": datetime.now(timezone.utc).isoformat()}
+        enc_code = urllib.parse.quote(str(job_id), safe="")
+        _get_http_session().patch(
+            f"{SUPABASE_URL}/rest/v1/render_jobs?job_code=eq.{enc_code}",
+            headers={
+                "apikey": SUPABASE_SERVICE_ROLE_KEY,
+                "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=6,
+        )
+    except Exception:
+        pass
+
+
+def _run_pipeline_in_proactor_loop(target, *args, job_id: str = "", **kwargs):
     """
     Executes the async Playwright + TTS + FFmpeg pipeline in a dedicated worker thread
-    backed by an explicit Windows ProactorEventLoop.
-    Why: Uvicorn on Windows (especially with --reload) sets WindowsSelectorEventLoopPolicy
-    on the main thread, where asyncio.create_subprocess_exec() raises NotImplementedError()
-    when Playwright launches its browser driver. Accepts either a coroutine or a coroutine factory.
+    backed by an explicit Windows ProactorEventLoop, supporting live cancellation via _active_job_threads.
     """
     loop = asyncio.ProactorEventLoop() if sys.platform == "win32" else asyncio.new_event_loop()
     try:
         asyncio.set_event_loop(loop)
         coro = target(*args, **kwargs) if callable(target) else target
-        return loop.run_until_complete(coro)
+        main_task = loop.create_task(coro)
+        if job_id:
+            _active_job_threads[job_id] = (loop, main_task)
+        return loop.run_until_complete(main_task)
     finally:
+        if job_id:
+            _active_job_threads.pop(job_id, None)
         try:
             loop.run_until_complete(loop.shutdown_asyncgens())
         except Exception:
@@ -400,6 +438,9 @@ async def _execute_episode_job(
     Authenticated production execution runner (protected by _pipeline_semaphore).
     Only callable when verified by STUDIO_ADMIN_KEY or credited Supabase account.
     """
+    if job_id in _cancelled_jobs:
+        return
+
     if _pipeline_semaphore.locked():
         update_job_record(
             job_id,
@@ -409,22 +450,27 @@ async def _execute_episode_job(
         )
 
     async with _pipeline_semaphore:
+        if job_id in _cancelled_jobs:
+            return
         try:
-            update_job_record(
-                job_id,
-                status="running",
-                stage=f"[1/6] AI Director ({creation_mode}): Compiling 4-scene script & shot directives...",
-                progress=20,
-            )
+            init_stage = f"[1/6] AI Director ({creation_mode}): Compiling 4-scene script & shot directives..."
+            update_job_record(job_id, status="running", stage=init_stage, progress=20)
+            await asyncio.to_thread(_patch_supabase_job_by_code, job_id, status="running", stage=init_stage, progress=20)
             await asyncio.sleep(0.2)
 
             def _progress_cb(stage: str, progress: int, concept: str = None, script_preview: dict = None):
+                if job_id in _cancelled_jobs:
+                    raise asyncio.CancelledError("Render cancelled by user")
                 fields: Dict[str, Any] = {"status": "running", "stage": stage, "progress": progress}
+                sb_fields: Dict[str, Any] = {"status": "running", "stage": stage, "progress": progress}
                 if concept:
                     fields["concept"] = concept[:160]
+                    sb_fields["concept"] = concept[:160]
                 if script_preview:
                     fields["script_preview"] = json.dumps(script_preview, ensure_ascii=False)
+                    sb_fields["script_preview"] = script_preview
                 update_job_record(job_id, **fields)
+                _patch_supabase_job_by_code(job_id, **sb_fields)
 
             if os.environ.get("VERCEL"):
                 update_job_record(
@@ -439,20 +485,23 @@ async def _execute_episode_job(
 
             urdu_final, english_final = await asyncio.to_thread(
                 _run_pipeline_in_proactor_loop,
-                produce_dual_language_episode(
-                    channel=channel,
-                    mock_video=mock,
-                    max_scenes=scenes,
-                    target_lang=lang,
-                    custom_prompt=custom_prompt if creation_mode in ("custom_director", "manual_scenes") else None,
-                    visual_style=visual_style,
-                    custom_scenes=custom_scenes if creation_mode == "manual_scenes" else None,
-                    progress_callback=_progress_cb,
-                    wa_token=wa_token,
-                    wa_user_id=wa_user_id,
-                    allow_owner_wa_fallback=allow_owner_wa_fallback,
-                ),
+                produce_dual_language_episode,
+                job_id=job_id,
+                channel=channel,
+                mock_video=mock,
+                max_scenes=scenes,
+                target_lang=lang,
+                custom_prompt=custom_prompt if creation_mode in ("custom_director", "manual_scenes") else None,
+                visual_style=visual_style,
+                custom_scenes=custom_scenes if creation_mode == "manual_scenes" else None,
+                progress_callback=_progress_cb,
+                wa_token=wa_token,
+                wa_user_id=wa_user_id,
+                allow_owner_wa_fallback=allow_owner_wa_fallback,
             )
+
+            if job_id in _cancelled_jobs:
+                return
 
             en_url = f"/media/{channel}/english/{Path(english_final).name}" if english_final else ""
             ur_url = f"/media/{channel}/urdu/{Path(urdu_final).name}" if urdu_final else ""
@@ -475,30 +524,41 @@ async def _execute_episode_job(
                 english_video=en_url or cdn_en,
                 urdu_video=ur_url or cdn_ur,
             )
-            if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
-                try:
-                    _http_session.patch(
-                        f"{SUPABASE_URL}/rest/v1/render_jobs?job_code=eq.{job_id}",
-                        headers={
-                            "apikey": SUPABASE_SERVICE_ROLE_KEY,
-                            "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
-                            "Content-Type": "application/json",
-                        },
-                        json={
-                            "status": "completed",
-                            "stage": "[6/6] Completed — Synced, Ducked & Exported",
-                            "progress": 100,
-                            "english_video": cdn_en or en_url,
-                            "urdu_video": cdn_ur or ur_url,
-                            "updated_at": datetime.now(timezone.utc).isoformat(),
-                        },
-                        timeout=8,
-                    )
-                except Exception:
-                    pass
+            await asyncio.to_thread(
+                _patch_supabase_job_by_code,
+                job_id,
+                status="completed",
+                stage="[6/6] Completed — Synced, Ducked & Exported",
+                progress=100,
+                english_video=cdn_en or en_url,
+                urdu_video=cdn_ur or ur_url,
+            )
+        except asyncio.CancelledError:
+            update_job_record(
+                job_id,
+                status="cancelled",
+                stage="Cancelled by user",
+                error="",
+            )
+            await asyncio.to_thread(
+                _patch_supabase_job_by_code,
+                job_id,
+                status="cancelled",
+                stage="Cancelled by user",
+                error="",
+            )
         except Exception as e:
+            if job_id in _cancelled_jobs:
+                return
             err_msg = f"{type(e).__name__}: {e}" if str(e) else type(e).__name__
             update_job_record(
+                job_id,
+                status="failed",
+                stage="Pipeline halted with error",
+                error=err_msg[:240],
+            )
+            await asyncio.to_thread(
+                _patch_supabase_job_by_code,
                 job_id,
                 status="failed",
                 stage="Pipeline halted with error",
@@ -678,13 +738,16 @@ async def get_rendered_vault(request: Request):
 
         if SUPABASE_URL and SUPABASE_ANON_KEY and sb_user.get("jwt"):
             try:
-                sb_jobs = _http_session.get(
-                    f"{SUPABASE_URL}/rest/v1/render_jobs?user_id=eq.{user_id}&select=english_video,urdu_video",
-                    headers={
-                        "apikey": SUPABASE_ANON_KEY,
-                        "Authorization": f"Bearer {sb_user['jwt']}",
-                    },
-                    timeout=6,
+                enc_uid = urllib.parse.quote(str(user_id), safe="")
+                sb_jobs = await asyncio.to_thread(
+                    lambda: _get_http_session().get(
+                        f"{SUPABASE_URL}/rest/v1/render_jobs?user_id=eq.{enc_uid}&select=english_video,urdu_video",
+                        headers={
+                            "apikey": SUPABASE_ANON_KEY,
+                            "Authorization": f"Bearer {sb_user['jwt']}",
+                        },
+                        timeout=6,
+                    )
                 )
                 if sb_jobs.status_code == 200:
                     for row in sb_jobs.json():
@@ -697,6 +760,37 @@ async def get_rendered_vault(request: Request):
 
         pairs = discover_rendered_vault(allowed_video_urls=allowed_urls)
         return {"count": len(pairs), "scope": "client_private", "episodes": pairs}
+
+    # For Founder Admin on Vercel, merge static manifest with any newly completed Supabase render_jobs
+    if is_admin and os.environ.get("VERCEL") and SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
+        try:
+            admin_urls = set()
+            base_pairs = discover_rendered_vault(allowed_video_urls=None)
+            for bp in base_pairs:
+                if bp.get("english", {}).get("video_url"):
+                    admin_urls.add(bp["english"]["video_url"])
+                if bp.get("urdu", {}).get("video_url"):
+                    admin_urls.add(bp["urdu"]["video_url"])
+            sb_all = await asyncio.to_thread(
+                lambda: _get_http_session().get(
+                    f"{SUPABASE_URL}/rest/v1/render_jobs?status=eq.completed&select=english_video,urdu_video&limit=100",
+                    headers={
+                        "apikey": SUPABASE_SERVICE_ROLE_KEY,
+                        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                    },
+                    timeout=6,
+                )
+            )
+            if sb_all.status_code == 200:
+                for row in sb_all.json():
+                    if row.get("english_video"):
+                        admin_urls.add(row["english_video"])
+                    if row.get("urdu_video"):
+                        admin_urls.add(row["urdu_video"])
+            pairs = discover_rendered_vault(allowed_video_urls=admin_urls)
+            return {"count": len(pairs), "scope": "founder_master", "episodes": pairs}
+        except Exception:
+            pass
 
     pairs = discover_rendered_vault(allowed_video_urls=None)
     return {

@@ -116,6 +116,7 @@ class FlowPoolManager:
     def mark_account_exhausted(self, account_name: str):
         """Marks an account as out of credits for the month."""
         print(f"\n⚠️ [{account_name.upper()}] Credits exhausted! Removing from active pool...")
+        self._load_status()
         if account_name not in self.status:
             self.status[account_name] = {}
         self.status[account_name]["exhausted"] = True
