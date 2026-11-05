@@ -38,3 +38,6 @@ setup_wa.py
 test_wa.py
 check_youtube_channels.txt
 
+
+.vercel
+.env*
