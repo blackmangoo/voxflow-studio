@@ -9,7 +9,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=Noto+Nastaliq+Urdu:wght@400;500;600;700&display=swap">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
@@ -844,7 +844,7 @@
             color: var(--text-muted);
         }
 
-        /* ─── 3. PRICING & RPM CALCULATOR (Public Only) ─── */
+        /* ─── 3. PRICING (Public Only) ─── */
         .pricing-top-bar {
             display: flex;
             justify-content: space-between;
@@ -1032,6 +1032,21 @@
             font-family: var(--font-mono);
             font-size: 1.25rem;
             font-weight: 700;
+        }
+
+        /* ─── RTL / Urdu Language Support ─── */
+        [dir="rtl"] {
+            font-family: 'Noto Nastaliq Urdu', serif;
+            text-align: right;
+        }
+        [dir="rtl"] .field-label,
+        [dir="rtl"] .plan-features li {
+            padding-left: 0;
+            padding-right: 1.2rem;
+        }
+        [dir="rtl"] .plan-features li::before {
+            left: auto;
+            right: 0;
         }
 
         /* ─── 4. AUTHENTICATED STUDIO WORKSPACE ─── */
@@ -2181,9 +2196,7 @@
             <div class="hero-container">
                 <div>
                     <div class="hero-top-badges">
-                        <a href="https://ammar.works" target="_blank" rel="noopener noreferrer" class="hero-founder-pill" title="Ammar Akbar Portfolio — Distributed Systems & AI Architecture">
-                            <span class="founder-badge-tag">AI SYSTEMS ARCHITECT</span>
-                            <span class="founder-badge-sep" aria-hidden="true">·</span>
+                        <a href="https://ammar.works" target="_blank" rel="noopener noreferrer" class="hero-founder-pill" title="Ammar Akbar — VoxFlow Studio">
                             <span class="founder-badge-text">Built by <strong>ammar.works</strong></span>
                             <span class="founder-badge-arrow" aria-hidden="true">↗</span>
                         </a>
@@ -2195,13 +2208,12 @@
 
                     <h1 class="hero-title">
                         True-Motion <span class="accent-cerulean">3D Cinema.</span><br>
-                        Dual-Market <span class="accent-rose">Arbitrage.</span>
+                        Automated <span class="accent-rose">Publishing.</span>
                     </h1>
 
                     <p class="hero-lead">
                         Standard faceless video tools charge $69/mo to pan across static images with monotone audio.
-                        VoxFlow Studio renders four 10-second Google Flow 3D scenes, directs 19 character voices, and masters frame-accurate audio ducking—delivering both
-                        <strong>US/UK High-RPM English</strong> and <strong>South Asian Urdu</strong> from a single render pass.
+                        VoxFlow Studio renders four 10-second 3D scenes, directs 19 character voices, and masters frame-accurate audio ducking — ready to publish across multiple markets.
                     </p>
 
                     <div class="hero-cta-row">
@@ -2252,7 +2264,7 @@
                             <video id="hero-video" autoplay muted loop playsinline preload="metadata"></video>
                             <div class="screen-overlay-top">
                                 <span class="hud-badge" id="hero-hud-channel">Body Simulator</span>
-                                <span class="hud-badge" id="hero-hud-lang">English · Tier-1 RPM</span>
+                                <span class="hud-badge" id="hero-hud-lang">English</span>
                             </div>
                             <button type="button" id="hero-mute-btn" onclick="toggleHeroMute()"
                                     style="position:absolute;bottom:10px;right:10px;z-index:5;background:rgba(10,10,10,0.85);border:1px solid var(--border-strong);color:var(--text-primary);padding:0.28rem 0.6rem;border-radius:6px;font-family:var(--font-mono);font-size:0.66rem;cursor:pointer;">
@@ -2284,11 +2296,10 @@
                     </p>
                     <div class="pipeline-architect-banner">
                         <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
-                            <span class="pipeline-arch-tag">SYSTEMS ARCHITECT</span>
-                            <span>Engineered &amp; distributed by </span>
+                            <span>Engineered by </span>
                             <a href="https://ammar.works" target="_blank" rel="noopener noreferrer" class="pipeline-arch-link">ammar.works ↗</a>
                         </div>
-                        <span style="font-size:0.75rem;color:var(--text-muted);">Autonomous Multi-Agent Pipeline · Podman Distributed Engine</span>
+                        <span style="font-size:0.75rem;color:var(--text-muted);">Fully automated pipeline — zero manual editing</span>
                     </div>
                 </div>
 
@@ -2313,7 +2324,7 @@
         </section>
 
         <!-- ============================================================
-             3. RPM-CALIBRATED PRICING (Hidden After Login)
+             3. PRICING (Hidden After Login)
              ============================================================ -->
         <section class="section" id="pricing-sec">
             <div class="container">
@@ -2322,61 +2333,115 @@
                         <div class="eyebrow">
                             <span>Subscription Plans</span>
                         </div>
-                        <h2 class="section-heading">Calibrated to <em>Regional Ad Yield.</em></h2>
+                        <h2 class="section-heading">Simple pricing. <em>Pick your pace.</em></h2>
                         <p class="section-desc">
-                            US &amp; UK English channels earn 5×–8× higher ad RPMs than South Asian streams. Choose a single language plan or activate Dual-Stream Arbitrage to export both languages from every 3D render.
+                            Choose a plan based on how many 3D videos you need per month. Every plan includes all languages and features.
                         </p>
-                    </div>
-
-                    <div class="segmented-control" role="tablist">
-                        <button id="tab-tier-urdu" class="seg-btn" onclick="switchPricingTier('urdu')">Urdu / Hindi</button>
-                        <button id="tab-tier-english" class="seg-btn" onclick="switchPricingTier('english')">English (Tier-1)</button>
-                        <button id="tab-tier-both" class="seg-btn active" onclick="switchPricingTier('both')">Dual-Stream (EN + UR)</button>
                     </div>
                 </div>
 
-                <div class="pricing-layout">
-                    <div class="plan-pair" id="pricing-cards-container"></div>
-
-                    <div class="calc-card surface-card">
-                        <div>
-                            <span class="plan-badge">Payout &amp; Margin Estimator</span>
-                            <h3 style="font-size:1.2rem;font-weight:700;margin-bottom:0.4rem;">Channel Revenue vs. Plan Cost</h3>
-                            <p style="font-size:0.84rem;color:var(--text-secondary);">
-                                Compare estimated monthly creator ad revenue across Urdu ($0.04/1k), US/UK English ($0.24/1k), and Dual-Stream channels.
-                            </p>
-
-                            <div style="margin:1.35rem 0;">
-                                <div style="display:flex;justify-content:space-between;font-size:0.84rem;">
-                                    <span>Projected Monthly Views</span>
-                                    <span style="font-family:var(--font-mono);font-weight:600;color:var(--cerulean-bright);" id="views-readout">500,000 views</span>
+                <div class="pricing-layout" style="grid-template-columns:1fr;">
+                    <div class="plan-pair" id="pricing-cards-container">
+                        <div class="plan-card surface-card">
+                            <div>
+                                <span class="plan-badge">Starter</span>
+                                <div class="plan-name">Creator Starter</div>
+                                <div class="plan-market">For creators getting started with 3D shorts</div>
+                                <div class="plan-price-row">
+                                    <span class="plan-price">$29</span>
+                                    <span style="color:var(--text-secondary);font-size:0.85rem;">/ month</span>
                                 </div>
-                                <input type="range" class="clean-slider" id="views-slider" min="50000" max="5000000" step="50000" value="500000" oninput="updateRoiCalculator()">
+                                <div class="plan-unit">
+                                    $2.42 per finished 3D Short · 12 videos/mo
+                                </div>
+                                <ul class="plan-features">
+                                    <li>12 fully rendered 3D episodes</li>
+                                    <li>All supported languages</li>
+                                    <li>19 neural character voices</li>
+                                    <li>Vision-verified quality scoring</li>
+                                    <li>Auto-publish to YouTube &amp; TikTok</li>
+                                </ul>
                             </div>
-
-                            <div class="kpi-grid-2x2">
-                                <div class="kpi-box">
-                                    <div class="kpi-box-label">Est. Ad Revenue</div>
-                                    <div class="kpi-box-val" id="roi-est-rev" style="color:var(--cerulean-bright);">$150.00</div>
-                                </div>
-                                <div class="kpi-box">
-                                    <div class="kpi-box-label">Cost per 3D Video</div>
-                                    <div class="kpi-box-val" id="roi-cost-vid">$1.48</div>
-                                </div>
-                                <div class="kpi-box">
-                                    <div class="kpi-box-label">Daily Plan Cost</div>
-                                    <div class="kpi-box-val" id="roi-sub-cost">$89/mo</div>
-                                </div>
-                                <div class="kpi-box">
-                                    <div class="kpi-box-label">Est. Net Profit</div>
-                                    <div class="kpi-box-val" id="roi-net-profit" style="color:var(--emerald);">+$61.00</div>
-                                </div>
-                            </div>
+                            <button type="button" class="btn btn-secondary" style="width:100%;"
+                                    onclick="selectPlanForStudio('starter', 'Creator Starter')">
+                                <span>Get Starter</span>
+                            </button>
                         </div>
 
-                        <div style="font-size:0.78rem;color:var(--text-muted);border-top:1px solid var(--border-subtle);padding-top:0.9rem;">
-                            Upon subscription activation, you receive dedicated client login credentials pre-loaded with your monthly 3D render quota.
+                        <div class="plan-card surface-card featured">
+                            <div>
+                                <span class="plan-badge">Most Popular</span>
+                                <div class="plan-name">Pro Daily</div>
+                                <div class="plan-market">For creators who publish every day</div>
+                                <div class="plan-price-row">
+                                    <span class="plan-price">$79</span>
+                                    <span style="color:var(--text-secondary);font-size:0.85rem;">/ month</span>
+                                </div>
+                                <div class="plan-unit">
+                                    $2.63 per finished 3D Short · 30 videos/mo
+                                </div>
+                                <ul class="plan-features">
+                                    <li>30 fully rendered 3D episodes</li>
+                                    <li>All supported languages</li>
+                                    <li>19 neural character voices</li>
+                                    <li>Vision-verified quality scoring</li>
+                                    <li>Auto-publish to YouTube &amp; TikTok</li>
+                                    <li>Priority render queue</li>
+                                </ul>
+                            </div>
+                            <button type="button" class="btn btn-primary" style="width:100%;"
+                                    onclick="selectPlanForStudio('daily', 'Pro Daily')">
+                                <span>Get Pro Daily</span>
+                            </button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Revenue Estimator -->
+                <div class="calc-card surface-card" style="margin-top:1.5rem;">
+                    <div>
+                        <span class="plan-badge">Revenue Estimator</span>
+                        <h3 style="font-size:1.2rem;font-weight:700;margin-bottom:0.4rem;">Estimate Your Earnings</h3>
+                        <p style="font-size:0.84rem;color:var(--text-secondary);">
+                            See how much your videos could earn on each platform.
+                        </p>
+
+                        <div style="margin:1.35rem 0;">
+                            <label class="field-label" for="est-platform-select" style="margin-bottom:0.4rem;display:block;">Platform</label>
+                            <select id="est-platform-select" class="clean-select" onchange="updateRevenueEstimator()">
+                                <option value="youtube">YouTube</option>
+                                <option value="tiktok">TikTok</option>
+                                <option value="instagram">Instagram Reels</option>
+                                <option value="facebook">Facebook Reels</option>
+                                <option value="snapchat">Snapchat Spotlight</option>
+                            </select>
+                        </div>
+
+                        <div style="margin:1.35rem 0;">
+                            <div style="display:flex;justify-content:space-between;font-size:0.84rem;">
+                                <span>Expected Monthly Views</span>
+                                <span style="font-family:var(--font-mono);font-weight:600;color:var(--cerulean-bright);" id="est-views-readout">500,000 views</span>
+                            </div>
+                            <input type="range" class="clean-slider" id="est-views-slider" min="10000" max="5000000" step="10000" value="500000" oninput="updateRevenueEstimator()">
+                        </div>
+
+                        <div class="kpi-grid-2x2">
+                            <div class="kpi-box">
+                                <div class="kpi-box-label">Est. Low Earnings</div>
+                                <div class="kpi-box-val" id="est-rev-low" style="color:var(--text-secondary);">$50</div>
+                            </div>
+                            <div class="kpi-box">
+                                <div class="kpi-box-label">Est. High Earnings</div>
+                                <div class="kpi-box-val" id="est-rev-high" style="color:var(--cerulean-bright);">$150</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="border-top:1px solid var(--border-subtle);padding-top:0.9rem;display:flex;flex-direction:column;gap:0.75rem;">
+                        <p style="font-size:0.74rem;color:var(--text-muted);">Estimates only. Actual earnings vary by niche, audience geography, engagement rate, and platform policy.</p>
+                        <button type="button" class="btn btn-primary" style="align-self:flex-start;" onclick="jumpTo('#pricing-cards-container')">
+                            <span>View Plans</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -2410,7 +2475,7 @@
                         <div class="ws-stat-val" id="ws-plan-name" style="color:var(--cerulean-bright);">—</div>
                     </div>
                     <div>
-                        <div class="ws-stat-label">Authorized Stream</div>
+                        <div class="ws-stat-label">Videos / Month</div>
                         <div class="ws-stat-val" id="ws-allowed-stream">—</div>
                     </div>
                     <div>
@@ -2505,12 +2570,12 @@
                         </div>
 
                         <div class="field-group">
-                            <label class="field-label" for="studio-lang-select">Output Language Stream</label>
+                            <label class="field-label" for="studio-lang-select">Output Language</label>
                             <select id="studio-lang-select" class="clean-select">
-                                <option value="both">Dual-Stream — English + Urdu/Hindi (2 Videos)</option>
-                                <option value="english">English Only — US/UK Tier-1 Stream</option>
-                                <option value="urdu">Urdu / Hindi Only — South Asian Stream</option>
+                                <option value="english">English</option>
+                                <option value="urdu">اردو (Urdu)</option>
                             </select>
+                            <a href="mailto:[YOUR SUPPORT EMAIL]?subject=Language%20request&amp;body=Hi%2C%20I%E2%80%99d%20like%20to%20request%20support%20for%20a%20new%20language%3A%20" style="font-size:0.78rem;color:var(--cerulean-bright);margin-top:0.4rem;display:inline-block;">Need another language? Request it →</a>
                         </div>
 
                         <div class="field-group">
@@ -2663,12 +2728,8 @@
                         <div class="field-group">
                             <label class="field-label" for="prov-plan-select">Subscribed Plan</label>
                             <select id="prov-plan-select" class="clean-select" onchange="syncProvisionCredits()">
-                                <option value="both_daily" data-credits="30">Global Dual-Stream Autopilot — $89/mo (30 Dual Renders)</option>
-                                <option value="both_starter" data-credits="12">Dual-Channel Arbitrage Starter — $49/mo (12 Dual Renders)</option>
-                                <option value="english_daily" data-credits="30">US/UK Monetizer Pro (English) — $69/mo (30 Renders)</option>
-                                <option value="english_starter" data-credits="12">US/UK Monetizer Starter (English) — $39/mo (12 Renders)</option>
-                                <option value="urdu_daily" data-credits="30">Desi Viral Daily (Urdu/Hindi) — $35/mo (30 Renders)</option>
-                                <option value="urdu_starter" data-credits="12">Desi Creator Starter (Urdu/Hindi) — $19/mo (12 Renders)</option>
+                                <option value="daily" data-credits="30">Pro Daily — $79/mo (30 Renders)</option>
+                                <option value="starter" data-credits="12">Creator Starter — $29/mo (12 Renders)</option>
                             </select>
                         </div>
 
@@ -2778,14 +2839,13 @@
                         </div>
                     </div>
                     <p class="footer-brand-desc">
-                        Production-grade autonomous 3D short-form cinema engine. Directing vision-verified camera motions, 19 neural voices, and multi-market dual-stream arbitrage across Global and South Asian audiences.
+                        Production-grade autonomous 3D short-form cinema engine. Directing vision-verified camera motions, 19 neural voices, and automated publishing across global audiences.
                     </p>
                     <div class="footer-tech-stack">
-                        <span class="tech-tag">FastAPI</span>
-                        <span class="tech-tag">Three.js WebGL</span>
-                        <span class="tech-tag">Supabase RLS</span>
-                        <span class="tech-tag">Playwright Cluster</span>
-                        <span class="tech-tag">Google Veo 3D</span>
+                        <span class="tech-tag">3D Rendering</span>
+                        <span class="tech-tag">Neural Voices</span>
+                        <span class="tech-tag">Vision QA</span>
+                        <span class="tech-tag">Auto Publishing</span>
                     </div>
                 </div>
 
@@ -2795,12 +2855,12 @@
                         <div class="founder-card-header">
                             <div class="founder-card-avatar" aria-hidden="true">AA</div>
                             <div>
-                                <div class="founder-card-sub">PRINCIPAL AI SYSTEMS ARCHITECT</div>
+                                <div class="founder-card-sub">FOUNDER &amp; CREATOR</div>
                                 <h3 class="founder-card-title">Ammar Akbar</h3>
                             </div>
                         </div>
                         <p class="founder-card-bio">
-                            Specialized in autonomous multi-agent pipelines, 3D WebGL computer graphics, and distributed AI engineering systems.
+                            Building autonomous video production tools for creators worldwide.
                         </p>
                         <a href="https://ammar.works" target="_blank" rel="noopener noreferrer" class="founder-card-cta" title="Visit Ammar Akbar's Official Engineering Portfolio">
                             <div>
@@ -2987,7 +3047,7 @@
         let vaultScope = 'public_showcase';
         let selectedHeroChannel = 'body_simulator';
         let selectedHeroLang = 'english';
-        let selectedPricingTier = 'both';
+        let selectedPricingTier = 'daily';
         let selectedStudioChannel = 'body_simulator';
         let selectedCreationMode = 'prebuilt';
         let selectedVisualStyle = 'pixar_3d';
@@ -3155,7 +3215,7 @@
             initThreeHero();
             await Promise.all([
                 loadCatalog(),
-                switchPricingTier('both')
+                Promise.resolve(updateRevenueEstimator())
             ]);
             setInterval(refreshJobsAndSeries, 6000);
         }
@@ -3221,17 +3281,19 @@
                 if (heroVid) heroVid.pause();
 
                 const planMap = {
-                    urdu_starter: ['Desi Creator Starter ($19)', 'Urdu / Hindi Stream', 'urdu'],
-                    urdu_daily: ['Desi Viral Daily ($35)', 'Urdu / Hindi Stream', 'urdu'],
-                    english_starter: ['US/UK Monetizer Starter ($39)', 'English Tier-1 Stream', 'english'],
-                    english_daily: ['US/UK Monetizer Pro ($69)', 'English Tier-1 Stream', 'english'],
-                    both_starter: ['Dual-Stream Starter ($49)', 'English + Urdu (Dual)', 'both'],
-                    both_daily: ['Global Dual-Stream ($89)', 'English + Urdu (Dual)', 'both'],
-                    free: ['Unactivated Account', 'Simulation Only', 'both']
+                    starter: ['Creator Starter ($29)', '12 videos/mo', 'english'],
+                    daily: ['Pro Daily ($79)', '30 videos/mo', 'english'],
+                    free: ['Unactivated Account', 'Simulation Only', 'english'],
+                    urdu_starter: ['Creator Starter ($29)', '12 videos/mo', 'english'],
+                    urdu_daily: ['Pro Daily ($79)', '30 videos/mo', 'english'],
+                    english_starter: ['Creator Starter ($29)', '12 videos/mo', 'english'],
+                    english_daily: ['Pro Daily ($79)', '30 videos/mo', 'english'],
+                    both_starter: ['Creator Starter ($29)', '12 videos/mo', 'english'],
+                    both_daily: ['Pro Daily ($79)', '30 videos/mo', 'english']
                 };
                 const [planTitle, streamTitle, allowedLang] = isAdmin
-                    ? ['Founder Admin', 'All Streams (EN + UR)', 'both']
-                    : (planMap[planTier] || planMap.both_daily);
+                    ? ['Founder Admin', 'All Languages', 'all']
+                    : (planMap[planTier] || planMap.daily);
 
                 document.getElementById('ws-user-email').textContent = session.user.email;
                 document.getElementById('ws-plan-name').textContent = planTitle;
@@ -3240,9 +3302,9 @@
 
                 if (langSelect) {
                     Array.from(langSelect.options).forEach(opt => {
-                        opt.disabled = !(isAdmin || allowedLang === 'both' || opt.value === allowedLang);
+                        opt.disabled = false;
                     });
-                    langSelect.value = allowedLang;
+                    langSelect.value = 'english';
                 }
 
                 badgeEl.textContent = isAdmin
@@ -3284,7 +3346,7 @@
                 updateVaultHeaderByScope();
                 document.getElementById('ws-user-email').textContent = 'Local Workstation';
                 document.getElementById('ws-plan-name').textContent = 'Workstation Admin Key';
-                document.getElementById('ws-allowed-stream').textContent = 'All Streams (EN + UR)';
+                document.getElementById('ws-allowed-stream').textContent = 'All Languages';
                 document.getElementById('ws-credits-remaining').textContent = 'Unlimited';
 
                 badgeEl.textContent = 'Workstation Admin';
@@ -3924,67 +3986,43 @@ Credits  : ${data.credits_balance} 3D Episodes`;
                 videoEl.play().catch(() => {});
             }
             document.getElementById('hero-hud-channel').textContent = streamObj.channel.replace('_', ' ');
-            document.getElementById('hero-hud-lang').textContent = streamObj.lang === 'english' ? 'English · Tier-1 RPM' : 'Urdu · Viral Stream';
+            document.getElementById('hero-hud-lang').textContent = streamObj.lang === 'english' ? 'English' : 'Urdu';
             document.getElementById('hero-episode-title').textContent = streamObj.title;
         }
 
-        /* ─── Pricing & ROI Calculator ─── */
-        async function switchPricingTier(tier) {
-            selectedPricingTier = tier;
-            document.getElementById('tab-tier-urdu').className = 'seg-btn' + (tier === 'urdu' ? ' active' : '');
-            document.getElementById('tab-tier-english').className = 'seg-btn' + (tier === 'english' ? ' active' : '');
-            document.getElementById('tab-tier-both').className = 'seg-btn' + (tier === 'both' ? ' active' : '');
-            await updateRoiCalculator();
-        }
+        /* ─── Revenue Estimator & Pricing ─── */
 
-        async function updateRoiCalculator() {
-            const slider = document.getElementById('views-slider');
+        const PLATFORM_CPM_RATES = {
+            youtube:   { low: 0.80, high: 4.00, label: 'YouTube' },
+            tiktok:    { low: 0.02, high: 0.10, label: 'TikTok' },
+            instagram: { low: 0.05, high: 0.20, label: 'Instagram Reels' },
+            facebook:  { low: 0.10, high: 0.30, label: 'Facebook Reels' },
+            snapchat:  { low: 0.01, high: 0.05, label: 'Snapchat Spotlight' }
+        };
+
+        const SUPPORTED_LANGUAGES = [
+            { value: 'english', label: 'English', dir: 'ltr' },
+            { value: 'urdu', label: 'اردو (Urdu)', dir: 'rtl', font: "'Noto Nastaliq Urdu', serif" }
+        ];
+
+        function updateRevenueEstimator() {
+            const slider = document.getElementById('est-views-slider');
             if (!slider) return;
             const views = parseInt(slider.value, 10);
-            document.getElementById('views-readout').textContent = `${views.toLocaleString()} views`;
+            document.getElementById('est-views-readout').textContent = `${views.toLocaleString()} views`;
 
-            const res = await fetch(`/api/pricing?language_tier=${selectedPricingTier}&monthly_views=${views}`);
-            const data = await res.json();
+            const platform = document.getElementById('est-platform-select').value;
+            const rates = PLATFORM_CPM_RATES[platform] || PLATFORM_CPM_RATES.youtube;
 
-            const container = document.getElementById('pricing-cards-container');
-            container.innerHTML = data.plans.map((p, idx) => {
-                const perVid = (p.price_usd / p.videos_delivered_per_month).toFixed(2);
-                return `
-                    <div class="plan-card surface-card ${idx === 1 ? 'featured' : ''}">
-                        <div>
-                            <span class="plan-badge">${p.language_label}</span>
-                            <div class="plan-name">${p.name}</div>
-                            <div class="plan-market">${p.target_market}</div>
-                            <div class="plan-price-row">
-                                <span class="plan-price">$${p.price_usd}</span>
-                                <span style="color:var(--text-secondary);font-size:0.85rem;">/ ${p.billing_period}</span>
-                            </div>
-                            <div class="plan-unit">
-                                $${perVid} per finished 3D Short · ${p.videos_delivered_per_month} videos/mo
-                            </div>
-                            <ul class="plan-features">
-                                ${p.features.map(f => `<li>${f}</li>`).join('')}
-                            </ul>
-                        </div>
-                        <button type="button" class="btn ${idx === 1 ? 'btn-primary' : 'btn-secondary'}" style="width:100%;"
-                                onclick="selectPlanForStudio('${p.language_tier}', '${p.name}')">
-                            <span>Get ${p.name}</span>
-                        </button>
-                    </div>
-                `;
-            }).join('');
+            const lowEarnings = (views / 1000) * rates.low;
+            const highEarnings = (views / 1000) * rates.high;
 
-            document.getElementById('roi-est-rev').textContent = `$${data.estimated_creator_ad_revenue_usd.toFixed(2)}`;
-            document.getElementById('roi-cost-vid').textContent = `$${data.effective_cost_per_video_usd.toFixed(2)}`;
-            document.getElementById('roi-sub-cost').textContent = `$${data.daily_plan_price_usd}/mo`;
-            const net = data.net_creator_profit_usd;
-            const netEl = document.getElementById('roi-net-profit');
-            netEl.textContent = (net >= 0 ? `+$${net.toFixed(2)}` : `-$${Math.abs(net).toFixed(2)}`);
-            netEl.style.color = net >= 0 ? 'var(--emerald)' : 'var(--danger)';
+            document.getElementById('est-rev-low').textContent = `$${lowEarnings.toFixed(0)}`;
+            document.getElementById('est-rev-high').textContent = `$${highEarnings.toFixed(0)}`;
         }
 
-        function selectPlanForStudio(langTier, planName) {
-            openAuthModal(`Plan: ${planName} (${langTier.toUpperCase()} Stream). Sign in below with the credentials issued upon purchase.`);
+        function selectPlanForStudio(planKey, planName) {
+            openAuthModal(`Plan: ${planName}. Sign in below with the credentials issued upon purchase.`);
         }
 
         /* ─── Dispatch Series & Render Jobs ─── */
