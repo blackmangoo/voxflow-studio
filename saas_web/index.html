@@ -112,6 +112,10 @@
             display: none !important;
         }
 
+        body:not(.admin-workspace) .admin-only {
+            display: none !important;
+        }
+
         /* ─── Fixed Header (Only Element Using Backdrop Blur) ─── */
         .site-header {
             position: fixed;
@@ -2156,14 +2160,14 @@
             <div class="header-right">
                 <!-- Cluster & Account Balance Telemetry -->
                 <div class="header-stat-group" title="Flow Cluster & Account Telemetry">
-                    <div class="header-stat-pill" title="Google Flow Cluster Tokens">
+                    <div class="header-stat-pill admin-only" title="Google Flow Cluster Tokens">
                         <span class="stat-label">Flow:</span>
                         <span class="stat-value" id="header-pool-text">5,340 tokens (89%)</span>
                     </div>
 
                     <div class="header-stat-pill workspace-only" id="header-credit-pill" title="Available Render Credits">
                         <span class="stat-label">Credits:</span>
-                        <span class="stat-value" id="auth-status-badge">9,999</span>
+                        <span class="stat-value" id="auth-status-badge">—</span>
                     </div>
                 </div>
 
@@ -2664,8 +2668,8 @@
                     </div>
                 </div>
 
-                <!-- 6-Node Google Flow Render Cluster & Live Token Ledger -->
-                <div style="margin-top:2.5rem;margin-bottom:0.85rem;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:0.75rem;">
+                <!-- 6-Node Google Flow Render Cluster & Live Token Ledger (Admin Only) -->
+                <div class="admin-only" style="margin-top:2.5rem;margin-bottom:0.85rem;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:0.75rem;">
                     <div>
                         <div class="eyebrow" style="margin-bottom:0.25rem;">
                             <span>Google Flow 3D Engine Cluster</span>
@@ -2681,7 +2685,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="cluster-grid" id="worker-pool-grid"></div>
+                <div class="cluster-grid admin-only" id="worker-pool-grid"></div>
             </div>
         </section>
 
@@ -2891,9 +2895,6 @@
                     © 2026 VoxFlow Studio. Engineered by <a href="https://ammar.works" target="_blank" rel="noopener noreferrer" class="footer-ammar-link">ammar.works</a> · All rights reserved.
                 </div>
                 <div class="footer-badges">
-                    <span class="footer-status-indicator">
-                        6 GPU Render Nodes Active
-                    </span>
                     <a href="https://ammar.works" target="_blank" rel="noopener noreferrer" class="footer-recognition-badge" title="Ammar Akbar Portfolio">
                         ammar.works ↗
                     </a>
@@ -3276,6 +3277,8 @@
                 const planTier = currentUserProfile.plan_tier || 'both_daily';
 
                 document.body.classList.add('authenticated-workspace');
+                if (isAdmin) document.body.classList.add('admin-workspace');
+                else document.body.classList.remove('admin-workspace');
                 setWebGLRunning(false);
                 const heroVid = document.getElementById('hero-video');
                 if (heroVid) heroVid.pause();
@@ -3298,7 +3301,9 @@
                 document.getElementById('ws-user-email').textContent = session.user.email;
                 document.getElementById('ws-plan-name').textContent = planTitle;
                 document.getElementById('ws-allowed-stream').textContent = streamTitle;
-                document.getElementById('ws-credits-remaining').textContent = `${credits.toLocaleString()} episodes`;
+                document.getElementById('ws-credits-remaining').textContent = isAdmin
+                    ? 'Unlimited'
+                    : `${credits.toLocaleString()} episodes`;
 
                 if (langSelect) {
                     Array.from(langSelect.options).forEach(opt => {
@@ -3308,20 +3313,24 @@
                 }
 
                 badgeEl.textContent = isAdmin
-                    ? `${credits.toLocaleString()} (Admin)`
+                    ? 'Unlimited (Admin)'
                     : `${credits.toLocaleString()}`;
                 labelEl.textContent = session.user.email.split('@')[0];
                 const avatarEl = document.getElementById('header-user-avatar');
                 if (avatarEl) {
                     avatarEl.textContent = (session.user.email[0] || 'A').toUpperCase();
                 }
-                creditPill.textContent = `${credits.toLocaleString()} credits available`;
+                creditPill.textContent = isAdmin
+                    ? 'Unlimited'
+                    : `${credits.toLocaleString()} credits available`;
 
                 signedInPanel.style.display = 'block';
                 formPanel.style.display = 'none';
                 document.getElementById('profile-role-line').textContent = `${isAdmin ? 'Founder Admin' : 'Client Account'} · ${planTitle}`;
                 document.getElementById('profile-email-line').textContent = session.user.email;
-                document.getElementById('profile-credits-line').textContent = `Available 3D Render Credits: ${credits.toLocaleString()}`;
+                document.getElementById('profile-credits-line').textContent = isAdmin
+                    ? 'Unlimited renders'
+                    : `Available 3D Render Credits: ${credits.toLocaleString()}`;
 
                 syncWhatsAppUIState(currentUserProfile);
 
@@ -3341,6 +3350,7 @@
                 }
             } else if (savedKey) {
                 document.body.classList.add('authenticated-workspace');
+                document.body.classList.add('admin-workspace');
                 setWebGLRunning(false);
                 vaultScope = 'founder_master';
                 updateVaultHeaderByScope();
@@ -3362,6 +3372,7 @@
                 loadProvisionedCustomers();
             } else {
                 document.body.classList.remove('authenticated-workspace');
+                document.body.classList.remove('admin-workspace');
                 setWebGLRunning(true);
                 vaultScope = 'public_showcase';
                 updateVaultHeaderByScope();
