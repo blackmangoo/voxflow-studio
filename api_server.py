@@ -801,7 +801,8 @@ async def get_rendered_vault(request: Request):
 
 
 @app.get("/api/pool-status", tags=["SaaS"])
-async def get_pool_status():
+async def get_pool_status(request: Request):
+    _require_founder_admin(request)
     return get_account_pool_telemetry()
 
 

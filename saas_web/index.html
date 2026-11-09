@@ -4117,18 +4117,19 @@ Credits  : ${data.credits_balance} 3D Episodes`;
         async function refreshJobsAndSeries() {
             try {
                 const authHdrs = buildAuthHeaders();
+                const isAdminView = document.body.classList.contains('admin-workspace');
                 const [jobsRes, serRes, poolRes] = await Promise.all([
                     fetch('/api/jobs', { headers: authHdrs }),
                     fetch('/api/series', { headers: authHdrs }),
-                    fetch('/api/pool-status')
+                    isAdminView ? fetch('/api/pool-status', { headers: authHdrs }) : Promise.resolve(null)
                 ]);
                 const [jobsData, serData, poolData] = await Promise.all([
                     jobsRes.json(),
                     serRes.json(),
-                    poolRes.json()
+                    poolRes && poolRes.ok ? poolRes.json() : Promise.resolve(null)
                 ]);
 
-                renderWorkerPool(poolData);
+                if (poolData) renderWorkerPool(poolData);
 
                 const jobsEl = document.getElementById('jobs-container');
                 const jobs = (jobsData.jobs || []).slice(0, 8);

@@ -202,8 +202,10 @@ class TestSaaSPlatform(unittest.TestCase):
         """
         client = TestClient(app)
 
-        # 1. Verify zero email addresses leaked in /api/pool-status or /api/catalog
-        pool_text = client.get("/api/pool-status").text.lower()
+        # 1. Verify zero email addresses leaked in /api/catalog and that /api/pool-status is admin-only
+        r_pool_anon = client.get("/api/pool-status")
+        self.assertEqual(r_pool_anon.status_code, 403)
+        pool_text = r_pool_anon.text.lower()
         cat_text = client.get("/api/catalog").text.lower()
         for forbidden_domain in ("@gmail.com", "@aleeas.com", "@mask.me", "ammar.akbar", "saleemiman"):
             self.assertNotIn(forbidden_domain, pool_text)
@@ -300,7 +302,7 @@ class TestSaaSPlatform(unittest.TestCase):
 
         # Fast API endpoint verification
         client = TestClient(app)
-        r_pool = client.get("/api/pool-status")
+        r_pool = client.get("/api/pool-status", headers={"X-Studio-Key": STUDIO_ADMIN_KEY})
         self.assertEqual(r_pool.status_code, 200)
         p_data = r_pool.json()
         self.assertIn("cluster_tokens_remaining", p_data)
