@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import sys
+import threading
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
@@ -18,6 +19,7 @@ from config import ACCOUNT_NAMES, TEMP_DIR, PROFILES_DIR
 from video_engine.flow_worker import FlowWorker, try_acquire_profile_nonblocking
 
 STATUS_FILE = Path(__file__).parent / "account_credit_status.json"
+_STATUS_FILE_LOCK = threading.Lock()
 
 
 class FlowPoolManager:
@@ -34,23 +36,31 @@ class FlowPoolManager:
         self._check_monthly_reset()
 
         configured = accounts or ACCOUNT_NAMES
+        existing_profiles = [acc for acc in configured if (PROFILES_DIR / acc).exists()]
         self.available_accounts = [
-            acc for acc in configured
-            if (PROFILES_DIR / acc).exists() and not self.status.get(acc, {}).get("exhausted", False)
+            acc for acc in existing_profiles
+            if not self.status.get(acc, {}).get("exhausted", False)
+            and int(self.status.get(acc, {}).get("tokens_remaining", 1000)) > 0
         ]
 
         if not self.available_accounts:
-            print("⚠️ All accounts marked exhausted or uninitialized. Resetting pool status...")
-            self.available_accounts = [acc for acc in configured if (PROFILES_DIR / acc).exists()]
-            for acc in self.available_accounts:
-                acct = self.status.setdefault(acc, {})
-                acct["exhausted"] = False
-                acct.setdefault("tokens_remaining", 1000)
-                acct.setdefault("tokens_total", 1000)
-            self._save_status()
-
-        if not self.available_accounts:
-            self.available_accounts = ["account_2"]
+            recoverable = [
+                acc for acc in existing_profiles
+                if int(self.status.get(acc, {}).get("tokens_remaining", 1000 if acc not in self.status else 0)) > 0
+            ]
+            if recoverable:
+                print("⚠️ Recovering accounts with remaining tokens (> 0) into active pool...")
+                self.available_accounts = recoverable
+                for acc in self.available_accounts:
+                    acct = self.status.setdefault(acc, {})
+                    acct["exhausted"] = False
+                    acct.setdefault("tokens_remaining", 1000)
+                    acct.setdefault("tokens_total", 1000)
+                self._save_status()
+            elif not existing_profiles and int(self.status.get("account_2", {}).get("tokens_remaining", 1000)) > 0:
+                self.available_accounts = ["account_2"]
+            else:
+                print("⚠️ Warning: All Flow accounts are exhausted for the current billing month (tokens_remaining <= 0).")
 
     def _check_monthly_reset(self):
         current_month = datetime.now().strftime("%Y-%m")
@@ -69,7 +79,7 @@ class FlowPoolManager:
                 }
             self._save_status()
 
-    def _load_status(self):
+    def _load_status_unlocked(self):
         if STATUS_FILE.exists():
             try:
                 with open(STATUS_FILE, "r", encoding="utf-8") as f:
@@ -79,53 +89,64 @@ class FlowPoolManager:
         else:
             self.status = {}
 
-    def _save_status(self):
+    def _save_status_unlocked(self):
         with open(STATUS_FILE, "w", encoding="utf-8") as f:
             json.dump(self.status, f, indent=2)
 
+    def _load_status(self):
+        with _STATUS_FILE_LOCK:
+            self._load_status_unlocked()
+
+    def _save_status(self):
+        with _STATUS_FILE_LOCK:
+            self._save_status_unlocked()
+
     def deduct_tokens(self, account_name: str, cost: int = 10) -> int:
         """Deducts Flow generation tokens upon successful render and updates status ledger."""
-        self._load_status()
-        acct = self.status.setdefault(account_name, {
-            "tokens_remaining": 1000,
-            "tokens_total": 1000,
-            "exhausted": False,
-        })
-        current = acct.get("tokens_remaining", 1000)
-        new_val = max(0, current - cost)
-        acct["tokens_remaining"] = new_val
-        acct["tokens_total"] = acct.get("tokens_total", 1000)
-        acct["last_rendered_at"] = datetime.now().isoformat()
-        if new_val <= 0:
-            acct["exhausted"] = True
-            if account_name in self.available_accounts:
-                self.available_accounts.remove(account_name)
-        self._save_status()
-        return new_val
+        with _STATUS_FILE_LOCK:
+            self._load_status_unlocked()
+            acct = self.status.setdefault(account_name, {
+                "tokens_remaining": 1000,
+                "tokens_total": 1000,
+                "exhausted": False,
+            })
+            current = acct.get("tokens_remaining", 1000)
+            new_val = max(0, current - cost)
+            acct["tokens_remaining"] = new_val
+            acct["tokens_total"] = acct.get("tokens_total", 1000)
+            acct["last_rendered_at"] = datetime.now().isoformat()
+            if new_val <= 0:
+                acct["exhausted"] = True
+                if account_name in self.available_accounts:
+                    self.available_accounts.remove(account_name)
+            self._save_status_unlocked()
+            return new_val
 
     def set_account_tokens(self, account_name: str, tokens_remaining: int, tokens_total: int = 1000):
         """Directly calibrate an account's Flow token balance."""
-        self._load_status()
-        acct = self.status.setdefault(account_name, {})
-        acct["tokens_remaining"] = max(0, int(tokens_remaining))
-        acct["tokens_total"] = max(1, int(tokens_total))
-        acct["exhausted"] = bool(tokens_remaining <= 0)
-        acct["last_synced_at"] = datetime.now().isoformat()
-        self._save_status()
+        with _STATUS_FILE_LOCK:
+            self._load_status_unlocked()
+            acct = self.status.setdefault(account_name, {})
+            acct["tokens_remaining"] = max(0, int(tokens_remaining))
+            acct["tokens_total"] = max(1, int(tokens_total))
+            acct["exhausted"] = bool(tokens_remaining <= 0)
+            acct["last_synced_at"] = datetime.now().isoformat()
+            self._save_status_unlocked()
 
     def mark_account_exhausted(self, account_name: str):
         """Marks an account as out of credits for the month."""
         print(f"\n⚠️ [{account_name.upper()}] Credits exhausted! Removing from active pool...")
-        self._load_status()
-        if account_name not in self.status:
-            self.status[account_name] = {}
-        self.status[account_name]["exhausted"] = True
-        self.status[account_name]["tokens_remaining"] = 0
-        self.status[account_name]["tokens_total"] = self.status[account_name].get("tokens_total", 1000)
-        self.status[account_name]["last_exhausted_at"] = datetime.now().isoformat()
-        self._save_status()
-        if account_name in self.available_accounts:
-            self.available_accounts.remove(account_name)
+        with _STATUS_FILE_LOCK:
+            self._load_status_unlocked()
+            if account_name not in self.status:
+                self.status[account_name] = {}
+            self.status[account_name]["exhausted"] = True
+            self.status[account_name]["tokens_remaining"] = 0
+            self.status[account_name]["tokens_total"] = self.status[account_name].get("tokens_total", 1000)
+            self.status[account_name]["last_exhausted_at"] = datetime.now().isoformat()
+            self._save_status_unlocked()
+            if account_name in self.available_accounts:
+                self.available_accounts.remove(account_name)
 
     async def generate_mock_clip(self, scene_idx: int, output_path: Path) -> Path:
         print(f"[SIMULATION] Rendering 10s mock clip for Scene {scene_idx + 1}...")

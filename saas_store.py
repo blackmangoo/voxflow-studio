@@ -305,9 +305,9 @@ def calculate_pricing_comparison(language_tier: str, monthly_views: int = 500_00
 
 
 # =============================================================================
-# SQLITE PERSISTENCE LAYER (Series + Jobs)
+# SQLITE PERSISTENCE LAYER (Series + Jobs + Checkout Leads)
 # =============================================================================
-def init_db(db_path: Path = DB_PATH) -> None:
+def init_saas_db(db_path: Path = DB_PATH) -> None:
     db_path.parent.mkdir(parents=True, exist_ok=True)
     with contextlib.closing(sqlite3.connect(str(db_path), timeout=15.0)) as conn:
         conn.execute("PRAGMA journal_mode = WAL")
@@ -355,6 +355,20 @@ def init_db(db_path: Path = DB_PATH) -> None:
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS checkout_leads (
+                id TEXT PRIMARY KEY,
+                email TEXT,
+                whatsapp TEXT,
+                plan_tier TEXT,
+                payment_method TEXT,
+                notes TEXT,
+                status TEXT,
+                created_at TEXT
+            )
+            """
+        )
         # Safe schema evolution for existing local DBs
         for alter_sql in (
             "ALTER TABLE series ADD COLUMN creation_mode TEXT NOT NULL DEFAULT 'prebuilt'",
@@ -375,6 +389,103 @@ def init_db(db_path: Path = DB_PATH) -> None:
             except sqlite3.OperationalError:
                 pass
         conn.commit()
+
+
+def init_db(db_path: Path = DB_PATH) -> None:
+    init_saas_db(db_path)
+
+
+def normalize_plan_tier(plan_tier: str) -> str:
+    cleaned = (plan_tier or "both_daily").strip().lower()
+    if cleaned == "starter":
+        return "both_starter"
+    if cleaned == "daily":
+        return "both_daily"
+    return cleaned
+
+
+def create_checkout_lead(
+    email: str,
+    whatsapp: str = "",
+    plan_tier: str = "both_daily",
+    payment_method: str = "whatsapp_concierge",
+    notes: str = "",
+    status: str = "pending",
+    db_path: Path = DB_PATH,
+) -> Dict[str, Any]:
+    init_saas_db(db_path)
+    normalized_tier = normalize_plan_tier(plan_tier)
+    if normalized_tier not in PRICING_PLANS:
+        normalized_tier = "both_daily"
+    plan = PRICING_PLANS[normalized_tier]
+    now_ms = int(time.time() * 1000)
+    lead_id = f"lead_{int(time.time())}_{now_ms % 1000}"
+    created_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+    lead = {
+        "id": lead_id,
+        "email": (email or "").strip().lower()[:120],
+        "whatsapp": (whatsapp or "").strip()[:60],
+        "plan_tier": normalized_tier,
+        "plan_name": plan["name"],
+        "price_usd": plan["price_usd"],
+        "payment_method": (payment_method or "whatsapp_concierge").strip()[:60],
+        "notes": (notes or "").strip()[:600],
+        "status": (status or "pending").strip()[:32],
+        "created_at": created_iso,
+    }
+    with contextlib.closing(sqlite3.connect(str(db_path))) as conn:
+        conn.execute(
+            """
+            INSERT INTO checkout_leads (
+                id, email, whatsapp, plan_tier, payment_method, notes, status, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                lead["id"],
+                lead["email"],
+                lead["whatsapp"],
+                lead["plan_tier"],
+                lead["payment_method"],
+                lead["notes"],
+                lead["status"],
+                lead["created_at"],
+            ),
+        )
+        conn.commit()
+    return lead
+
+
+def list_checkout_leads(
+    limit: int = 100,
+    db_path: Path = DB_PATH,
+) -> List[Dict[str, Any]]:
+    init_saas_db(db_path)
+    with contextlib.closing(sqlite3.connect(str(db_path))) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            "SELECT * FROM checkout_leads ORDER BY created_at DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+        result = []
+        for r in rows:
+            item = dict(r)
+            plan = PRICING_PLANS.get(item.get("plan_tier") or "", {})
+            item["plan_name"] = plan.get("name", item.get("plan_tier", ""))
+            item["price_usd"] = plan.get("price_usd", 0)
+            result.append(item)
+        return result
+
+
+def delete_checkout_lead(
+    lead_id: str,
+    db_path: Path = DB_PATH,
+) -> bool:
+    init_saas_db(db_path)
+    with contextlib.closing(sqlite3.connect(str(db_path))) as conn:
+        cur = conn.execute("DELETE FROM checkout_leads WHERE id = ?", (lead_id,))
+        conn.commit()
+        return bool(cur.rowcount and cur.rowcount > 0)
 
 
 def create_series_record(
@@ -481,6 +592,63 @@ def list_series_records(
             item["price_usd"] = plan.get("price_usd", 0)
             result.append(item)
         return result
+
+
+def update_series_status_record(
+    series_id: str,
+    status: Optional[str] = None,
+    user_id: Optional[str] = None,
+    is_admin: bool = True,
+    db_path: Path = DB_PATH,
+) -> Optional[Dict[str, Any]]:
+    init_db(db_path)
+    with contextlib.closing(sqlite3.connect(str(db_path))) as conn:
+        conn.row_factory = sqlite3.Row
+        if is_admin:
+            row = conn.execute("SELECT * FROM series WHERE id = ?", (series_id,)).fetchone()
+        elif user_id:
+            row = conn.execute(
+                "SELECT * FROM series WHERE id = ? AND user_id = ?",
+                (series_id, user_id),
+            ).fetchone()
+        else:
+            return None
+        if not row:
+            return None
+        current = dict(row)
+        new_status = status if status in ("active", "paused") else (
+            "paused" if current.get("status") == "active" else "active"
+        )
+        conn.execute(
+            "UPDATE series SET status = ? WHERE id = ?",
+            (new_status, series_id),
+        )
+        conn.commit()
+        current["status"] = new_status
+        plan = PRICING_PLANS.get(current.get("plan_id", ""), {})
+        current["price_usd"] = plan.get("price_usd", 0)
+        return current
+
+
+def delete_series_record(
+    series_id: str,
+    user_id: Optional[str] = None,
+    is_admin: bool = True,
+    db_path: Path = DB_PATH,
+) -> bool:
+    init_db(db_path)
+    with contextlib.closing(sqlite3.connect(str(db_path))) as conn:
+        if is_admin:
+            cur = conn.execute("DELETE FROM series WHERE id = ?", (series_id,))
+        elif user_id:
+            cur = conn.execute(
+                "DELETE FROM series WHERE id = ? AND user_id = ?",
+                (series_id, user_id),
+            )
+        else:
+            return False
+        conn.commit()
+        return bool(cur.rowcount and cur.rowcount > 0)
 
 
 def create_job_record(
@@ -929,5 +1097,6 @@ def get_account_pool_telemetry() -> Dict[str, Any]:
         "cluster_tokens_max": max_cluster_tokens,
         "cluster_percent": cluster_pct,
         "cluster_scenes_remaining": total_cluster_tokens // 10,
+        "cluster_episodes_remaining": total_cluster_tokens // 40,
         "workers": workers,
     }

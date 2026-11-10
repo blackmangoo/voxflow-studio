@@ -749,7 +749,7 @@ class MultiChannelDirector:
         from google import genai
         from google.genai import types
 
-        for api_k in keys_to_try[:1]:
+        for api_k in keys_to_try:
             client = genai.Client(
                 api_key=api_k,
                 http_options=types.HttpOptions(

@@ -23,7 +23,8 @@ import json
 import os
 import sys
 import time
-from datetime import datetime, timezone
+import urllib.parse
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -86,6 +87,111 @@ def claim_supabase_job(job_uuid: str) -> Optional[Dict[str, Any]]:
     resp.raise_for_status()
     rows = resp.json()
     return rows[0] if rows else None
+
+
+def check_and_enqueue_due_series() -> int:
+    """
+    Checks active recurring series in public.series and enqueues a render job
+    if no job for that series was created within its cadence window (24h for daily,
+    56h for 3/week) and the owning user has credits_balance > 0 (or is admin).
+    """
+    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+        return 0
+
+    enqueued_count = 0
+    try:
+        headers = _supabase_headers()
+        series_resp = requests.get(
+            f"{SUPABASE_URL}/rest/v1/series?status=eq.active&select=*&order=created_at.asc&limit=50",
+            headers=headers,
+            timeout=15,
+        )
+        if series_resp.status_code != 200:
+            return 0
+        active_series = series_resp.json()
+    except Exception as exc:
+        print(f"[Series Scheduler Warning] Could not fetch active series: {exc}")
+        return 0
+
+    now_utc = datetime.now(timezone.utc)
+
+    for s in active_series:
+        try:
+            series_id = s.get("id")
+            user_id = s.get("user_id")
+            if not series_id or not user_id:
+                continue
+
+            cadence_meta = f"{s.get('cadence', '')} {s.get('plan_id', '')}".lower()
+            is_three_per_week = ("starter" in cadence_meta) or ("3" in cadence_meta) or ("week" in cadence_meta)
+            window_hours = 56.0 if is_three_per_week else 24.0
+            cutoff_iso = (now_utc - timedelta(hours=window_hours)).isoformat()
+
+            enc_sid = urllib.parse.quote(str(series_id), safe="")
+            enc_cutoff = urllib.parse.quote(cutoff_iso, safe="")
+            recent_resp = requests.get(
+                f"{SUPABASE_URL}/rest/v1/render_jobs?series_id=eq.{enc_sid}&created_at=gte.{enc_cutoff}&select=id,created_at&limit=1",
+                headers=headers,
+                timeout=10,
+            )
+            if recent_resp.status_code == 200 and recent_resp.json():
+                # A render job was already created within the cadence window
+                continue
+
+            enc_uid = urllib.parse.quote(str(user_id), safe="")
+            prof_resp = requests.get(
+                f"{SUPABASE_URL}/rest/v1/profiles?id=eq.{enc_uid}&select=id,role,credits_balance",
+                headers=headers,
+                timeout=10,
+            )
+            if prof_resp.status_code != 200 or not prof_resp.json():
+                continue
+
+            prof = prof_resp.json()[0]
+            is_admin = prof.get("role") == "admin"
+            credits_balance = int(prof.get("credits_balance") or 0)
+            if not is_admin and credits_balance <= 0:
+                continue
+
+            channel = s.get("channel") or "body_simulator"
+            lang = s.get("language_tier") or "both"
+            creation_mode = s.get("creation_mode") or "prebuilt"
+            custom_prompt = (s.get("custom_prompt") or "").strip()
+            visual_style = (s.get("visual_style_dna") or "pixar_3d").strip()
+            series_name = s.get("name") or channel
+            job_code = f"job_ser_{channel}_{int(time.time())}_{int(time.time() * 1000) % 1000}"
+
+            ins_resp = requests.post(
+                f"{SUPABASE_URL}/rest/v1/render_jobs",
+                headers=headers,
+                json={
+                    "job_code": job_code,
+                    "user_id": user_id,
+                    "series_id": series_id,
+                    "creation_mode": creation_mode if creation_mode in ("prebuilt", "custom_director", "manual_scenes") else "prebuilt",
+                    "channel": channel,
+                    "lang": lang if lang in ("urdu", "english", "both") else "both",
+                    "custom_prompt": custom_prompt,
+                    "visual_style_dna": visual_style,
+                    "custom_scenes": [],
+                    "mock_mode": False,
+                    "status": "queued",
+                    "stage": f"[0/6] Auto-scheduled by Series Autopilot ('{series_name[:40]}')",
+                    "progress": 5,
+                    "concept": (custom_prompt or series_name)[:160],
+                },
+                timeout=12,
+            )
+            if ins_resp.status_code in (200, 201):
+                enqueued_count += 1
+                print(
+                    f"📅 [SERIES SCHEDULER] Enqueued due series '{series_name}' "
+                    f"(series_id={series_id}, window={int(window_hours)}h) -> {job_code}"
+                )
+        except Exception as exc:
+            print(f"[Series Scheduler Item Warning] {exc}")
+
+    return enqueued_count
 
 
 async def process_supabase_job(job: Dict[str, Any]) -> None:
@@ -229,8 +335,16 @@ async def run_worker_loop(poll_interval: float = 4.0, once: bool = False) -> Non
     print(f"    Poll Interval    : {poll_interval}s")
     print("=" * 78)
 
+    last_series_check = 0.0
+    series_check_interval = 60.0
+
     while True:
         try:
+            now_mono = time.monotonic()
+            if once or (now_mono - last_series_check) >= series_check_interval:
+                last_series_check = now_mono
+                await asyncio.to_thread(check_and_enqueue_due_series)
+
             queued_jobs = fetch_queued_supabase_jobs(limit=3)
             for item in queued_jobs:
                 claimed = claim_supabase_job(item["id"])

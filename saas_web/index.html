@@ -1605,85 +1605,6 @@
             color: var(--text-primary);
             transform: translate(2px, -2px);
         }
-            background: linear-gradient(135deg, rgba(16, 22, 32, 0.85), rgba(8, 12, 18, 0.95));
-            border: 1px solid rgba(36, 176, 230, 0.35);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-        }
-
-        .ws-founder-left {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 0.85rem;
-            font-size: 0.8rem;
-        }
-
-        .ws-live-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            color: var(--emerald);
-        }
-
-        .ws-version-tag {
-            font-family: var(--font-mono);
-            font-size: 0.72rem;
-            color: var(--text-secondary);
-        }
-
-        .ws-arch-tag {
-            font-family: var(--font-mono);
-            font-size: 0.68rem;
-            color: var(--cerulean-bright);
-            background: var(--cerulean-subtle);
-            border: 1px solid var(--cerulean-border);
-            padding: 0.15rem 0.5rem;
-            border-radius: 4px;
-        }
-
-        .ws-founder-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            text-decoration: none;
-            color: var(--text-secondary);
-            font-size: 0.84rem;
-            padding: 0.35rem 0.8rem;
-            border-radius: var(--radius-sm);
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--border-subtle);
-            transition: all 0.22s ease;
-        }
-
-        .ws-founder-link:hover {
-            color: #FFFFFF;
-            border-color: var(--rose-border);
-            background: var(--rose-subtle);
-            box-shadow: 0 0 16px rgba(255, 45, 149, 0.28);
-        }
-
-        .ws-founder-link strong {
-            color: var(--cerulean-bright);
-            font-weight: 800;
-        }
-
-        .ws-founder-link:hover strong {
-            color: var(--rose-soft);
-        }
-
-        .ws-founder-arrow {
-            color: var(--cerulean-bright);
-            transition: transform 0.2s ease;
-        }
-
-        .ws-founder-link:hover .ws-founder-arrow {
-            color: var(--rose-soft);
-            transform: translate(2px, -2px);
-        }
 
         /* ─── Pipeline Architect Banner ─── */
         .pipeline-architect-banner {
@@ -2024,6 +1945,29 @@
 
         /* ─── Responsive Adjustments ─── */
         @media (max-width: 1080px) {
+            .site-header {
+                height: auto;
+                min-height: 60px;
+                padding: 0.4rem 0;
+            }
+            .nav-container {
+                height: auto;
+                flex-wrap: wrap;
+                padding: 0.25rem 1rem;
+                gap: 0.5rem;
+            }
+            .desktop-nav {
+                display: flex;
+                order: 3;
+                width: 100%;
+                overflow-x: auto;
+                justify-content: flex-start;
+                padding: 4px;
+                scrollbar-width: none;
+            }
+            .desktop-nav::-webkit-scrollbar {
+                display: none;
+            }
             .hero-container,
             .pipeline-grid,
             .pricing-layout,
@@ -2035,9 +1979,6 @@
             }
             .cluster-grid {
                 grid-template-columns: repeat(2, 1fr);
-            }
-            .desktop-nav {
-                display: none;
             }
             .footer-top-grid {
                 grid-template-columns: 1fr;
@@ -2562,6 +2503,7 @@
                             <select id="studio-lang-select" class="clean-select">
                                 <option value="english">English</option>
                                 <option value="urdu">اردو (Urdu)</option>
+                                <option value="both">Both (EN + UR Dual-Stream)</option>
                             </select>
                             <a href="mailto:ammar.akbar2002@gmail.com?subject=Language%20request&amp;body=Hi%2C%20I%E2%80%99d%20like%20to%20request%20support%20for%20a%20new%20language%3A%20" style="font-size:0.78rem;color:var(--cerulean-bright);margin-top:0.4rem;display:inline-block;">Need another language? Request it →</a>
                         </div>
@@ -2570,6 +2512,7 @@
                             <label class="field-label" for="studio-mode-select">Render Engine</label>
                             <select id="studio-mode-select" class="clean-select">
                                 <option value="live" selected>Google Flow 3D Cluster — 4 × 10s Veo 3D Scenes (1 Credit)</option>
+                                <option value="mock">Sandbox Simulation (Uses Sandbox Quota)</option>
                             </select>
                         </div>
 
@@ -2715,9 +2658,13 @@
 
                         <div class="field-group">
                             <label class="field-label" for="prov-plan-select">Subscribed Plan</label>
-                            <select id="prov-plan-select" class="clean-select" onchange="syncProvisionCredits()">
-                                <option value="daily" data-credits="30">Pro Daily — $79/mo (30 Renders)</option>
-                                <option value="starter" data-credits="12">Creator Starter — $29/mo (12 Renders)</option>
+                            <select id="prov-plan-select" class="clean-select" onchange="syncProvisionPlanDefaults()">
+                                <option value="both_daily" data-credits="30">Global Dual-Stream Autopilot — $89/mo (30 Renders · EN + UR)</option>
+                                <option value="both_starter" data-credits="12">Dual-Channel Arbitrage Starter — $49/mo (12 Renders · EN + UR)</option>
+                                <option value="english_daily" data-credits="30">US/UK Monetizer Pro (English) — $69/mo (30 Renders)</option>
+                                <option value="english_starter" data-credits="12">US/UK Monetizer Starter (English) — $39/mo (12 Renders)</option>
+                                <option value="urdu_daily" data-credits="30">Desi Viral Daily (Urdu) — $35/mo (30 Renders)</option>
+                                <option value="urdu_starter" data-credits="12">Desi Creator Starter (Urdu) — $19/mo (12 Renders)</option>
                             </select>
                         </div>
 
@@ -2739,9 +2686,17 @@
                         </div>
                     </div>
 
-                    <!-- Right: Active Accounts List -->
+                    <!-- Right: Active Accounts List & Pending Checkout Leads -->
                     <div class="panel-box surface-card">
                         <div class="panel-head">
+                            <h3 class="panel-title">Pending Checkout Requests (Leads)</h3>
+                            <button type="button" class="btn-ghost" onclick="loadCheckoutLeads()">Refresh</button>
+                        </div>
+                        <div class="stack-list" id="admin-leads-list" style="margin-bottom:1.5rem;">
+                            <div class="item-row-card"><div class="item-row-sub">Loading pending checkout leads...</div></div>
+                        </div>
+
+                        <div class="panel-head" style="padding-top:1.25rem;border-top:1px solid var(--border-subtle);">
                             <h3 class="panel-title">Provisioned Accounts</h3>
                             <button type="button" class="btn-ghost" onclick="loadProvisionedCustomers()">Refresh</button>
                         </div>
@@ -2888,23 +2843,50 @@
             <!-- Sign-In Form -->
             <div id="auth-form-panel">
                 <div id="auth-plan-notice" style="display:none;background:var(--cerulean-subtle);border:1px solid var(--cerulean-border);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:1rem;font-size:0.8rem;color:var(--text-primary);line-height:1.45;"></div>
+                <div id="auth-modal-error" style="display:none;border-radius:8px;padding:0.65rem 0.85rem;margin-bottom:0.9rem;font-size:0.8rem;line-height:1.45;"></div>
 
-                <div class="mode-tabs" style="grid-template-columns:repeat(2,1fr);margin-bottom:1.1rem;">
+                <div class="mode-tabs" id="auth-mode-tabs-bar" style="grid-template-columns:repeat(2,1fr);margin-bottom:1.1rem;">
                     <button type="button" class="mode-tab active" id="auth-tab-signin" onclick="switchAuthTab('signin')">Account Login</button>
                     <button type="button" class="mode-tab" id="auth-tab-key" onclick="switchAuthTab('key')">Workstation Key</button>
                 </div>
 
                 <div id="auth-email-fields">
+                    <div class="field-group" id="auth-trial-name-group" style="display:none;">
+                        <label class="field-label" for="auth-name-input">Your Name or Channel</label>
+                        <input id="auth-name-input" class="clean-input" type="text" placeholder="e.g. Creator Studio">
+                    </div>
                     <div class="field-group">
                         <label class="field-label" for="auth-email-input">Email</label>
                         <input id="auth-email-input" class="clean-input" type="email" placeholder="you@domain.com">
                     </div>
                     <div class="field-group">
-                        <label class="field-label" for="auth-password-input">Password</label>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">
+                            <label class="field-label" for="auth-password-input" style="margin:0;">Password</label>
+                            <button type="button" id="auth-forgot-link" onclick="handleForgotPassword()" style="background:none;border:none;color:var(--cerulean-bright);font-size:0.75rem;cursor:pointer;font-family:inherit;padding:0;">Forgot password?</button>
+                        </div>
                         <input id="auth-password-input" class="clean-input" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter') submitSupabaseAuth()">
                     </div>
                     <button type="button" class="btn btn-primary" style="width:100%;margin-top:0.35rem;" onclick="submitSupabaseAuth()" id="auth-submit-btn">
-                        <span>Sign In</span>
+                        <span id="auth-submit-btn-label">Sign In</span>
+                    </button>
+                    <div style="margin-top:0.85rem;text-align:center;">
+                        <button type="button" id="auth-trial-toggle-link" onclick="toggleTrialSignupMode()" style="background:none;border:none;color:var(--cerulean-bright);font-size:0.78rem;font-weight:500;cursor:pointer;font-family:inherit;text-decoration:underline;">
+                            Start Free Sandbox Trial (3 Preview Runs)
+                        </button>
+                    </div>
+                </div>
+
+                <div id="auth-recovery-fields" style="display:none;">
+                    <div style="font-size:0.88rem;font-weight:600;color:var(--text-primary);margin-bottom:0.5rem;">Set New Password</div>
+                    <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:0.85rem;">
+                        Enter a new password (minimum 6 characters) to complete your account recovery.
+                    </p>
+                    <div class="field-group">
+                        <label class="field-label" for="auth-new-password-input">New Password</label>
+                        <input id="auth-new-password-input" class="clean-input" type="password" placeholder="Minimum 6 characters" onkeydown="if(event.key==='Enter') submitNewPasswordRecovery()">
+                    </div>
+                    <button type="button" class="btn btn-primary" style="width:100%;margin-top:0.35rem;" id="auth-recovery-submit-btn" onclick="submitNewPasswordRecovery()">
+                        <span>Set New Password</span>
                     </button>
                 </div>
 
@@ -3024,6 +3006,9 @@
         let currentSession = null;
         let currentUserProfile = null;
         let currentAuthTab = 'signin';
+        let isTrialSignupMode = false;
+        let isPasswordRecoveryMode = false;
+        let vaultCardActiveLang = {};
 
         const DEFAULT_MANUAL_SCENES = [
             {
@@ -3188,7 +3173,11 @@
                     supabaseClient = window.supabase.createClient(cfg.supabase_url, cfg.supabase_anon_key);
                     const { data: { session } } = await supabaseClient.auth.getSession();
                     await applyAuthSession(session);
-                    supabaseClient.auth.onAuthStateChange(async (_event, sessionNow) => {
+                    supabaseClient.auth.onAuthStateChange(async (event, sessionNow) => {
+                        if (event === 'PASSWORD_RECOVERY') {
+                            openPasswordRecoveryModal();
+                            return;
+                        }
                         await applyAuthSession(sessionNow);
                     });
                 } else {
@@ -3212,6 +3201,7 @@
             const adminSec = document.getElementById('admin-provision-sec');
             const adminNav = document.getElementById('nav-admin-provision');
             const langSelect = document.getElementById('studio-lang-select');
+            const modeSelect = document.getElementById('studio-mode-select');
 
             const savedKey = (localStorage.getItem('voxflow_workstation_key') || '').trim();
             if (savedKey && document.getElementById('studio-admin-key')) {
@@ -3243,36 +3233,53 @@
                 if (heroVid) heroVid.pause();
 
                 const planMap = {
-                    starter: ['Creator Starter ($29)', '12 videos/mo', 'english'],
-                    daily: ['Pro Daily ($79)', '30 videos/mo', 'english'],
-                    free: ['Unactivated Account', 'Simulation Only', 'english'],
-                    urdu_starter: ['Creator Starter ($29)', '12 videos/mo', 'english'],
-                    urdu_daily: ['Pro Daily ($79)', '30 videos/mo', 'english'],
-                    english_starter: ['Creator Starter ($29)', '12 videos/mo', 'english'],
-                    english_daily: ['Pro Daily ($79)', '30 videos/mo', 'english'],
-                    both_starter: ['Creator Starter ($29)', '12 videos/mo', 'english'],
-                    both_daily: ['Pro Daily ($79)', '30 videos/mo', 'english']
+                    starter: ['Creator Starter ($29)', '12 videos/mo', 'both'],
+                    daily: ['Pro Daily ($79)', '30 videos/mo', 'both'],
+                    free: ['Free Sandbox Trial', 'Simulation Only', 'both'],
+                    urdu_starter: ['Desi Creator Starter ($19)', '12 Urdu videos/mo', 'urdu'],
+                    urdu_daily: ['Desi Viral Daily ($35)', '30 Urdu videos/mo', 'urdu'],
+                    english_starter: ['US/UK Monetizer Starter ($39)', '12 English videos/mo', 'english'],
+                    english_daily: ['US/UK Monetizer Pro ($69)', '30 English videos/mo', 'english'],
+                    both_starter: ['Dual-Channel Arbitrage Starter ($49)', '24 Dual-Stream videos/mo', 'both'],
+                    both_daily: ['Global Dual-Stream Autopilot ($89)', '60 Dual-Stream videos/mo', 'both']
                 };
                 const [planTitle, streamTitle, allowedLang] = isAdmin
                     ? ['Founder Admin', 'All Languages', 'all']
-                    : (planMap[planTier] || planMap.daily);
+                    : (planMap[planTier] || planMap.both_daily);
 
                 document.getElementById('ws-user-email').textContent = session.user.email;
                 document.getElementById('ws-plan-name').textContent = planTitle;
                 document.getElementById('ws-allowed-stream').textContent = streamTitle;
                 document.getElementById('ws-credits-remaining').textContent = isAdmin
-                    ? 'Unlimited'
+                    ? `${credits.toLocaleString()} tokens`
                     : `${credits.toLocaleString()} episodes`;
 
                 if (langSelect) {
+                    const allowAllLangs = isAdmin || allowedLang === 'both' || allowedLang === 'all';
                     Array.from(langSelect.options).forEach(opt => {
-                        opt.disabled = false;
+                        opt.disabled = allowAllLangs ? false : (opt.value !== allowedLang);
                     });
-                    langSelect.value = 'english';
+                    if (allowAllLangs) {
+                        if (!langSelect.value || langSelect.options[langSelect.selectedIndex]?.disabled) {
+                            langSelect.value = 'both';
+                        } else {
+                            langSelect.value = 'both';
+                        }
+                    } else {
+                        langSelect.value = allowedLang;
+                    }
+                }
+
+                if (modeSelect) {
+                    if (!isAdmin && credits <= 0) {
+                        modeSelect.value = 'mock';
+                    } else {
+                        modeSelect.value = 'live';
+                    }
                 }
 
                 badgeEl.textContent = isAdmin
-                    ? 'Unlimited (Admin)'
+                    ? `${credits.toLocaleString()} Tokens`
                     : `${credits.toLocaleString()}`;
                 labelEl.textContent = session.user.email.split('@')[0];
                 const avatarEl = document.getElementById('header-user-avatar');
@@ -3280,15 +3287,17 @@
                     avatarEl.textContent = (session.user.email[0] || 'A').toUpperCase();
                 }
                 creditPill.textContent = isAdmin
-                    ? 'Unlimited'
-                    : `${credits.toLocaleString()} credits available`;
+                    ? `${credits.toLocaleString()} Flow Tokens`
+                    : (credits > 0 ? `${credits.toLocaleString()} credits available` : 'Sandbox Trial Mode');
 
-                signedInPanel.style.display = 'block';
-                formPanel.style.display = 'none';
+                if (!isPasswordRecoveryMode) {
+                    signedInPanel.style.display = 'block';
+                    formPanel.style.display = 'none';
+                }
                 document.getElementById('profile-role-line').textContent = `${isAdmin ? 'Founder Admin' : 'Client Account'} · ${planTitle}`;
                 document.getElementById('profile-email-line').textContent = session.user.email;
                 document.getElementById('profile-credits-line').textContent = isAdmin
-                    ? 'Unlimited renders'
+                    ? `Available Flow Pool Tokens: ${credits.toLocaleString()} (${Math.floor(credits / 40)} episodes)`
                     : `Available 3D Render Credits: ${credits.toLocaleString()}`;
 
                 syncWhatsAppUIState(currentUserProfile);
@@ -3299,6 +3308,11 @@
                     adminSec.style.display = 'block';
                     adminNav.style.display = 'inline-block';
                     loadProvisionedCustomers();
+                    loadCheckoutLeads();
+                    fetch('/api/pool-status', { headers: buildAuthHeaders() })
+                        .then(r => r.ok ? r.json() : null)
+                        .then(poolData => { if (poolData) renderWorkerPool(poolData); })
+                        .catch(() => {});
                 } else {
                     vaultScope = 'client_private';
                     vaultEpisodes = [];
@@ -3316,7 +3330,15 @@
                 document.getElementById('ws-user-email').textContent = 'Local Workstation';
                 document.getElementById('ws-plan-name').textContent = 'Workstation Admin Key';
                 document.getElementById('ws-allowed-stream').textContent = 'All Languages';
-                document.getElementById('ws-credits-remaining').textContent = 'Unlimited';
+                document.getElementById('ws-credits-remaining').textContent = 'Syncing tokens...';
+
+                if (langSelect) {
+                    Array.from(langSelect.options).forEach(opt => { opt.disabled = false; });
+                    langSelect.value = 'both';
+                }
+                if (modeSelect) {
+                    modeSelect.value = 'live';
+                }
 
                 badgeEl.textContent = 'Workstation Admin';
                 labelEl.textContent = 'Workstation';
@@ -3325,10 +3347,15 @@
                 formPanel.style.display = 'none';
                 document.getElementById('profile-role-line').textContent = 'Workstation Key Active';
                 document.getElementById('profile-email-line').textContent = 'Direct Local Pipeline Control';
-                document.getElementById('profile-credits-line').textContent = 'Unlimited local renders';
+                document.getElementById('profile-credits-line').textContent = 'Syncing cluster token pool...';
                 adminSec.style.display = 'block';
                 adminNav.style.display = 'inline-block';
                 loadProvisionedCustomers();
+                loadCheckoutLeads();
+                fetch('/api/pool-status', { headers: buildAuthHeaders() })
+                    .then(r => r.ok ? r.json() : null)
+                    .then(poolData => { if (poolData) renderWorkerPool(poolData); })
+                    .catch(() => {});
             } else {
                 document.body.classList.remove('authenticated-workspace');
                 document.body.classList.remove('admin-workspace');
@@ -3367,7 +3394,30 @@
             }
         }
 
+        function setAuthModalFeedback(message, isSuccess = false) {
+            const errEl = document.getElementById('auth-modal-error');
+            if (!errEl) return;
+            if (!message) {
+                errEl.style.display = 'none';
+                errEl.textContent = '';
+                return;
+            }
+            errEl.style.display = 'block';
+            errEl.textContent = message;
+            if (isSuccess) {
+                errEl.style.color = 'var(--emerald)';
+                errEl.style.background = 'rgba(16, 185, 129, 0.1)';
+                errEl.style.border = '1px solid rgba(16, 185, 129, 0.35)';
+            } else {
+                errEl.style.color = 'var(--danger)';
+                errEl.style.background = 'rgba(239, 68, 68, 0.1)';
+                errEl.style.border = '1px solid rgba(239, 68, 68, 0.35)';
+            }
+        }
+
         function openAuthModal(planNoticeText) {
+            isPasswordRecoveryMode = false;
+            setAuthModalFeedback('');
             const noticeEl = document.getElementById('auth-plan-notice');
             if (noticeEl) {
                 if (planNoticeText && typeof planNoticeText === 'string') {
@@ -3377,39 +3427,208 @@
                     noticeEl.style.display = 'none';
                 }
             }
+            const recFields = document.getElementById('auth-recovery-fields');
+            if (recFields) recFields.style.display = 'none';
+            const tabsBar = document.getElementById('auth-mode-tabs-bar');
+            if (tabsBar) tabsBar.style.display = 'grid';
+            switchAuthTab(currentAuthTab || 'signin');
             document.getElementById('auth-modal-backdrop').classList.add('open');
         }
 
         function closeAuthModal() {
+            isPasswordRecoveryMode = false;
+            setAuthModalFeedback('');
             document.getElementById('auth-modal-backdrop').classList.remove('open');
         }
 
         function switchAuthTab(tab) {
             currentAuthTab = tab;
+            setAuthModalFeedback('');
             ['signin', 'key'].forEach(t => {
                 const btn = document.getElementById(`auth-tab-${t}`);
                 if (btn) btn.classList.toggle('active', t === tab);
             });
+            const recFields = document.getElementById('auth-recovery-fields');
+            if (recFields) recFields.style.display = 'none';
             document.getElementById('auth-email-fields').style.display = tab === 'key' ? 'none' : 'block';
             document.getElementById('auth-key-fields').style.display = tab === 'key' ? 'block' : 'none';
         }
 
-        async function submitSupabaseAuth() {
-            if (!supabaseClient) {
-                showToast('Authentication service is still loading—please try again.');
+        function toggleTrialSignupMode(forceState) {
+            isTrialSignupMode = typeof forceState === 'boolean' ? forceState : !isTrialSignupMode;
+            setAuthModalFeedback('');
+            const nameGroup = document.getElementById('auth-trial-name-group');
+            const submitLabel = document.getElementById('auth-submit-btn-label');
+            const toggleLink = document.getElementById('auth-trial-toggle-link');
+            const forgotLink = document.getElementById('auth-forgot-link');
+            if (nameGroup) nameGroup.style.display = isTrialSignupMode ? 'block' : 'none';
+            if (submitLabel) {
+                submitLabel.textContent = isTrialSignupMode
+                    ? 'Create Free Sandbox Account (3 Preview Runs)'
+                    : 'Sign In';
+            }
+            if (toggleLink) {
+                toggleLink.textContent = isTrialSignupMode
+                    ? 'Already have an account? Sign In'
+                    : 'Start Free Sandbox Trial (3 Preview Runs)';
+            }
+            if (forgotLink) {
+                forgotLink.style.display = isTrialSignupMode ? 'none' : 'inline';
+            }
+        }
+
+        function openAuthModalForTrial(prefillEmail) {
+            openAuthModal('Start your Free Sandbox Trial with 3 instant preview runs.');
+            switchAuthTab('signin');
+            toggleTrialSignupMode(true);
+            if (prefillEmail && document.getElementById('auth-email-input')) {
+                document.getElementById('auth-email-input').value = prefillEmail;
+            }
+        }
+
+        async function handleForgotPassword() {
+            const email = (document.getElementById('auth-email-input')?.value || '').trim();
+            if (!email || !email.includes('@')) {
+                setAuthModalFeedback('Please enter your account email address above first, then click "Forgot password?".', false);
+                showToast('Enter your email address first to reset your password.');
                 return;
             }
+            setAuthModalFeedback('Sending password reset link...', true);
+            try {
+                let sentViaSupabase = false;
+                if (supabaseClient && supabaseClient.auth && typeof supabaseClient.auth.resetPasswordForEmail === 'function') {
+                    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                        redirectTo: window.location.origin
+                    });
+                    if (!error) {
+                        sentViaSupabase = true;
+                    }
+                }
+                if (!sentViaSupabase) {
+                    const res = await fetch('/api/auth/forgot-password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, redirect_to: window.location.origin })
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        setAuthModalFeedback(data.detail || 'Unable to send password reset email.', false);
+                        return;
+                    }
+                }
+                setAuthModalFeedback(`Password reset link sent to ${email}. Check your inbox to set a new password.`, true);
+                showToast(`Password reset instructions sent to ${email}`);
+            } catch (err) {
+                setAuthModalFeedback(`Reset error: ${err.message}`, false);
+            }
+        }
+
+        function openPasswordRecoveryModal() {
+            isPasswordRecoveryMode = true;
+            const signedInPanel = document.getElementById('auth-signed-in-panel');
+            const formPanel = document.getElementById('auth-form-panel');
+            const tabsBar = document.getElementById('auth-mode-tabs-bar');
+            const emailFields = document.getElementById('auth-email-fields');
+            const keyFields = document.getElementById('auth-key-fields');
+            const recFields = document.getElementById('auth-recovery-fields');
+            if (signedInPanel) signedInPanel.style.display = 'none';
+            if (formPanel) formPanel.style.display = 'block';
+            if (tabsBar) tabsBar.style.display = 'none';
+            if (emailFields) emailFields.style.display = 'none';
+            if (keyFields) keyFields.style.display = 'none';
+            if (recFields) recFields.style.display = 'block';
+            setAuthModalFeedback('Password recovery verified. Enter your new password below.', true);
+            document.getElementById('auth-modal-backdrop').classList.add('open');
+        }
+
+        async function submitNewPasswordRecovery() {
+            const newPass = (document.getElementById('auth-new-password-input')?.value || '').trim();
+            if (newPass.length < 6) {
+                setAuthModalFeedback('New password must be at least 6 characters.', false);
+                return;
+            }
+            if (!supabaseClient) {
+                setAuthModalFeedback('Authentication client is not initialized.', false);
+                return;
+            }
+            const btn = document.getElementById('auth-recovery-submit-btn');
+            if (btn) btn.disabled = true;
+            try {
+                const { error } = await supabaseClient.auth.updateUser({ password: newPass });
+                if (error) {
+                    setAuthModalFeedback(`Password update failed: ${error.message}`, false);
+                    return;
+                }
+                isPasswordRecoveryMode = false;
+                setAuthModalFeedback('Your password has been updated! Redirecting to studio...', true);
+                showToast('Password updated successfully!');
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                await applyAuthSession(session);
+                setTimeout(() => closeAuthModal(), 900);
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        async function submitSupabaseAuth() {
+            setAuthModalFeedback('');
             const email = (document.getElementById('auth-email-input').value || '').trim();
             const password = (document.getElementById('auth-password-input').value || '').trim();
-            if (!email || password.length < 6) {
-                showToast('Please enter your issued email and password (at least 6 characters).');
+            const fullName = (document.getElementById('auth-name-input')?.value || '').trim();
+
+            if (!email || !email.includes('@') || password.length < 6) {
+                const msg = 'Please enter a valid email and password (at least 6 characters).';
+                setAuthModalFeedback(msg, false);
+                showToast(msg);
                 return;
             }
+
             const btn = document.getElementById('auth-submit-btn');
             btn.disabled = true;
             try {
+                if (isTrialSignupMode) {
+                    const res = await fetch('/api/auth/trial-signup', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            full_name: fullName || email.split('@')[0],
+                            name: fullName || email.split('@')[0],
+                            email,
+                            password
+                        })
+                    });
+                    const trialData = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        const errMsg = trialData.detail || 'Could not create sandbox trial account.';
+                        setAuthModalFeedback(errMsg, false);
+                        showToast(errMsg);
+                        return;
+                    }
+                    setAuthModalFeedback('Sandbox Trial activated! Signing you in...', true);
+                    if (supabaseClient) {
+                        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                        if (error) {
+                            setAuthModalFeedback(`Trial created, but sign-in returned: ${error.message}`, false);
+                            showToast(`Sign-in error: ${error.message}`);
+                            return;
+                        }
+                        toggleTrialSignupMode(false);
+                        closeAuthModal();
+                        window.scrollTo({ top: 0, behavior: 'instant' });
+                        showToast(`Welcome ${data.user.email}! 3 Free Sandbox Preview Runs unlocked.`);
+                        return;
+                    }
+                }
+
+                if (!supabaseClient) {
+                    setAuthModalFeedback('Authentication service is still loading—please try again.', false);
+                    showToast('Authentication service is still loading—please try again.');
+                    return;
+                }
+
                 const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
                 if (error) {
+                    setAuthModalFeedback(`Sign-in error: ${error.message}`, false);
                     showToast(`Sign-in error: ${error.message}`);
                     return;
                 }
@@ -3556,16 +3775,103 @@
             );
         }
 
-        /* ─── Admin Client Provisioning ─── */
+        /* ─── Admin Client Provisioning & Checkout Leads ─── */
         function generateClientPassword() {
             const rand = Math.random().toString(36).slice(2, 6).toUpperCase() + Math.floor(100 + Math.random() * 900);
             document.getElementById('prov-pass-input').value = `VoxFlow#${rand}!`;
         }
 
-        function syncProvisionCredits() {
+        function syncProvisionPlanDefaults() {
             const sel = document.getElementById('prov-plan-select');
+            if (!sel) return;
             const opt = sel.options[sel.selectedIndex];
-            document.getElementById('prov-credits-input').value = opt.getAttribute('data-credits') || '30';
+            const defaultCredits = opt?.getAttribute('data-credits') || (sel.value.endsWith('_starter') ? '12' : '30');
+            const creditsInput = document.getElementById('prov-credits-input');
+            if (creditsInput) creditsInput.value = defaultCredits;
+        }
+
+        function syncProvisionCredits() {
+            syncProvisionPlanDefaults();
+        }
+
+        async function loadCheckoutLeads() {
+            const container = document.getElementById('admin-leads-list');
+            if (!container) return;
+            try {
+                const res = await fetch('/api/admin/leads', { headers: buildAuthHeaders() });
+                if (!res.ok) {
+                    container.innerHTML = `<div class="item-row-card"><div class="item-row-sub">No pending checkout leads available.</div></div>`;
+                    return;
+                }
+                const data = await res.json().catch(() => ({}));
+                const leads = data.leads || [];
+                if (!leads.length) {
+                    container.innerHTML = `<div class="item-row-card"><div class="item-row-sub">No pending checkout requests right now.</div></div>`;
+                    return;
+                }
+                container.innerHTML = leads.map(l => {
+                    const safeEmail = (l.email || '').replace(/'/g, "\\'");
+                    const safePlan = (l.plan_tier || 'both_daily').replace(/'/g, "\\'");
+                    const safeName = (l.email || '').split('@')[0].replace(/'/g, "\\'");
+                    const waLabel = l.whatsapp ? ` · WhatsApp: ${l.whatsapp}` : '';
+                    const payLabel = l.payment_method === 'card_payment_link' ? 'Card Payment Link' : 'WhatsApp Concierge / Bank Transfer';
+                    return `
+                        <div class="item-row-card">
+                            <div class="item-row-top">
+                                <strong>${l.email}</strong>
+                                <span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--cerulean-bright);">
+                                    ${l.plan_name || l.plan_tier} ($${l.price_usd || 0})
+                                </span>
+                            </div>
+                            <div class="item-row-sub" style="margin-bottom:0.55rem;">
+                                ${payLabel}${waLabel}
+                            </div>
+                            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                                <button type="button" class="btn-ghost" style="padding:0.22rem 0.6rem;font-size:0.72rem;color:var(--cerulean-bright);border-color:var(--cerulean-border);"
+                                        onclick="loadLeadIntoProvisioner('${safeEmail}', '${safePlan}', '${safeName}')">
+                                    Load into Provisioner
+                                </button>
+                                <button type="button" class="btn-ghost" style="padding:0.22rem 0.6rem;font-size:0.72rem;color:var(--danger);"
+                                        onclick="dismissCheckoutLead('${l.id}')">
+                                    Dismiss
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                container.innerHTML = `<div class="item-row-card"><div class="item-row-sub">Unable to load checkout leads.</div></div>`;
+            }
+        }
+
+        function loadLeadIntoProvisioner(email, planTier, suggestedName) {
+            const emailEl = document.getElementById('prov-email-input');
+            const nameEl = document.getElementById('prov-name-input');
+            const planEl = document.getElementById('prov-plan-select');
+            if (emailEl) emailEl.value = email || '';
+            if (nameEl && suggestedName) nameEl.value = suggestedName;
+            if (planEl) {
+                const normalized = planTier === 'starter' ? 'both_starter' : (planTier === 'daily' ? 'both_daily' : planTier);
+                planEl.value = normalized || 'both_daily';
+                syncProvisionPlanDefaults();
+            }
+            emailEl?.focus();
+            showToast(`Loaded ${email} (${planTier}) into Client Provisioner.`);
+        }
+
+        async function dismissCheckoutLead(leadId) {
+            if (!leadId) return;
+            const res = await fetch(`/api/admin/leads/${encodeURIComponent(leadId)}`, {
+                method: 'DELETE',
+                headers: buildAuthHeaders()
+            });
+            if (res.ok) {
+                showToast('Checkout lead dismissed.');
+                await loadCheckoutLeads();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                showToast(err.detail || 'Could not dismiss lead.');
+            }
         }
 
         async function provisionCustomerAccount() {
@@ -3661,7 +3967,7 @@ Credits  : ${data.credits_balance} 3D Episodes`;
                             </div>
                             <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;margin-top:0.35rem;">
                                 <span class="item-row-sub">
-                                    ${c.full_name || 'Client'} · <strong style="color:var(--emerald);">${c.credits_balance}</strong> credits remaining
+                                    ${c.full_name || 'Client'} · <strong style="color:var(--emerald);">${Number(c.credits_balance ?? 0).toLocaleString()}</strong> ${isAdmin ? `Flow tokens (${c.sandbox_runs_remaining ?? Math.floor((c.credits_balance || 0) / 40)} episodes)` : 'credits'} remaining
                                 </span>
                                 ${!isAdmin ? `<button type="button" class="btn-ghost" style="padding:0.2rem 0.55rem;font-size:0.72rem;color:var(--danger);" onclick="deleteCustomerAccount('${c.id}', '${c.email}')">Remove</button>` : ''}
                             </div>
@@ -3734,15 +4040,42 @@ Credits  : ${data.credits_balance} 3D Episodes`;
                 clusterBadge.textContent = `${pool.cluster_tokens_remaining.toLocaleString()} / ${pool.cluster_tokens_max?.toLocaleString() || '6,000'} (${pool.cluster_scenes_remaining || 0} scenes)`;
             }
 
+            if (document.body.classList.contains('admin-workspace') && pool.cluster_tokens_remaining !== undefined) {
+                const remTokens = Number(pool.cluster_tokens_remaining || 0);
+                const maxTokens = Number(pool.cluster_tokens_max || 6000);
+                const remScenes = Number(pool.cluster_scenes_remaining ?? Math.floor(remTokens / 10));
+                const remEps = Number(pool.cluster_episodes_remaining ?? Math.floor(remTokens / 40));
+
+                const wsCreditsEl = document.getElementById('ws-credits-remaining');
+                if (wsCreditsEl) {
+                    wsCreditsEl.textContent = `${remTokens.toLocaleString()} tokens (${remEps} eps)`;
+                }
+                const badgeEl = document.getElementById('auth-status-badge');
+                if (badgeEl) {
+                    badgeEl.textContent = `${remTokens.toLocaleString()} Tokens`;
+                }
+                const creditPill = document.getElementById('console-credit-pill');
+                if (creditPill) {
+                    creditPill.textContent = `${remTokens.toLocaleString()} / ${maxTokens.toLocaleString()} Flow Tokens`;
+                }
+                const profCreditsEl = document.getElementById('profile-credits-line');
+                if (profCreditsEl) {
+                    profCreditsEl.textContent = `Cluster Pool: ${remTokens.toLocaleString()} / ${maxTokens.toLocaleString()} tokens (${remEps} episodes · ${remScenes} scenes)`;
+                }
+            }
+
             const grid = document.getElementById('worker-pool-grid');
             if (!grid) return;
             grid.innerHTML = pool.workers.map((w, i) => {
                 const color = w.status === 'READY' ? 'var(--emerald)' : (w.status === 'RENDERING' ? 'var(--cerulean-bright)' : 'var(--danger)');
                 const pct = w.tokens_percent ?? 100;
-                const tokens = (w.tokens_remaining ?? 1000).toLocaleString();
-                const total = (w.tokens_total ?? 1000).toLocaleString();
+                const rawTokens = w.tokens_remaining ?? 1000;
+                const rawTotal = w.tokens_total ?? 1000;
+                const tokens = rawTokens.toLocaleString();
+                const total = rawTotal.toLocaleString();
                 const barColor = pct > 40 ? 'var(--emerald)' : (pct > 15 ? 'var(--cerulean-bright)' : 'var(--rose)');
                 const shortRole = (w.role || '').split('·')[0].trim();
+                const accKey = w.account_id || w.account || `account_${i + 1}`;
                 return `
                     <div class="node-card surface-card">
                         <div class="node-top">
@@ -3756,13 +4089,48 @@ Credits  : ${data.credits_balance} 3D Episodes`;
                         <div style="height:4px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;margin-bottom:0.35rem;">
                             <div style="width:${pct}%;height:100%;background:${barColor};transition:width 0.4s ease;"></div>
                         </div>
-                        <div class="node-sub" style="display:flex;justify-content:space-between;align-items:center;color:var(--text-secondary);font-size:0.7rem;">
+                        <div class="node-sub" style="display:flex;justify-content:space-between;align-items:center;color:var(--text-secondary);font-size:0.7rem;gap:0.35rem;">
                             <span>${shortRole}</span>
                             <span style="color:var(--cerulean-bright);font-weight:600;">${pct}%</span>
+                        </div>
+                        <div class="admin-only" style="margin-top:0.45rem;">
+                            <button type="button" class="btn-ghost" style="width:100%;height:24px;font-size:0.68rem;" onclick="promptSetNodeTokens('${accKey}', ${rawTokens}, ${rawTotal})">
+                                Set Tokens
+                            </button>
                         </div>
                     </div>
                 `;
             }).join('');
+        }
+
+        async function promptSetNodeTokens(accountName, currentTokens, totalTokens) {
+            const raw = prompt(`Set remaining Google Flow tokens for ${accountName}:`, String(currentTokens ?? 1000));
+            if (raw === null) return;
+            const parsed = parseInt(raw.trim(), 10);
+            if (isNaN(parsed) || parsed < 0) {
+                showToast('Please enter a valid non-negative token count.');
+                return;
+            }
+            try {
+                const res = await fetch('/api/pool/set-tokens', {
+                    method: 'POST',
+                    headers: buildAuthHeaders(),
+                    body: JSON.stringify({
+                        account_name: accountName,
+                        tokens_remaining: parsed,
+                        tokens_total: totalTokens || 1000
+                    })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok) {
+                    if (data.telemetry) renderWorkerPool(data.telemetry);
+                    showToast(`Calibrated ${accountName} to ${parsed.toLocaleString()} tokens.`);
+                } else {
+                    showToast(data.detail || 'Could not update node tokens.');
+                }
+            } catch (err) {
+                showToast(`Network error calibrating tokens: ${err.message}`);
+            }
         }
 
         function selectStudioChannel(chId, btnEl) {
@@ -4000,15 +4368,28 @@ Credits  : ${data.credits_balance} 3D Episodes`;
 
             const form = document.createElement('div');
             form.className = 'checkout-email-form';
-            form.style.cssText = 'margin-top:0.75rem;';
+            form.style.cssText = 'margin-top:0.75rem;display:flex;flex-direction:column;gap:0.55rem;';
             form.innerHTML = `
-                <label class="field-label" style="margin-bottom:0.4rem;display:block;">Your Email</label>
-                <input type="email" class="clean-input" placeholder="you@example.com" id="checkout-email-${planKey}" required>
-                <button type="button" class="btn btn-primary" style="width:100%;margin-top:0.75rem;"
+                <div>
+                    <label class="field-label" style="margin-bottom:0.35rem;display:block;">Your Email</label>
+                    <input type="email" class="clean-input" placeholder="you@example.com" id="checkout-email-${planKey}" required>
+                </div>
+                <div>
+                    <label class="field-label" style="margin-bottom:0.35rem;display:block;">WhatsApp Number (Optional)</label>
+                    <input type="tel" class="clean-input" placeholder="+92 300 1234567 or +1 555 0199" id="checkout-wa-${planKey}">
+                </div>
+                <div>
+                    <label class="field-label" style="margin-bottom:0.35rem;display:block;">Payment Method</label>
+                    <select class="clean-select" id="checkout-pay-${planKey}">
+                        <option value="whatsapp_concierge">WhatsApp Concierge / Bank Transfer</option>
+                        <option value="card_payment_link">Card Payment Link</option>
+                    </select>
+                </div>
+                <button type="button" class="btn btn-primary" style="width:100%;margin-top:0.25rem;"
                         onclick="submitPlanPurchase('${planKey}', '${planName}')">
-                    <span>Purchase ${planName}</span>
+                    <span>Request ${planName} Activation</span>
                 </button>
-                <button type="button" style="width:100%;margin-top:0.4rem;background:none;border:none;color:var(--text-muted);font-size:0.8rem;cursor:pointer;font-family:inherit;"
+                <button type="button" style="width:100%;margin-top:0.15rem;background:none;border:none;color:var(--text-muted);font-size:0.8rem;cursor:pointer;font-family:inherit;"
                         onclick="cancelPlanPurchase('${planKey}')">
                     Cancel
                 </button>
@@ -4016,21 +4397,57 @@ Credits  : ${data.credits_balance} 3D Episodes`;
             btn.replaceWith(form);
         }
 
-        function submitPlanPurchase(planKey, planName) {
+        async function submitPlanPurchase(planKey, planName) {
             const emailInput = document.getElementById(`checkout-email-${planKey}`);
+            const waInput = document.getElementById(`checkout-wa-${planKey}`);
+            const paySelect = document.getElementById(`checkout-pay-${planKey}`);
             const email = emailInput?.value?.trim();
+            const whatsapp = waInput?.value?.trim() || '';
+            const paymentMethod = paySelect?.value || 'whatsapp_concierge';
             if (!email || !email.includes('@')) {
                 showToast('Please enter a valid email address.');
                 return;
             }
             const form = emailInput.closest('.checkout-email-form');
+            const normalizedTier = planKey === 'starter' ? 'both_starter' : (planKey === 'daily' ? 'both_daily' : planKey);
+
+            try {
+                await fetch('/api/checkout/lead', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email,
+                        whatsapp,
+                        plan_tier: normalizedTier,
+                        payment_method: paymentMethod
+                    })
+                });
+            } catch (e) {
+                console.warn('Checkout lead capture notice:', e);
+            }
+
+            const subjectEnc = encodeURIComponent(`VoxFlow Studio Activation — ${planName} (${email})`);
+            const bodyEnc = encodeURIComponent(`Hi Ammar,\n\nI just requested ${planName} (${normalizedTier}) on VoxFlow Studio.\nEmail: ${email}\nWhatsApp: ${whatsapp || 'Not provided'}\nPayment Preference: ${paymentMethod}\n\nPlease share activation details!`);
+            const safeEmail = email.replace(/'/g, "\\'");
+
             form.innerHTML = `
-                <div style="text-align:center;padding:1rem 0;">
-                    <div style="font-size:1.4rem;margin-bottom:0.5rem;color:var(--cerulean-bright);">&#10003;</div>
-                    <div style="font-weight:600;margin-bottom:0.4rem;">Thank you!</div>
-                    <p style="font-size:0.84rem;color:var(--text-secondary);line-height:1.5;">
-                        Your credentials for <strong>${planName}</strong> will be sent to <strong>${email}</strong> via email once we confirm your payment.
+                <div style="text-align:center;padding:0.9rem 0.25rem;">
+                    <div style="font-size:1.35rem;margin-bottom:0.4rem;color:var(--emerald);">&#10003;</div>
+                    <div style="font-weight:700;margin-bottom:0.35rem;">Request Logged for ${planName}</div>
+                    <p style="font-size:0.8rem;color:var(--text-secondary);line-height:1.5;margin-bottom:0.85rem;">
+                        We logged your request for <strong>${email}</strong>. Activate your credits immediately via concierge or test the 3D Sandbox now:
                     </p>
+                    <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                        <a href="mailto:ammar.akbar2002@gmail.com?subject=${subjectEnc}&amp;body=${bodyEnc}"
+                           target="_blank" rel="noopener"
+                           class="btn btn-primary" style="width:100%;text-decoration:none;">
+                            <span>Instant Activation via WhatsApp →</span>
+                        </a>
+                        <button type="button" class="btn btn-secondary" style="width:100%;"
+                                onclick="openAuthModalForTrial('${safeEmail}')">
+                            <span>Try Free Sandbox Now</span>
+                        </button>
+                    </div>
                 </div>
             `;
         }
@@ -4159,20 +4576,77 @@ Credits  : ${data.credits_balance} 3D Episodes`;
                     }).join('');
                 }
 
-                const serEl = document.getElementById('series-list-container');
-                const series = (serData.series || []).slice(0, 6);
-                if (!series.length) {
-                    serEl.innerHTML = `<div class="item-row-sub">No recurring series saved yet.</div>`;
-                } else {
-                    serEl.innerHTML = series.map(s => `
-                        <div class="item-row-card" style="padding:0.7rem 0.9rem;display:flex;justify-content:space-between;align-items:center;">
-                            <span style="font-size:0.84rem;"><strong>${s.name}</strong> · ${s.channel.replace('_', ' ')} (${s.language_tier.toUpperCase()})</span>
-                            <span style="font-family:var(--font-mono);font-size:0.74rem;color:var(--cerulean-bright);">$${s.price_usd}/mo</span>
-                        </div>
-                    `).join('');
-                }
+                renderSeriesList(serData.series || []);
             } catch (e) {
                 console.warn('Telemetry refresh notice:', e);
+            }
+        }
+
+        function renderSeriesList(seriesList) {
+            const serEl = document.getElementById('series-list-container');
+            if (!serEl) return;
+            const series = (seriesList || []).slice(0, 6);
+            if (!series.length) {
+                serEl.innerHTML = `<div class="item-row-sub">No recurring series saved yet.</div>`;
+                return;
+            }
+            serEl.innerHTML = series.map(s => {
+                const isPaused = s.status === 'paused';
+                const nextStatus = isPaused ? 'active' : 'paused';
+                const statusBadgeColor = isPaused ? 'var(--text-muted)' : 'var(--emerald)';
+                return `
+                    <div class="item-row-card" style="padding:0.75rem 0.9rem;display:flex;justify-content:space-between;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+                        <div>
+                            <div style="font-size:0.84rem;">
+                                <strong>${s.name}</strong> · ${s.channel.replace('_', ' ')} (${(s.language_tier || 'both').toUpperCase()})
+                            </div>
+                            <div style="font-family:var(--font-mono);font-size:0.7rem;color:${statusBadgeColor};margin-top:0.15rem;">
+                                ${(s.status || 'active').toUpperCase()} · $${s.price_usd || 0}/mo
+                            </div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:0.4rem;">
+                            <button type="button" class="btn-ghost" style="height:24px;padding:0 0.55rem;font-size:0.7rem;"
+                                    onclick="toggleSeriesStatus('${s.id}', '${nextStatus}')">
+                                ${isPaused ? 'Resume' : 'Pause'}
+                            </button>
+                            <button type="button" class="btn-ghost" style="height:24px;padding:0 0.55rem;font-size:0.7rem;color:var(--danger);"
+                                    onclick="deleteSavedSeries('${s.id}')">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function toggleSeriesStatus(seriesId, nextStatus) {
+            if (!seriesId) return;
+            const res = await fetch(`/api/series/${encodeURIComponent(seriesId)}`, {
+                method: 'PATCH',
+                headers: buildAuthHeaders(),
+                body: JSON.stringify({ status: nextStatus })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok) {
+                showToast(`Series ${nextStatus === 'paused' ? 'paused' : 'resumed'}.`);
+                await refreshJobsAndSeries();
+            } else {
+                showToast(data.detail || 'Could not update series status.');
+            }
+        }
+
+        async function deleteSavedSeries(seriesId) {
+            if (!seriesId) return;
+            const res = await fetch(`/api/series/${encodeURIComponent(seriesId)}`, {
+                method: 'DELETE',
+                headers: buildAuthHeaders()
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok) {
+                showToast('Recurring series deleted.');
+                await refreshJobsAndSeries();
+            } else {
+                showToast(data.detail || 'Could not delete series.');
             }
         }
 
@@ -4210,6 +4684,8 @@ Credits  : ${data.credits_balance} 3D Episodes`;
                 return;
             }
             grid.innerHTML = vaultEpisodes.map((pair, idx) => {
+                const defaultLang = pair.english ? 'english' : 'urdu';
+                vaultCardActiveLang[idx] = defaultLang;
                 const defaultStream = pair.english || pair.urdu;
                 const hasBoth = Boolean(pair.english && pair.urdu);
                 return `
@@ -4228,7 +4704,17 @@ Credits  : ${data.credits_balance} 3D Episodes`;
                             </div>
                         </div>
                         <div class="vault-title" id="vtitle-${idx}">${defaultStream.title}</div>
-                        <div class="vault-tags">${defaultStream.hashtags || '#VoxFlowStudio'}</div>
+                        <div class="vault-tags" id="vtags-${idx}">${defaultStream.hashtags || '#VoxFlowStudio'}</div>
+                        <div style="display:flex;gap:0.45rem;margin-top:0.65rem;">
+                            <a id="vdl-${idx}" href="${defaultStream.video_url}" download target="_blank" rel="noopener"
+                               class="btn-ghost" style="flex:1;text-decoration:none;font-size:0.72rem;">
+                                Download .MP4
+                            </a>
+                            <button type="button" id="vcopy-${idx}" class="btn-ghost" style="flex:1;font-size:0.72rem;"
+                                    onclick="copyVaultCardMeta(${idx})">
+                                Copy Tags &amp; Caption
+                            </button>
+                        </div>
                         <div style="font-family:var(--font-mono);font-size:0.68rem;color:${hasBoth ? 'var(--cerulean-bright)' : 'var(--text-muted)'};margin-top:0.55rem;">
                             ${hasBoth ? 'Dual-Stream Pair (EN + UR)' : 'Single-Stream Master'}
                         </div>
@@ -4258,22 +4744,44 @@ Credits  : ${data.credits_balance} 3D Episodes`;
         function switchVaultCardLang(idx, lang) {
             const pair = vaultEpisodes[idx];
             if (!pair || !pair[lang]) return;
+            vaultCardActiveLang[idx] = lang;
+            const stream = pair[lang];
             const vid = document.getElementById(`vault-vid-${idx}`);
             const badge = document.getElementById(`vault-play-badge-${idx}`);
             const t = vid.currentTime || 0;
-            vid.dataset.src = pair[lang].video_url;
-            if (pair[lang].thumb_url) vid.poster = pair[lang].thumb_url;
-            vid.src = pair[lang].video_url;
+            vid.dataset.src = stream.video_url;
+            if (stream.thumb_url) vid.poster = stream.thumb_url;
+            vid.src = stream.video_url;
             vid.controls = true;
             if (badge) badge.style.display = 'none';
             vid.currentTime = t;
             vid.play().catch(() => {});
-            document.getElementById(`vtitle-${idx}`).textContent = pair[lang].title;
+            document.getElementById(`vtitle-${idx}`).textContent = stream.title;
+            const tagsEl = document.getElementById(`vtags-${idx}`);
+            if (tagsEl) tagsEl.textContent = stream.hashtags || '#VoxFlowStudio';
+            const dlEl = document.getElementById(`vdl-${idx}`);
+            if (dlEl) dlEl.href = stream.video_url;
 
             const btnEn = document.getElementById(`vbtn-en-${idx}`);
             const btnUr = document.getElementById(`vbtn-ur-${idx}`);
             if (btnEn) btnEn.className = 'stream-pill ' + (lang === 'english' ? 'active-en' : '');
             if (btnUr) btnUr.className = 'stream-pill ' + (lang === 'urdu' ? 'active-ur' : '');
+        }
+
+        function copyVaultCardMeta(idx) {
+            const pair = vaultEpisodes[idx];
+            if (!pair) return;
+            const activeLang = vaultCardActiveLang[idx] || (pair.english ? 'english' : 'urdu');
+            const stream = pair[activeLang] || pair.english || pair.urdu;
+            if (!stream) return;
+            const captionPart = (stream.caption || stream.title || '').trim();
+            const tagsPart = (stream.hashtags || '#VoxFlowStudio').trim();
+            const combined = `${captionPart} ${tagsPart}`.trim();
+            navigator.clipboard.writeText(combined).then(() => {
+                showToast('Copied caption & hashtags to clipboard!');
+            }).catch(() => {
+                showToast(combined);
+            });
         }
 
         window.addEventListener('DOMContentLoaded', bootApp);

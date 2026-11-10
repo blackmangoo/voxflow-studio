@@ -29,15 +29,22 @@ from saas_store import (
     PRICING_PLANS,
     VISUAL_STYLE_CATALOG,
     calculate_pricing_comparison,
+    create_checkout_lead,
     create_job_record,
     create_series_record,
+    delete_checkout_lead,
+    delete_series_record,
     discover_rendered_vault,
     get_account_pool_telemetry,
     init_db,
+    init_saas_db,
+    list_checkout_leads,
     list_job_records,
     list_series_records,
+    normalize_plan_tier,
     reconcile_stale_jobs,
-     update_job_record,
+    update_job_record,
+    update_series_status_record,
     upload_video_to_supabase_cdn,
 )
 
@@ -62,11 +69,11 @@ _allowed_origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
-    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "X-Studio-Key"],
 )
 
-init_db()
+init_saas_db()
 reconcile_stale_jobs()
 
 STUDIO_ADMIN_KEY = os.environ.get("STUDIO_ADMIN_KEY") or os.environ.get("AGENT_API_KEY") or ""
@@ -191,13 +198,21 @@ def _verify_supabase_user_token(request: Request) -> Optional[Dict[str, Any]]:
         )
         if prof_resp.status_code == 200 and prof_resp.json():
             prof = prof_resp.json()[0]
+            role_val = prof.get("role", "user")
+            if role_val == "admin":
+                pool_tel = get_account_pool_telemetry()
+                real_tokens = int(pool_tel.get("cluster_tokens_remaining", 0))
+                real_episodes = int(pool_tel.get("cluster_episodes_remaining", real_tokens // 40))
+            else:
+                real_tokens = int(prof.get("credits_balance", 0))
+                real_episodes = int(prof.get("sandbox_runs_remaining", 5))
             res_obj = {
                 "id": user_id,
                 "email": email,
-                "role": prof.get("role", "user"),
+                "role": role_val,
                 "plan_tier": prof.get("plan_tier", "free"),
-                "credits_balance": int(prof.get("credits_balance", 0)),
-                "sandbox_runs_remaining": int(prof.get("sandbox_runs_remaining", 5)),
+                "credits_balance": real_tokens,
+                "sandbox_runs_remaining": real_episodes,
                 "wa_agent_token": prof.get("wa_agent_token", ""),
                 "wa_user_id": prof.get("wa_user_id", ""),
                 "wa_verified": bool(prof.get("wa_verified", False)),
@@ -206,19 +221,29 @@ def _verify_supabase_user_token(request: Request) -> Optional[Dict[str, Any]]:
             _jwt_profile_cache[jwt_token] = (now, res_obj)
             return res_obj
         is_owner = email in ("ammar.akbar2002@gmail.com", "ammar.akbar2069@gmail.com")
+        pool_tel = get_account_pool_telemetry() if is_owner else {}
+        owner_tokens = int(pool_tel.get("cluster_tokens_remaining", 0))
+        owner_episodes = int(pool_tel.get("cluster_episodes_remaining", owner_tokens // 40))
         res_obj = {
             "id": user_id,
             "email": email,
             "role": "admin" if is_owner else "user",
             "plan_tier": "both_daily" if is_owner else "free",
-            "credits_balance": 9999 if is_owner else 0,
-            "sandbox_runs_remaining": 9999 if is_owner else 5,
+            "credits_balance": owner_tokens if is_owner else 0,
+            "sandbox_runs_remaining": owner_episodes if is_owner else 5,
             "jwt": jwt_token,
         }
         _jwt_profile_cache[jwt_token] = (now, res_obj)
         return res_obj
     except Exception:
         return None
+
+
+def _extract_request_auth(request: Request) -> Dict[str, Any]:
+    if _is_authorized_studio_key(request):
+        return {"role": "admin", "mode": "studio_key"}
+    sb_user = _verify_supabase_user_token(request)
+    return sb_user or {}
 
 
 def _resolve_caller_authorization(request: Request) -> Dict[str, Any]:
@@ -310,9 +335,35 @@ class ProvisionCustomerRequest(BaseModel):
     full_name: str = Field("", max_length=80, description="Customer or channel name")
     plan_tier: str = Field(
         "both_daily",
-        pattern="^(urdu_starter|urdu_daily|english_starter|english_daily|both_starter|both_daily)$",
+        pattern="^(starter|daily|urdu_starter|urdu_daily|english_starter|english_daily|both_starter|both_daily)$",
     )
     credits_balance: Optional[int] = Field(None, ge=0, le=10000, description="Override credits (defaults to plan episodes)")
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str = Field(..., min_length=5, max_length=120, description="Registered account email")
+    redirect_to: Optional[str] = Field(None, max_length=300, description="Optional password reset redirect URL")
+
+
+class TrialSignupRequest(BaseModel):
+    email: str = Field(..., min_length=5, max_length=120, description="New creator email address")
+    password: str = Field(..., min_length=6, max_length=100, description="Account password")
+    full_name: str = Field("", max_length=80, description="Creator or channel name")
+
+
+class CheckoutLeadRequest(BaseModel):
+    email: str = Field(..., min_length=5, max_length=120, description="Buyer email address")
+    whatsapp: str = Field("", max_length=60, description="Buyer WhatsApp number")
+    plan_tier: str = Field(
+        "both_daily",
+        pattern="^(starter|daily|urdu_starter|urdu_daily|english_starter|english_daily|both_starter|both_daily)$",
+    )
+    payment_method: str = Field("whatsapp_concierge", max_length=60)
+    notes: str = Field("", max_length=600)
+
+
+class SeriesStatusUpdateRequest(BaseModel):
+    status: Optional[str] = Field(None, pattern="^(active|paused)$")
 
 
 class WhatsAppTestRequest(BaseModel):
@@ -622,13 +673,189 @@ async def get_public_config():
 
 
 @app.get("/api/catalog", tags=["SaaS"])
-async def get_saas_catalog():
+async def get_saas_catalog(request: Request):
+    is_admin = _is_authorized_studio_key(request) or _extract_request_auth(request).get("role") == "admin"
     return {
         "channels": CHANNEL_CATALOG,
         "visual_styles": VISUAL_STYLE_CATALOG,
         "plans": list(PRICING_PLANS.values()),
-        "pool": get_account_pool_telemetry(),
+        "pool": get_account_pool_telemetry() if is_admin else [],
     }
+
+
+@app.post("/api/auth/forgot-password", tags=["Auth"])
+async def api_forgot_password(req: ForgotPasswordRequest):
+    """
+    Triggers a Supabase Auth password recovery email for the user.
+    """
+    clean_email = req.email.strip().lower()
+    if "@" not in clean_email or "." not in clean_email.split("@")[-1]:
+        raise HTTPException(status_code=400, detail="Please enter a valid email address.")
+    if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+        raise HTTPException(status_code=500, detail="Supabase authentication is not configured.")
+
+    recover_url = f"{SUPABASE_URL}/auth/v1/recover"
+    if req.redirect_to:
+        enc_redir = urllib.parse.quote(req.redirect_to.strip(), safe="")
+        recover_url = f"{recover_url}?redirect_to={enc_redir}"
+
+    def _recover_sync():
+        return _get_http_session().post(
+            recover_url,
+            headers={
+                "apikey": SUPABASE_ANON_KEY,
+                "Content-Type": "application/json",
+            },
+            json={"email": clean_email},
+            timeout=10,
+        )
+
+    resp = await asyncio.to_thread(_recover_sync)
+    if resp.status_code >= 400:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Password recovery request failed: {resp.text[:180]}",
+        )
+    return {
+        "status": "ok",
+        "message": "If an account exists for that email, a password reset link has been sent.",
+    }
+
+
+@app.post("/api/auth/trial-signup", tags=["Auth"])
+async def api_trial_signup(req: TrialSignupRequest):
+    """
+    Self-serve Free Trial Signup (Debate 3 Option B):
+    Creates a confirmed user account with role='user', plan_tier='both_starter',
+    credits_balance=0, and sandbox_runs_remaining=3 so new creators can immediately
+    sign in, test the AI Director Storyboard Preview and 3 Sandbox simulations,
+    and hit the upgrade gate when attempting a Live 3D render.
+    """
+    clean_email = req.email.strip().lower()
+    if "@" not in clean_email or "." not in clean_email.split("@")[-1]:
+        raise HTTPException(status_code=400, detail="Please enter a valid email address.")
+    if len(req.password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters.")
+    if not SUPABASE_URL or not (SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY):
+        raise HTTPException(status_code=500, detail="Supabase authentication is not configured.")
+
+    clean_name = req.full_name.strip() or clean_email.split("@")[0]
+
+    def _signup_sync() -> Dict[str, Any]:
+        sess = _get_http_session()
+        encoded_email = urllib.parse.quote(clean_email, safe="")
+
+        if SUPABASE_SERVICE_ROLE_KEY:
+            srk_headers = {
+                "apikey": SUPABASE_SERVICE_ROLE_KEY,
+                "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                "Content-Type": "application/json",
+            }
+            prof_check = sess.get(
+                f"{SUPABASE_URL}/rest/v1/profiles?email=eq.{encoded_email}&select=id,email",
+                headers=srk_headers,
+                timeout=10,
+            )
+            if prof_check.status_code == 200 and prof_check.json():
+                raise HTTPException(
+                    status_code=400,
+                    detail="An account with this email already exists. Please sign in or use Forgot Password.",
+                )
+
+            create_res = sess.post(
+                f"{SUPABASE_URL}/auth/v1/admin/users",
+                headers=srk_headers,
+                json={
+                    "email": clean_email,
+                    "password": req.password,
+                    "email_confirm": True,
+                    "user_metadata": {"full_name": clean_name},
+                },
+                timeout=10,
+            )
+            if create_res.status_code not in (200, 201):
+                err_lower = create_res.text.lower()
+                if "already" in err_lower or "exists" in err_lower or "registered" in err_lower or create_res.status_code == 422:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="An account with this email already exists. Please sign in or use Forgot Password.",
+                    )
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Could not create trial account: {create_res.text[:180]}",
+                )
+
+            user_id = create_res.json().get("id")
+            is_owner = clean_email in ("ammar.akbar2002@gmail.com", "ammar.akbar2069@gmail.com")
+            pool_tel = get_account_pool_telemetry() if is_owner else {}
+            owner_tokens = int(pool_tel.get("cluster_tokens_remaining", 0))
+            owner_episodes = int(pool_tel.get("cluster_episodes_remaining", owner_tokens // 40))
+            upsert_res = sess.post(
+                f"{SUPABASE_URL}/rest/v1/profiles",
+                headers={**srk_headers, "Prefer": "resolution=merge-duplicates,return=representation"},
+                json={
+                    "id": user_id,
+                    "email": clean_email,
+                    "full_name": clean_name,
+                    "role": "admin" if is_owner else "user",
+                    "plan_tier": "both_daily" if is_owner else "both_starter",
+                    "credits_balance": owner_tokens if is_owner else 0,
+                    "sandbox_runs_remaining": owner_episodes if is_owner else 3,
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                },
+                timeout=10,
+            )
+            if upsert_res.status_code >= 400:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Trial profile creation failed: {upsert_res.text[:180]}",
+                )
+            return {
+                "status": "created",
+                "user_id": user_id,
+                "email": clean_email,
+                "full_name": clean_name,
+                "role": "admin" if is_owner else "user",
+                "plan_tier": "both_daily" if is_owner else "both_starter",
+                "credits_balance": owner_tokens if is_owner else 0,
+                "sandbox_runs_remaining": owner_episodes if is_owner else 3,
+                "message": "Free trial account created! Sign in to test Storyboard Preview and 3 Sandbox renders.",
+            }
+
+        # Fallback to public signup endpoint if service role key is absent
+        signup_res = sess.post(
+            f"{SUPABASE_URL}/auth/v1/signup",
+            headers={"apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json"},
+            json={
+                "email": clean_email,
+                "password": req.password,
+                "data": {"full_name": clean_name},
+            },
+            timeout=10,
+        )
+        if signup_res.status_code >= 400:
+            err_lower = signup_res.text.lower()
+            if "already" in err_lower or "exists" in err_lower or "registered" in err_lower:
+                raise HTTPException(
+                    status_code=400,
+                    detail="An account with this email already exists. Please sign in or use Forgot Password.",
+                )
+            raise HTTPException(status_code=400, detail=f"Signup failed: {signup_res.text[:180]}")
+        body = signup_res.json()
+        user_obj = body.get("user") or body
+        return {
+            "status": "created",
+            "user_id": user_obj.get("id", ""),
+            "email": clean_email,
+            "full_name": clean_name,
+            "role": "user",
+            "plan_tier": "both_starter",
+            "credits_balance": 0,
+            "sandbox_runs_remaining": 3,
+            "message": "Free trial account created! Sign in to test Storyboard Preview and 3 Sandbox renders.",
+        }
+
+    return await asyncio.to_thread(_signup_sync)
 
 
 @app.post("/api/director/preview", tags=["AI Director"])
@@ -886,13 +1113,14 @@ async def api_create_series(req: SeriesCreateRequest, request: Request):
         )
         if sb_user and SUPABASE_URL and SUPABASE_ANON_KEY:
             try:
-                await asyncio.to_thread(
+                sb_post = await asyncio.to_thread(
                     lambda: _get_http_session().post(
                         f"{SUPABASE_URL}/rest/v1/series",
                         headers={
                             "apikey": SUPABASE_ANON_KEY,
                             "Authorization": f"Bearer {sb_user['jwt']}",
                             "Content-Type": "application/json",
+                            "Prefer": "return=representation",
                         },
                         json={
                             "user_id": sb_user["id"],
@@ -909,11 +1137,155 @@ async def api_create_series(req: SeriesCreateRequest, request: Request):
                         timeout=6,
                     )
                 )
+                if sb_post.status_code in (200, 201) and sb_post.json():
+                    record["supabase_id"] = sb_post.json()[0].get("id")
             except Exception:
                 pass
         return record
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.patch("/api/series/{series_id}", tags=["SaaS"])
+async def api_update_series_status(
+    series_id: str,
+    request: Request,
+    req: Optional[SeriesStatusUpdateRequest] = None,
+):
+    """
+    Toggles or sets a recurring series status between 'active' and 'paused'
+    in both SQLite and Supabase public.series (scoped to the user or admin).
+    """
+    auth = _resolve_caller_authorization(request)
+    if not auth["is_authenticated"]:
+        raise HTTPException(status_code=401, detail="Sign in required to update a saved series.")
+
+    sb_user = auth.get("user")
+    is_admin = bool(auth["mode"] == "studio_key" or (sb_user and sb_user.get("role") == "admin"))
+    uid = sb_user["id"] if sb_user else "admin"
+    requested_status = req.status if (req and req.status in ("active", "paused")) else None
+
+    local_updated = update_series_status_record(
+        series_id=series_id,
+        status=requested_status,
+        user_id=uid,
+        is_admin=is_admin,
+    )
+    resolved_status = local_updated["status"] if local_updated else (requested_status or "paused")
+    sb_updated_row = None
+
+    if SUPABASE_URL and (SUPABASE_SERVICE_ROLE_KEY or (sb_user and SUPABASE_ANON_KEY)):
+        try:
+            hdrs = (
+                {
+                    "apikey": SUPABASE_SERVICE_ROLE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                    "Content-Type": "application/json",
+                    "Prefer": "return=representation",
+                }
+                if SUPABASE_SERVICE_ROLE_KEY
+                else {
+                    "apikey": SUPABASE_ANON_KEY,
+                    "Authorization": f"Bearer {sb_user['jwt']}",
+                    "Content-Type": "application/json",
+                    "Prefer": "return=representation",
+                }
+            )
+            enc_sid = urllib.parse.quote(str(series_id).strip(), safe="")
+            q_filter = f"id=eq.{enc_sid}"
+            if sb_user and not is_admin:
+                enc_uid = urllib.parse.quote(str(sb_user["id"]), safe="")
+                q_filter += f"&user_id=eq.{enc_uid}"
+
+            if not requested_status and not local_updated:
+                cur_res = await asyncio.to_thread(
+                    lambda: _get_http_session().get(
+                        f"{SUPABASE_URL}/rest/v1/series?{q_filter}&select=id,status",
+                        headers=hdrs,
+                        timeout=6,
+                    )
+                )
+                if cur_res.status_code == 200 and cur_res.json():
+                    cur_st = cur_res.json()[0].get("status", "active")
+                    resolved_status = "paused" if cur_st == "active" else "active"
+
+            patch_res = await asyncio.to_thread(
+                lambda: _get_http_session().patch(
+                    f"{SUPABASE_URL}/rest/v1/series?{q_filter}",
+                    headers=hdrs,
+                    json={"status": resolved_status},
+                    timeout=6,
+                )
+            )
+            if patch_res.status_code == 200 and patch_res.json():
+                sb_updated_row = patch_res.json()[0]
+        except Exception:
+            pass
+
+    if not local_updated and not sb_updated_row:
+        raise HTTPException(status_code=404, detail=f"Series '{series_id}' not found.")
+
+    return {
+        "status": resolved_status,
+        "series_id": series_id,
+        "series": sb_updated_row or local_updated,
+    }
+
+
+@app.delete("/api/series/{series_id}", tags=["SaaS"])
+async def api_delete_series(series_id: str, request: Request):
+    """
+    Deletes a saved recurring series from both SQLite and Supabase public.series
+    (scoped to the authenticated owner or admin).
+    """
+    auth = _resolve_caller_authorization(request)
+    if not auth["is_authenticated"]:
+        raise HTTPException(status_code=401, detail="Sign in required to delete a saved series.")
+
+    sb_user = auth.get("user")
+    is_admin = bool(auth["mode"] == "studio_key" or (sb_user and sb_user.get("role") == "admin"))
+    uid = sb_user["id"] if sb_user else "admin"
+
+    deleted_local = delete_series_record(series_id=series_id, user_id=uid, is_admin=is_admin)
+    deleted_sb = False
+
+    if SUPABASE_URL and (SUPABASE_SERVICE_ROLE_KEY or (sb_user and SUPABASE_ANON_KEY)):
+        try:
+            hdrs = (
+                {
+                    "apikey": SUPABASE_SERVICE_ROLE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                    "Prefer": "return=representation",
+                }
+                if SUPABASE_SERVICE_ROLE_KEY
+                else {
+                    "apikey": SUPABASE_ANON_KEY,
+                    "Authorization": f"Bearer {sb_user['jwt']}",
+                    "Prefer": "return=representation",
+                }
+            )
+            enc_sid = urllib.parse.quote(str(series_id).strip(), safe="")
+            q_filter = f"id=eq.{enc_sid}"
+            if sb_user and not is_admin:
+                enc_uid = urllib.parse.quote(str(sb_user["id"]), safe="")
+                q_filter += f"&user_id=eq.{enc_uid}"
+
+            del_res = await asyncio.to_thread(
+                lambda: _get_http_session().delete(
+                    f"{SUPABASE_URL}/rest/v1/series?{q_filter}",
+                    headers=hdrs,
+                    timeout=6,
+                )
+            )
+            if del_res.status_code in (200, 204):
+                deleted_sb = True
+        except Exception:
+            pass
+
+    if not deleted_local and not deleted_sb:
+        raise HTTPException(status_code=404, detail=f"Series '{series_id}' not found.")
+
+    return {"status": "deleted", "series_id": series_id}
 
 
 @app.get("/api/jobs", tags=["SaaS"])
@@ -1272,6 +1644,139 @@ async def api_whatsapp_confirm(req: WhatsAppConfirmRequest, request: Request):
     }
 
 
+# ─── Hybrid Lead Capture & Concierge Checkout (Option C) ────────────────────
+
+@app.post("/api/checkout/lead", tags=["Checkout"])
+async def api_create_checkout_lead(req: CheckoutLeadRequest):
+    """
+    Public endpoint: validates and saves a checkout lead in SQLite (and attempts
+    optional insert into Supabase public.checkout_leads if present), returning the
+    created lead and studio concierge contact details.
+    """
+    clean_email = req.email.strip().lower()
+    if "@" not in clean_email or "." not in clean_email.split("@")[-1]:
+        raise HTTPException(status_code=400, detail="Please enter a valid email address.")
+
+    normalized_tier = normalize_plan_tier(req.plan_tier)
+    if normalized_tier not in PRICING_PLANS:
+        raise HTTPException(status_code=400, detail=f"Unknown plan_tier: {req.plan_tier}")
+
+    lead = create_checkout_lead(
+        email=clean_email,
+        whatsapp=req.whatsapp,
+        plan_tier=normalized_tier,
+        payment_method=req.payment_method,
+        notes=req.notes,
+        status="pending",
+    )
+
+    if SUPABASE_URL and (SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY):
+        try:
+            key = SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY
+            await asyncio.to_thread(
+                lambda: _get_http_session().post(
+                    f"{SUPABASE_URL}/rest/v1/checkout_leads",
+                    headers={
+                        "apikey": key,
+                        "Authorization": f"Bearer {key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "id": lead["id"],
+                        "email": lead["email"],
+                        "whatsapp": lead["whatsapp"],
+                        "plan_tier": lead["plan_tier"],
+                        "payment_method": lead["payment_method"],
+                        "notes": lead["notes"],
+                        "status": lead["status"],
+                        "created_at": lead["created_at"],
+                    },
+                    timeout=6,
+                )
+            )
+        except Exception:
+            pass
+
+    return {
+        "status": "ok",
+        "lead": lead,
+        "concierge": {
+            "whatsapp": "+923161402546",
+            "email": "ammar.akbar2002@gmail.com",
+            "message": "Checkout request logged! Complete payment with our studio concierge to activate live 3D render credits.",
+        },
+    }
+
+
+@app.get("/api/admin/leads", tags=["Admin"])
+async def api_list_checkout_leads(request: Request):
+    """Lists all captured checkout leads (Founder Admin only)."""
+    _require_founder_admin(request)
+    local_leads = list_checkout_leads(limit=100)
+    leads_by_id = {item["id"]: item for item in local_leads}
+
+    if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
+        try:
+            sb_res = await asyncio.to_thread(
+                lambda: _get_http_session().get(
+                    f"{SUPABASE_URL}/rest/v1/checkout_leads?select=*&order=created_at.desc&limit=100",
+                    headers={
+                        "apikey": SUPABASE_SERVICE_ROLE_KEY,
+                        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                    },
+                    timeout=8,
+                )
+            )
+            if sb_res.status_code == 200:
+                for row in sb_res.json():
+                    lid = str(row.get("id", ""))
+                    if lid and lid not in leads_by_id:
+                        plan = PRICING_PLANS.get(row.get("plan_tier", ""), {})
+                        row["plan_name"] = plan.get("name", row.get("plan_tier", ""))
+                        row["price_usd"] = plan.get("price_usd", 0)
+                        leads_by_id[lid] = row
+        except Exception:
+            pass
+
+    merged = sorted(
+        leads_by_id.values(),
+        key=lambda x: str(x.get("created_at", "")),
+        reverse=True,
+    )
+    return {"leads": merged}
+
+
+@app.delete("/api/admin/leads/{lead_id}", tags=["Admin"])
+async def api_delete_checkout_lead(lead_id: str, request: Request):
+    """Deletes/dismisses a checkout lead (Founder Admin only)."""
+    _require_founder_admin(request)
+    deleted_local = delete_checkout_lead(lead_id)
+    deleted_sb = False
+
+    if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
+        try:
+            enc_id = urllib.parse.quote(str(lead_id).strip(), safe="")
+            sb_del = await asyncio.to_thread(
+                lambda: _get_http_session().delete(
+                    f"{SUPABASE_URL}/rest/v1/checkout_leads?id=eq.{enc_id}",
+                    headers={
+                        "apikey": SUPABASE_SERVICE_ROLE_KEY,
+                        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                    },
+                    timeout=8,
+                )
+            )
+            if sb_del.status_code in (200, 204):
+                deleted_sb = True
+        except Exception:
+            pass
+
+    if not deleted_local and not deleted_sb:
+        raise HTTPException(status_code=404, detail=f"Lead '{lead_id}' not found.")
+
+    return {"status": "deleted", "lead_id": lead_id}
+
+
 # ─── Admin Customer Provisioning (Ammar / Founder Only) ─────────────────────
 
 def _require_founder_admin(request: Request) -> Dict[str, Any]:
@@ -1305,7 +1810,15 @@ async def api_list_customers(request: Request):
     resp = await asyncio.to_thread(_fetch_sync)
     if resp.status_code != 200:
         raise HTTPException(status_code=502, detail=f"Supabase query error: {resp.text[:200]}")
-    return {"customers": resp.json()}
+    customers = resp.json()
+    pool_tel = get_account_pool_telemetry()
+    live_admin_tokens = int(pool_tel.get("cluster_tokens_remaining", 0))
+    live_admin_episodes = int(pool_tel.get("cluster_episodes_remaining", live_admin_tokens // 40))
+    for c in customers:
+        if c.get("role") == "admin":
+            c["credits_balance"] = live_admin_tokens
+            c["sandbox_runs_remaining"] = live_admin_episodes
+    return {"customers": customers}
 
 
 @app.delete("/api/admin/customers/{user_id}", tags=["Admin"])
@@ -1343,7 +1856,8 @@ async def api_provision_customer(req: ProvisionCustomerRequest, request: Request
     if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
         raise HTTPException(status_code=500, detail="Supabase service role key not configured")
 
-    plan = PRICING_PLANS.get(req.plan_tier)
+    normalized_tier = normalize_plan_tier(req.plan_tier)
+    plan = PRICING_PLANS.get(normalized_tier)
     if not plan:
         raise HTTPException(status_code=400, detail=f"Unknown plan_tier: {req.plan_tier}")
 
@@ -1434,7 +1948,7 @@ async def api_provision_customer(req: ProvisionCustomerRequest, request: Request
                 "email": clean_email,
                 "full_name": clean_name,
                 "role": "admin" if is_owner else "user",
-                "plan_tier": req.plan_tier,
+                "plan_tier": normalized_tier,
                 "credits_balance": credits_to_grant,
                 "sandbox_runs_remaining": 50,
                 "updated_at": datetime.now(timezone.utc).isoformat(),
@@ -1452,7 +1966,7 @@ async def api_provision_customer(req: ProvisionCustomerRequest, request: Request
             "email": clean_email,
             "password": req.password,
             "full_name": clean_name,
-            "plan_tier": req.plan_tier,
+            "plan_tier": normalized_tier,
             "plan_name": plan["name"],
             "language_tier": plan["language_tier"],
             "credits_balance": credits_to_grant,

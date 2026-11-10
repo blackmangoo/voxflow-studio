@@ -124,6 +124,7 @@ class GeminiTTSPool:
         return False
 
     def generate_tts(self, voice_name: str, style: str, text: str, output_wav: Path) -> float:
+        prompt_text = f"Say in a {style.strip()} tone: {text}" if style and style.strip() else text
         while True:
             last_err = None
             for model_name in GEMINI_TTS_MODELS:
@@ -132,7 +133,7 @@ class GeminiTTSPool:
                         model=model_name,
                         contents=[{
                             "role": "user",
-                            "parts": [{"text": text}]
+                            "parts": [{"text": prompt_text}]
                         }],
                         config=types.GenerateContentConfig(
                             response_modalities=["AUDIO"],
@@ -270,10 +271,33 @@ class VoxStudioEngine:
 
             words = item["line"].split()
             if words:
-                ms_per_w = int((dur * 1000) / len(words))
-                for w_i, w in enumerate(words):
-                    w_start = cumulative_ms + (w_i * ms_per_w)
-                    all_words.append({"word": w, "speaker": spk_raw, "start_ms": w_start, "end_ms": w_start + ms_per_w})
+                line_dur_ms = int(dur * 1000)
+                weights = []
+                for w in words:
+                    clean_tail = w.rstrip("\"'”’)]}")
+                    pause_bonus = 0.0
+                    if clean_tail.endswith((".", "?", "!")):
+                        pause_bonus = 2.5
+                    elif clean_tail.endswith((",", ";", ":")):
+                        pause_bonus = 1.5
+                    weights.append(max(2.0, float(len(w)) + pause_bonus))
+
+                total_weight = sum(weights) or 1.0
+                running_weight = 0.0
+                for w_i, (w, weight) in enumerate(zip(words, weights)):
+                    w_start_rel = int(round(line_dur_ms * (running_weight / total_weight)))
+                    running_weight += weight
+                    w_end_rel = (
+                        line_dur_ms
+                        if w_i == len(words) - 1
+                        else int(round(line_dur_ms * (running_weight / total_weight)))
+                    )
+                    all_words.append({
+                        "word": w,
+                        "speaker": spk_raw,
+                        "start_ms": cumulative_ms + w_start_rel,
+                        "end_ms": cumulative_ms + max(w_start_rel + 1, w_end_rel),
+                    })
 
             cumulative_ms += int(dur * 1000) + 180
 

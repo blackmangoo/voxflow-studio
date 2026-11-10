@@ -21,8 +21,10 @@ class ElevenLabsEngine:
         api_key: Optional[str] = None,
         voice_id: str = DEFAULT_ELEVEN_VOICE
     ):
-        self.api_key = api_key or os.environ.get("ELEVENLABS_API_KEY", "sk_0c09bf61cf51987d33ce5bbe662792d2110fb6e5430d7f31")
+        self.api_key = (api_key or os.getenv("ELEVENLABS_API_KEY", "")).strip()
         self.voice_id = voice_id
+        if not self.api_key:
+            print("[ElevenLabsEngine] Warning: ELEVENLABS_API_KEY is not set; speech generation will fail until configured.")
 
     def _characters_to_words(
         self,
