@@ -1,12 +1,16 @@
 import asyncio
 import collections
+import hashlib
 import json
+import math
 import os
 import secrets
+import struct
 import sys
 import threading
 import time
 import urllib.parse
+import wave
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -24,6 +28,7 @@ if str(ROOT_DIR) not in sys.path:
 import config  # loads .env into os.environ
 from brain.multi_channel_director import MultiChannelDirector
 from config import OUTPUT_DIR
+from voice.voxstudio_engine import VOICE_CONFIGS, VoxStudioEngine
 from saas_store import (
     CHANNEL_CATALOG,
     PRICING_PLANS,
@@ -327,6 +332,13 @@ class GenerateEpisodeRequest(BaseModel):
     custom_prompt: str = Field("", max_length=1000, description="Custom user prompt / episode concept")
     visual_style: str = Field("pixar_3d", max_length=400, description="Visual style preset or custom style DNA")
     custom_scenes: Optional[List[ManualSceneItem]] = Field(None, description="Manual scene-by-scene overrides")
+
+
+class VoicePreviewRequest(BaseModel):
+    voice_id: str = Field("Charon", description="Voice persona: Charon, Kore, Puck, Fenrir, Aoede")
+    channel: str = Field("body_simulator")
+    lang: str = Field("english", pattern="^(english|urdu)$")
+    text: Optional[str] = Field(None, max_length=280)
 
 
 class ProvisionCustomerRequest(BaseModel):
@@ -932,6 +944,256 @@ async def api_director_preview(req: DirectorPreviewRequest, request: Request):
     }
 
 
+# ─── Voice Cast Catalog & Live Audio Preview ─────────────────────────────────
+
+CHANNEL_DEFAULT_VOICES: Dict[str, str] = {
+    "body_simulator": "Charon",
+    "xray_mechanics": "Fenrir",
+    "crazy_characters": "Puck",
+    "health_coach": "Kore",
+    "garage_guru": "Fenrir",
+    "code_classroom": "Aoede",
+}
+
+CHANNEL_SAMPLE_LINES: Dict[str, Dict[str, str]] = {
+    "body_simulator": {
+        "english": "Red alert in the bloodstream! Five hundred milligrams of raw caffeine just hit the stomach lining!",
+        "urdu": "Arrey Maalik! Raat ke do baje itni teekhi biryani kaun khata hai?! Stomach jal raha hai!",
+    },
+    "xray_mechanics": {
+        "english": "Inside the cylinder head at six thousand RPM, micro-fractures ignite a catastrophic thermal runaway.",
+        "urdu": "Radiator mein sadah paani daloge toh head gasket aise hi phatega, andar ka x-ray dekho!",
+    },
+    "crazy_characters": {
+        "english": "Wait a second! When the boiling oil hit the pan, Aalu jumped straight onto the kitchen counter!",
+        "urdu": "Oye Tamatar bhai! Kadhai garam ho gayi hai, aaj toh apni crispy fries banne wali hain!",
+    },
+    "health_coach": {
+        "english": "Eating soluble fiber ten minutes before carbohydrates slashes your post-meal glucose spike by forty percent.",
+        "urdu": "Khane se pehle sirf ek katori salad aapke blood sugar spike ko chaalis feesad tak kam kar deta hai.",
+    },
+    "garage_guru": {
+        "english": "Lock the rear differential before you hit that mud trench, or your axle bearings are toast.",
+        "urdu": "4x4 low-range lagao ustaad, warna iss keechad mein clutch plate dhuan chhor degi!",
+    },
+    "code_classroom": {
+        "english": "You allocated ten megabytes on the heap without a destructor? Congratulations, your server just leaked!",
+        "urdu": "Bina pointer samjhe AI se code copy karoge toh production server aise hi crash hoga!",
+    },
+}
+
+VOICE_PERSONA_SPECS: Dict[str, Dict[str, Any]] = {
+    "Charon": {
+        "voice_id": "Charon",
+        "id": "Charon",
+        "name": "Charon — Deep Documentary Baritone",
+        "gender": "Male",
+        "style": VOICE_CONFIGS["narrator"]["style"],
+        "style_urdu": VOICE_CONFIGS["farhan"]["style"],
+        "edge_voice_en": VOICE_CONFIGS["narrator"]["edge_voice"],
+        "edge_voice_ur": VOICE_CONFIGS["farhan"]["edge_voice"],
+        "rate": VOICE_CONFIGS["narrator"]["rate"],
+        "pitch": VOICE_CONFIGS["narrator"]["pitch"],
+        "characters": [k for k, v in VOICE_CONFIGS.items() if v.get("voice") == "Charon"],
+    },
+    "Kore": {
+        "voice_id": "Kore",
+        "id": "Kore",
+        "name": "Kore — Warm Empathetic Guide",
+        "gender": "Female",
+        "style": VOICE_CONFIGS["mehak"]["style"],
+        "style_urdu": VOICE_CONFIGS["mehak"]["style"],
+        "edge_voice_en": "en-US-AriaNeural",
+        "edge_voice_ur": VOICE_CONFIGS["mehak"]["edge_voice"],
+        "rate": VOICE_CONFIGS["mehak"]["rate"],
+        "pitch": VOICE_CONFIGS["mehak"]["pitch"],
+        "characters": [k for k, v in VOICE_CONFIGS.items() if v.get("voice") == "Kore"],
+    },
+    "Puck": {
+        "voice_id": "Puck",
+        "id": "Puck",
+        "name": "Puck — High-Energy Comedic Spark",
+        "gender": "Male",
+        "style": VOICE_CONFIGS["stomach"]["style"],
+        "style_urdu": VOICE_CONFIGS["aalu"]["style"],
+        "edge_voice_en": VOICE_CONFIGS["student"]["edge_voice"],
+        "edge_voice_ur": VOICE_CONFIGS["stomach"]["edge_voice"],
+        "rate": VOICE_CONFIGS["stomach"]["rate"],
+        "pitch": VOICE_CONFIGS["stomach"]["pitch"],
+        "characters": [k for k, v in VOICE_CONFIGS.items() if v.get("voice") == "Puck"],
+    },
+    "Fenrir": {
+        "voice_id": "Fenrir",
+        "id": "Fenrir",
+        "name": "Fenrir — Gritty Master Engineer",
+        "gender": "Male",
+        "style": VOICE_CONFIGS["mechanic"]["style"],
+        "style_urdu": VOICE_CONFIGS["muscle"]["style"],
+        "edge_voice_en": VOICE_CONFIGS["mechanic"]["edge_voice"],
+        "edge_voice_ur": VOICE_CONFIGS["muscle"]["edge_voice"],
+        "rate": VOICE_CONFIGS["mechanic"]["rate"],
+        "pitch": VOICE_CONFIGS["mechanic"]["pitch"],
+        "characters": [k for k, v in VOICE_CONFIGS.items() if v.get("voice") == "Fenrir"],
+    },
+    "Aoede": {
+        "voice_id": "Aoede",
+        "id": "Aoede",
+        "name": "Aoede — Crisp Studio Host",
+        "gender": "Female",
+        "style": VOICE_CONFIGS["melody"]["style"],
+        "style_urdu": VOICE_CONFIGS["chai"]["style"],
+        "edge_voice_en": VOICE_CONFIGS["melody"]["edge_voice"],
+        "edge_voice_ur": VOICE_CONFIGS["chai"]["edge_voice"],
+        "rate": VOICE_CONFIGS["melody"]["rate"],
+        "pitch": VOICE_CONFIGS["melody"]["pitch"],
+        "characters": [k for k, v in VOICE_CONFIGS.items() if v.get("voice") == "Aoede"],
+    },
+}
+
+_vox_preview_engine: Optional[VoxStudioEngine] = None
+
+
+def _get_vox_preview_engine() -> VoxStudioEngine:
+    global _vox_preview_engine
+    if _vox_preview_engine is None:
+        _vox_preview_engine = VoxStudioEngine()
+    return _vox_preview_engine
+
+
+def _write_fallback_tone_wav(output_wav: Path, duration_sec: float = 1.6) -> None:
+    """Writes a clean 24kHz 16-bit mono chime WAV if both cloud TTS tiers are unreachable."""
+    sample_rate = 24000
+    n_samples = int(sample_rate * duration_sec)
+    frames = bytearray()
+    for i in range(n_samples):
+        t = i / sample_rate
+        env = min(1.0, i / 1200.0) * math.exp(-2.2 * t)
+        val = int(12000 * env * (0.65 * math.sin(2.0 * math.pi * 440.0 * t) + 0.35 * math.sin(2.0 * math.pi * 659.25 * t)))
+        frames.extend(struct.pack("<h", max(-32767, min(32767, val))))
+    with wave.open(str(output_wav), "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(sample_rate)
+        w.writeframes(bytes(frames))
+
+
+@app.get("/api/voices/catalog", tags=["Voices"])
+async def get_voices_catalog():
+    """
+    Returns the 5 Gemini/Edge studio voice personas (Charon, Kore, Puck, Fenrir, Aoede)
+    with their acting style descriptions from VOICE_CONFIGS, channel-to-default-voice
+    mappings, and default sample audition lines in English and Urdu for each channel.
+    """
+    voices_list = []
+    for vid, spec in VOICE_PERSONA_SPECS.items():
+        default_for = [ch for ch, def_v in CHANNEL_DEFAULT_VOICES.items() if def_v == vid]
+        voices_list.append({
+            **spec,
+            "default_channels": default_for,
+        })
+    return {
+        "voices": voices_list,
+        "channel_defaults": CHANNEL_DEFAULT_VOICES,
+        "sample_lines": CHANNEL_SAMPLE_LINES,
+        "character_configs": VOICE_CONFIGS,
+    }
+
+
+@app.post("/api/voices/preview", tags=["Voices"])
+async def api_voice_preview(req: VoicePreviewRequest):
+    """
+    Synthesizes a short voice preview .wav file using VoxStudioEngine into
+    output/voice_previews/preview_{hash}.wav, returning the cached file immediately
+    if it already exists on disk so repeat plays are instant.
+    """
+    raw_vid = (req.voice_id or "").strip()
+    canonical_voice = None
+    for k in VOICE_PERSONA_SPECS:
+        if k.lower() == raw_vid.lower():
+            canonical_voice = k
+            break
+    if not canonical_voice and raw_vid.lower() in VOICE_CONFIGS:
+        canonical_voice = VOICE_CONFIGS[raw_vid.lower()].get("voice", "Charon")
+    if not canonical_voice:
+        canonical_voice = CHANNEL_DEFAULT_VOICES.get(req.channel, "Charon")
+
+    persona_spec = VOICE_PERSONA_SPECS[canonical_voice]
+    channel_key = req.channel if req.channel in CHANNEL_SAMPLE_LINES else "body_simulator"
+    lang_key = "urdu" if req.lang == "urdu" else "english"
+
+    sample_text = (req.text or "").strip()
+    if not sample_text:
+        sample_text = CHANNEL_SAMPLE_LINES[channel_key][lang_key]
+
+    style_desc = persona_spec["style_urdu"] if lang_key == "urdu" else persona_spec["style"]
+    edge_voice = persona_spec["edge_voice_ur"] if lang_key == "urdu" else persona_spec["edge_voice_en"]
+
+    digest = hashlib.md5(
+        f"{canonical_voice}|{lang_key}|{sample_text}".encode("utf-8")
+    ).hexdigest()[:16]
+    filename = f"preview_{digest}.wav"
+    preview_dir = OUTPUT_DIR / "voice_previews"
+    preview_dir.mkdir(parents=True, exist_ok=True)
+    target_wav = preview_dir / filename
+
+    if target_wav.exists() and target_wav.stat().st_size > 200:
+        return {
+            "status": "ok",
+            "voice_id": canonical_voice,
+            "channel": channel_key,
+            "lang": lang_key,
+            "cached": True,
+            "audio_url": f"/api/voices/sample/{filename}",
+            "style": style_desc,
+        }
+
+    synth_spec = {
+        "voice": canonical_voice,
+        "edge_voice": edge_voice,
+        "rate": persona_spec["rate"],
+        "pitch": persona_spec["pitch"],
+        "style": style_desc,
+    }
+
+    vox = _get_vox_preview_engine()
+    try:
+        await asyncio.to_thread(vox._synthesize_turn_gemini, synth_spec, sample_text, target_wav)
+    except Exception:
+        try:
+            await vox._synthesize_turn_edge(
+                synth_spec,
+                sample_text,
+                target_wav,
+                character_key=canonical_voice.lower(),
+            )
+        except Exception:
+            await asyncio.to_thread(_write_fallback_tone_wav, target_wav)
+
+    return {
+        "status": "ok",
+        "voice_id": canonical_voice,
+        "channel": channel_key,
+        "lang": lang_key,
+        "cached": False,
+        "audio_url": f"/api/voices/sample/{filename}",
+        "style": style_desc,
+    }
+
+
+@app.get("/api/voices/sample/{filename}", tags=["Voices"])
+async def stream_voice_sample(filename: str):
+    """Streams output/voice_previews/{filename} safely with path-traversal protection."""
+    if "/" in filename or "\\" in filename or ".." in filename or not filename.endswith(".wav"):
+        raise HTTPException(status_code=400, detail="Invalid filename")
+
+    preview_dir = (OUTPUT_DIR / "voice_previews").resolve()
+    target = (preview_dir / filename).resolve()
+    if not str(target).startswith(str(preview_dir)) or not target.exists():
+        raise HTTPException(status_code=404, detail="Voice preview audio not found")
+
+    return FileResponse(str(target), media_type="audio/wav")
+
+
 @app.get("/api/pricing", tags=["SaaS"])
 async def get_pricing_calculator(
     language_tier: str = Query("both", pattern="^(urdu|english|both)$"),
@@ -1413,22 +1675,8 @@ async def api_trigger_generate(
             detail="Valid customer login with active render credits (or Admin access) is required to dispatch renders.",
         )
 
-    # Enforce purchased language stream for non-admin customers
+    # Multi-language support (english, urdu, both) is included standard across all plans
     sb_user = auth.get("user")
-    if sb_user and sb_user.get("role") != "admin":
-        user_plan = PRICING_PLANS.get(sb_user.get("plan_tier", ""), {})
-        allowed_lang = user_plan.get("language_tier", "both")
-        if allowed_lang == "urdu" and req.lang != "urdu":
-            raise HTTPException(
-                status_code=403,
-                detail="Your plan is subscribed to the Urdu/Hindi Stream. Upgrade to English or Dual-Stream to render English episodes.",
-            )
-        if allowed_lang == "english" and req.lang != "english":
-            raise HTTPException(
-                status_code=403,
-                detail="Your plan is subscribed to the English Stream. Upgrade to Dual-Stream Arbitrage to render both languages.",
-            )
-
     serialized_scenes = [s.model_dump() for s in req.custom_scenes] if req.custom_scenes else []
     uid = sb_user["id"] if sb_user else ("admin" if auth["can_live_render"] else "anonymous")
     uemail = sb_user["email"] if sb_user else ""

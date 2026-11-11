@@ -124,6 +124,314 @@
             display: none !important;
         }
 
+        /* ─── Instant Workspace Tab Routing (switchWorkspaceTab) ─── */
+        body.authenticated-workspace[data-ws-tab="pricing"] #pricing-sec {
+            display: block !important;
+            padding-top: 1.5rem;
+        }
+
+        body.authenticated-workspace:not([data-ws-tab="vault"]) #vault-sec {
+            display: none !important;
+        }
+
+        body.authenticated-workspace[data-ws-tab="vault"] #vault-sec {
+            display: block !important;
+            padding-top: 1.5rem;
+        }
+
+        body.authenticated-workspace[data-ws-tab="vault"] #studio-sec,
+        body.authenticated-workspace[data-ws-tab="pricing"] #studio-sec,
+        body.authenticated-workspace[data-ws-tab="admin"] #studio-sec {
+            display: none !important;
+        }
+
+        body.authenticated-workspace:not([data-ws-tab="admin"]) #admin-provision-sec {
+            display: none !important;
+        }
+
+        body.authenticated-workspace.admin-workspace[data-ws-tab="admin"] #admin-provision-sec {
+            display: block !important;
+            padding-top: 1.5rem;
+        }
+
+        body.authenticated-workspace[data-ws-tab="automation"] #ws-pane-studio {
+            display: none !important;
+        }
+
+        body.authenticated-workspace:not([data-ws-tab="automation"]) #ws-pane-automation {
+            display: none !important;
+        }
+
+        .workspace-top-shell {
+            padding: 5.5rem 2rem 0;
+        }
+
+        .ws-tab-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-lg);
+            padding: 0.38rem;
+            margin-bottom: 0.5rem;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .ws-tab-bar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .ws-tab-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.48rem;
+            padding: 0.55rem 1.05rem;
+            border-radius: var(--radius-md);
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-secondary);
+            font-family: var(--font-sans);
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.16s ease;
+        }
+
+        .ws-tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .ws-tab-btn.active {
+            color: #FFFFFF;
+            background: var(--cerulean-subtle);
+            border-color: var(--cerulean-bright);
+            box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.14);
+        }
+
+        .ws-tab-pill {
+            font-family: var(--font-mono);
+            font-size: 0.66rem;
+            padding: 0.1rem 0.42rem;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--cerulean-bright);
+        }
+
+        /* ─── Custom Language Request & Dual-Stream Standard Badges ─── */
+        .lang-standard-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-md);
+            background: rgba(2, 132, 199, 0.08);
+            border: 1px solid var(--cerulean-border);
+            margin-bottom: 1.25rem;
+        }
+
+        .custom-lang-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.42rem 0.8rem;
+            border-radius: var(--radius-sm);
+            background: var(--rose-subtle);
+            border: 1px solid var(--rose-border);
+            color: var(--rose-soft);
+            font-family: var(--font-sans);
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.16s ease;
+        }
+
+        .custom-lang-badge:hover {
+            background: rgba(244, 63, 94, 0.16);
+            border-color: var(--rose);
+            color: #FFFFFF;
+        }
+
+        /* ─── 4-Card Visual Storyboard Timeline Grid ─── */
+        .storyboard-timeline-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+
+        .storyboard-scene-card {
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.48rem;
+            transition: border-color 0.16s ease;
+        }
+
+        .storyboard-scene-card:hover {
+            border-color: var(--cerulean-border);
+        }
+
+        .storyboard-scene-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .storyboard-scene-tag {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--cerulean-bright);
+        }
+
+        /* ─── 6-Stage Visual Stepper for Active Render Jobs ─── */
+        .job-stepper-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0.32rem;
+            margin-top: 0.65rem;
+        }
+
+        .job-step-pill {
+            padding: 0.3rem 0.35rem;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.63rem;
+            color: var(--text-muted);
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: all 0.2s ease;
+        }
+
+        .job-step-pill.done {
+            background: rgba(16, 185, 129, 0.12);
+            border-color: rgba(16, 185, 129, 0.38);
+            color: var(--emerald);
+            font-weight: 600;
+        }
+
+        .job-step-pill.current {
+            background: var(--cerulean-subtle);
+            border-color: var(--cerulean-bright);
+            color: #FFFFFF;
+            font-weight: 700;
+        }
+
+        .job-elapsed-badge {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            padding: 0.14rem 0.45rem;
+            border-radius: 4px;
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid var(--cerulean-border);
+            color: var(--cerulean-bright);
+        }
+
+        /* ─── Voice Cast & Persona Audition Bar ─── */
+        .voice-audition-box {
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 0.85rem;
+            margin-bottom: 1.15rem;
+        }
+
+        .voice-audition-controls {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .voice-player-wrap {
+            margin-top: 0.65rem;
+            padding-top: 0.55rem;
+            border-top: 1px solid var(--border-subtle);
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .voice-player-wrap.active {
+            display: flex;
+        }
+
+        .voice-player-wrap audio {
+            height: 30px;
+            max-width: 240px;
+            flex: 1;
+        }
+
+        /* ─── Vault Channel Filter & Search Toolbar ─── */
+        .vault-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+            padding: 0.85rem 1rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+        }
+
+        .vault-filter-bar {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .vault-search-wrap {
+            position: relative;
+            min-width: 260px;
+            flex: 1;
+            max-width: 360px;
+        }
+
+        .inspector-modal-card {
+            width: 100%;
+            max-width: 640px;
+            max-height: 88vh;
+            overflow-y: auto;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-lg);
+            padding: 1.65rem;
+            box-shadow: 0 28px 80px rgba(0, 0, 0, 0.88);
+        }
+
+        .inspector-script-pre {
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            line-height: 1.65;
+            color: var(--text-primary);
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 0.9rem 1rem;
+            white-space: pre-wrap;
+            max-height: 260px;
+            overflow-y: auto;
+        }
+
         /* ─── Fixed Header (Only Element Using Backdrop Blur) ─── */
         .site-header {
             position: fixed;
@@ -1063,14 +1371,14 @@
 
         /* ─── 4. AUTHENTICATED STUDIO WORKSPACE ─── */
         body.authenticated-workspace #studio-sec {
-            padding-top: 6.2rem;
+            padding-top: 1.5rem;
         }
 
         .workspace-banner {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 1rem;
-            margin-bottom: 2rem;
+            margin-bottom: 1.25rem;
             padding: 1.15rem 1.4rem;
             border-radius: var(--radius-lg);
             background: var(--bg-surface);
@@ -1994,8 +2302,13 @@
             .plan-pair,
             .cluster-grid,
             .tile-grid-2col,
-            .workspace-banner {
+            .workspace-banner,
+            .storyboard-timeline-grid,
+            .voice-audition-controls {
                 grid-template-columns: 1fr;
+            }
+            .job-stepper-grid {
+                grid-template-columns: repeat(3, 1fr);
             }
             .hero-founder-pill {
                 font-size: 0.75rem;
@@ -2090,15 +2403,15 @@
             <nav class="desktop-nav" aria-label="Primary Navigation">
                 <!-- Public Visitors -->
                 <button class="nav-link active marketing-only" onclick="jumpTo('#hero-sec')">Overview</button>
-                <button class="nav-link marketing-only" onclick="jumpTo('#pipeline-sec')">Architecture</button>
                 <button class="nav-link marketing-only" onclick="jumpTo('#pricing-sec')">Pricing</button>
+                <button class="nav-link marketing-only" onclick="jumpTo('#vault-sec')">Episode Vault</button>
 
-                <!-- Logged-In Clients & Founder -->
-                <button class="nav-link active workspace-only" onclick="jumpTo('#studio-sec')">Studio Workspace</button>
-                <button class="nav-link workspace-only" id="nav-admin-provision" style="display:none;" onclick="jumpTo('#admin-provision-sec')">Client Accounts</button>
-
-                <!-- Shared -->
-                <button class="nav-link" onclick="jumpTo('#vault-sec')">Episode Vault</button>
+                <!-- Logged-In Clients & Founder Instant Workspace Tabs -->
+                <button class="nav-link active workspace-only" data-ws-nav="studio" onclick="switchWorkspaceTab('studio')">Director Studio</button>
+                <button class="nav-link workspace-only" data-ws-nav="automation" onclick="switchWorkspaceTab('automation')">Automation &amp; Delivery</button>
+                <button class="nav-link workspace-only" data-ws-nav="vault" onclick="switchWorkspaceTab('vault')">Episode Vault</button>
+                <button class="nav-link workspace-only" data-ws-nav="pricing" onclick="switchWorkspaceTab('pricing')">Upgrade &amp; Plans</button>
+                <button class="nav-link workspace-only admin-only" id="nav-admin-provision" data-ws-nav="admin" style="display:none;" onclick="switchWorkspaceTab('admin')">Founder Admin</button>
             </nav>
 
             <div class="header-right">
@@ -2136,6 +2449,67 @@
 
     <main>
         <!-- ============================================================
+             0. AUTHENTICATED WORKSPACE TOP SHELL & INSTANT VIEW SWITCHER
+             ============================================================ -->
+        <div class="workspace-top-shell workspace-only">
+            <div class="container">
+                <div class="workspace-founder-bar">
+                    <div class="ws-founder-left">
+                        <span class="ws-live-indicator">CLUSTER ONLINE</span>
+                        <span class="ws-version-tag">VoxFlow v2.4 Master Engine</span>
+                        <span class="ws-arch-tag">English + Urdu Dual-Stream Included Standard</span>
+                    </div>
+                    <a href="mailto:ammar.akbar2002@gmail.com?subject=Custom%20Language%20Request" class="custom-lang-badge">
+                        <span>Need Arabic, Spanish, Hindi, or French? Request a Custom Language →</span>
+                    </a>
+                </div>
+
+                <div class="workspace-banner">
+                    <div>
+                        <div class="ws-stat-label">Signed-In Account</div>
+                        <div class="ws-stat-val" id="ws-user-email">—</div>
+                    </div>
+                    <div>
+                        <div class="ws-stat-label">Active Subscription</div>
+                        <div class="ws-stat-val" id="ws-plan-name" style="color:var(--cerulean-bright);">—</div>
+                    </div>
+                    <div>
+                        <div class="ws-stat-label">Videos / Month</div>
+                        <div class="ws-stat-val" id="ws-allowed-stream">—</div>
+                    </div>
+                    <div>
+                        <div class="ws-stat-label">Available 3D Credits</div>
+                        <div class="ws-stat-val" id="ws-credits-remaining" style="color:var(--emerald);">—</div>
+                    </div>
+                </div>
+
+                <!-- 5-Tab Instant Workspace View Switcher Bar -->
+                <div class="ws-tab-bar" id="ws-tab-bar" role="tablist" aria-label="Workspace Views">
+                    <button type="button" class="ws-tab-btn active" id="ws-tab-btn-studio" data-ws-tab-btn="studio" onclick="switchWorkspaceTab('studio')">
+                        <span>Director Studio</span>
+                        <span class="ws-tab-pill">3D + Voices</span>
+                    </button>
+                    <button type="button" class="ws-tab-btn" id="ws-tab-btn-automation" data-ws-tab-btn="automation" onclick="switchWorkspaceTab('automation')">
+                        <span>Automation &amp; Delivery</span>
+                        <span class="ws-tab-pill">Series + WhatsApp</span>
+                    </button>
+                    <button type="button" class="ws-tab-btn" id="ws-tab-btn-vault" data-ws-tab-btn="vault" onclick="switchWorkspaceTab('vault')">
+                        <span>Episode Vault</span>
+                        <span class="ws-tab-pill" id="ws-tab-vault-count">9:16 Archive</span>
+                    </button>
+                    <button type="button" class="ws-tab-btn" id="ws-tab-btn-pricing" data-ws-tab-btn="pricing" onclick="switchWorkspaceTab('pricing')">
+                        <span>Upgrade &amp; Plans</span>
+                        <span class="ws-tab-pill">Get Credits</span>
+                    </button>
+                    <button type="button" class="ws-tab-btn admin-only" id="ws-tab-btn-admin" data-ws-tab-btn="admin" onclick="switchWorkspaceTab('admin')">
+                        <span>Founder Admin</span>
+                        <span class="ws-tab-pill">6-Node Pool + Leads</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================
              1. PUBLIC MARKETING HERO (Hidden After Login)
              ============================================================ -->
         <section class="hero-section" id="hero-sec">
@@ -2169,19 +2543,19 @@
 
                     <div class="hero-metrics">
                         <div class="metric-card surface-card">
-                            <div class="metric-label">Motion Engine</div>
+                            <div class="metric-label">Motion Quality</div>
                             <div class="metric-val">4 × 10s 3D Scenes</div>
-                            <div class="metric-sub">Vision-verified camera motion</div>
+                            <div class="metric-sub">Cinematic vertical camera motion</div>
                         </div>
                         <div class="metric-card surface-card">
-                            <div class="metric-label">Audio Mastering</div>
-                            <div class="metric-val">-18 dB Ducking</div>
-                            <div class="metric-sub">19 character personas + EBU R128</div>
+                            <div class="metric-label">Voice &amp; Audio</div>
+                            <div class="metric-val">Studio Mastered</div>
+                            <div class="metric-sub">Expressive character voices &amp; music</div>
                         </div>
                         <div class="metric-card surface-card">
-                            <div class="metric-label">Unit Economics</div>
+                            <div class="metric-label">Dual Output</div>
                             <div class="metric-val">2 Videos / Render</div>
-                            <div class="metric-sub">English + Urdu from shared 3D clips</div>
+                            <div class="metric-sub">English + Urdu included standard</div>
                         </div>
                     </div>
                 </div>
@@ -2224,43 +2598,7 @@
         </section>
 
         <!-- ============================================================
-             2. PRODUCTION PIPELINE ARCHITECTURE (Hidden After Login)
-             ============================================================ -->
-        <section class="section" id="pipeline-sec">
-            <div class="container">
-                <div class="section-header">
-                    <div class="eyebrow">
-                        <span>Production Architecture</span>
-                    </div>
-                    <h2 class="section-heading">Six automated stages. <em>Zero manual editing.</em></h2>
-                    <p class="section-desc">
-                        Every episode moves deterministically from custom or autonomous script direction through multi-node 3D rendering, Gemini Vision quality scoring, and broadcast loudness normalization.
-                    </p>
-                    <p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.5rem;">Fully automated pipeline — zero manual editing</p>
-                </div>
-
-                <div class="pipeline-grid">
-                    <div class="stage-list" id="pipeline-steps-list"></div>
-
-                    <div class="inspector-panel surface-card">
-                        <div>
-                            <div class="inspector-head">
-                                <span id="term-stage-code" style="color:var(--cerulean-bright);">Stage 1 · AI Showrunner</span>
-                                <span style="color:var(--emerald);">Verified</span>
-                            </div>
-                            <pre class="inspector-pre" id="term-json-payload"></pre>
-                        </div>
-                        <div class="inspector-foot">
-                            <span id="term-latency-readout">Avg latency: 420ms</span>
-                            <span>1080×1920 Vertical Master</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ============================================================
-             3. PRICING (Hidden After Login)
+             3. PRICING (Public & Workspace Upgrade View)
              ============================================================ -->
         <section class="section" id="pricing-sec">
             <div class="container">
@@ -2271,9 +2609,20 @@
                         </div>
                         <h2 class="section-heading">Simple pricing. <em>Pick your pace.</em></h2>
                         <p class="section-desc">
-                            Choose a plan based on how many 3D videos you need per month.
+                            Choose a plan based on how many 3D videos you need per month. Every plan includes synchronized English and Urdu Dual-Stream outputs standard.
                         </p>
                     </div>
+                </div>
+
+                <div class="lang-standard-banner">
+                    <div style="display:flex;align-items:center;gap:0.65rem;flex-wrap:wrap;">
+                        <span class="plan-badge" style="margin:0;">Multi-Language Standard</span>
+                        <strong style="font-size:0.88rem;color:var(--text-primary);">English + Urdu Dual-Stream Included Standard</strong>
+                        <span style="font-size:0.8rem;color:var(--text-secondary);">Every 3D render outputs both English and Urdu masters at zero extra credit cost.</span>
+                    </div>
+                    <a href="mailto:ammar.akbar2002@gmail.com?subject=Custom%20Language%20Request" class="custom-lang-badge">
+                        <span>Need Arabic, Spanish, Hindi, or French? Request a Custom Language →</span>
+                    </a>
                 </div>
 
                 <div class="pricing-layout" style="grid-template-columns:1fr;">
@@ -2292,6 +2641,7 @@
                                 </div>
                                 <ul class="plan-features">
                                     <li>12 fully rendered 3D episodes</li>
+                                    <li><strong>English + Urdu Dual-Stream Included Standard</strong></li>
                                     <li>19 neural character voices</li>
                                     <li>Vision-verified quality scoring</li>
                                     <li>Auto-publish to YouTube &amp; TikTok</li>
@@ -2317,6 +2667,7 @@
                                 </div>
                                 <ul class="plan-features">
                                     <li>30 fully rendered 3D episodes</li>
+                                    <li><strong>English + Urdu Dual-Stream Included Standard</strong></li>
                                     <li>19 neural character voices</li>
                                     <li>Vision-verified quality scoring</li>
                                     <li>Auto-publish to YouTube &amp; TikTok</li>
@@ -2386,35 +2737,9 @@
              ============================================================ -->
         <section class="section" id="studio-sec">
             <div class="container">
-                <div class="workspace-founder-bar">
-                    <div class="ws-founder-left">
-                        <span class="ws-live-indicator">CLUSTER ONLINE</span>
-                        <span class="ws-version-tag">VoxFlow v2.4 Master Engine</span>
-                        <span class="ws-arch-tag">Autonomous Media Infrastructure</span>
-                    </div>
-                </div>
-
-                <div class="workspace-banner">
-                    <div>
-                        <div class="ws-stat-label">Signed-In Account</div>
-                        <div class="ws-stat-val" id="ws-user-email">—</div>
-                    </div>
-                    <div>
-                        <div class="ws-stat-label">Active Subscription</div>
-                        <div class="ws-stat-val" id="ws-plan-name" style="color:var(--cerulean-bright);">—</div>
-                    </div>
-                    <div>
-                        <div class="ws-stat-label">Videos / Month</div>
-                        <div class="ws-stat-val" id="ws-allowed-stream">—</div>
-                    </div>
-                    <div>
-                        <div class="ws-stat-label">Available 3D Credits</div>
-                        <div class="ws-stat-val" id="ws-credits-remaining" style="color:var(--emerald);">—</div>
-                    </div>
-                </div>
-
-                <div class="workspace-grid">
-                    <!-- Left: Episode Director & Dispatch -->
+                <!-- TAB 1: DIRECTOR STUDIO (Left: Episode Director + Voice Audition | Right: Active Render Queue + 4-Card Storyboard Timeline) -->
+                <div class="workspace-grid" id="ws-pane-studio">
+                    <!-- Left: Episode Director & Voice Cast Audition -->
                     <div class="panel-box surface-card">
                         <div class="panel-head">
                             <h2 class="panel-title">Episode Director</h2>
@@ -2445,6 +2770,33 @@
                             <div class="tile-grid-2col" id="studio-channel-picker"></div>
                         </div>
 
+                        <!-- Upgrade 6: Channel Voice Cast & Persona Audition Bar -->
+                        <div class="voice-audition-box">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.45rem;gap:0.5rem;flex-wrap:wrap;">
+                                <label class="field-label" for="studio-voice-select" style="margin:0;">Voice Cast &amp; Persona Audition</label>
+                                <span id="voice-audition-status" style="font-family:var(--font-mono);font-size:0.68rem;color:var(--cerulean-bright);">Voice Preview Ready</span>
+                            </div>
+                            <div class="voice-audition-controls">
+                                <select id="studio-voice-select" class="clean-select" onchange="selectStudioVoicePersona(this.value)">
+                                    <option value="Charon">Charon · Deep Cinematic</option>
+                                    <option value="Kore">Kore · Warm Expressive</option>
+                                    <option value="Puck">Puck · High-Energy Sitcom</option>
+                                    <option value="Fenrir">Fenrir · Gritty Mechanical</option>
+                                    <option value="Aoede">Aoede · Clear Analytical</option>
+                                </select>
+                                <button type="button" class="btn btn-secondary" id="btn-audition-en" style="height:34px;padding:0 0.75rem;font-size:0.76rem;" onclick="auditionStudioVoice('english')">
+                                    <span>🔊 Audition EN</span>
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="btn-audition-ur" style="height:34px;padding:0 0.75rem;font-size:0.76rem;" onclick="auditionStudioVoice('urdu')">
+                                    <span>🔊 Audition UR</span>
+                                </button>
+                            </div>
+                            <div class="voice-player-wrap" id="voice-player-wrap">
+                                <span id="voice-player-label" style="font-family:var(--font-mono);font-size:0.7rem;color:var(--text-secondary);">Sample Ready</span>
+                                <audio id="voice-audition-audio" controls preload="none"></audio>
+                            </div>
+                        </div>
+
                         <!-- Custom Prompt Director -->
                         <div id="custom-director-pane" style="display:none;">
                             <div class="field-group">
@@ -2472,20 +2824,10 @@
                             </div>
 
                             <div style="display:flex;justify-content:space-between;align-items:center;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap;">
-                                <button type="button" class="btn btn-secondary" style="padding:0.55rem 0.95rem;font-size:0.8rem;" onclick="compileDirectorPreview()" id="btn-compile-preview">
+                                <button type="button" class="btn btn-secondary" style="padding:0.55rem 0.95rem;font-size:0.8rem;" onclick="previewDirectorStoryboard()" id="btn-compile-preview">
                                     <span>Preview 4-Scene Storyboard</span>
                                 </button>
-                                <span style="font-size:0.76rem;color:var(--text-muted);">Generates 4 camera prompts + EN/UR dialogue</span>
-                            </div>
-
-                            <div class="preview-card" id="storyboard-preview-box">
-                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.65rem;">
-                                    <span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--cerulean-bright);font-weight:600;" id="preview-compiler-tag">Compiled Storyboard</span>
-                                    <button type="button" class="btn-ghost" onclick="transferPreviewToManualMatrix()">
-                                        Open in Scene Editor →
-                                    </button>
-                                </div>
-                                <div id="storyboard-preview-content" style="font-size:0.82rem;color:var(--text-secondary);line-height:1.55;"></div>
+                                <span style="font-size:0.76rem;color:var(--text-muted);">Populates the interactive 4-Card Timeline on the right →</span>
                             </div>
                         </div>
 
@@ -2499,20 +2841,27 @@
                         </div>
 
                         <div class="field-group">
-                            <label class="field-label" for="studio-lang-select">Output Language</label>
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.42rem;gap:0.5rem;flex-wrap:wrap;">
+                                <label class="field-label" for="studio-lang-select" style="margin:0;">Output Language</label>
+                                <span style="font-family:var(--font-mono);font-size:0.68rem;color:var(--emerald);">English + Urdu Dual-Stream Included Standard</span>
+                            </div>
                             <select id="studio-lang-select" class="clean-select">
                                 <option value="english">English</option>
                                 <option value="urdu">اردو (Urdu)</option>
-                                <option value="both">Both (EN + UR Dual-Stream)</option>
+                                <option value="both" selected>Both (EN + UR Dual-Stream)</option>
                             </select>
-                            <a href="mailto:ammar.akbar2002@gmail.com?subject=Language%20request&amp;body=Hi%2C%20I%E2%80%99d%20like%20to%20request%20support%20for%20a%20new%20language%3A%20" style="font-size:0.78rem;color:var(--cerulean-bright);margin-top:0.4rem;display:inline-block;">Need another language? Request it →</a>
+                            <div style="margin-top:0.55rem;">
+                                <a href="mailto:ammar.akbar2002@gmail.com?subject=Custom%20Language%20Request" class="custom-lang-badge">
+                                    <span>Need Arabic, Spanish, Hindi, or French? Request a Custom Language →</span>
+                                </a>
+                            </div>
                         </div>
 
                         <div class="field-group">
-                            <label class="field-label" for="studio-mode-select">Render Engine</label>
+                            <label class="field-label" for="studio-mode-select">Render Mode</label>
                             <select id="studio-mode-select" class="clean-select">
-                                <option value="live" selected>Google Flow 3D Cluster — 4 × 10s Veo 3D Scenes (1 Credit)</option>
-                                <option value="mock">Sandbox Simulation (Uses Sandbox Quota)</option>
+                                <option value="live" selected>Full 3D Cinema Render — 4 × 10s Scenes (1 Credit)</option>
+                                <option value="mock">Sandbox Preview (Uses Free Sandbox Quota)</option>
                             </select>
                         </div>
 
@@ -2520,115 +2869,165 @@
                             <button type="button" class="btn btn-primary" onclick="triggerEpisodeRender()">
                                 <span>Render Episode Now</span>
                             </button>
+                            <button type="button" class="btn btn-secondary" onclick="previewDirectorStoryboard()">
+                                <span>Compile 4-Card Timeline</span>
+                            </button>
                             <button type="button" class="btn btn-secondary" onclick="createAutopilotSeries()">
                                 <span>Save Recurring Series</span>
                             </button>
                         </div>
                     </div>
 
-                    <!-- Right: Live Render Queue & Saved Series -->
+                    <!-- Right: Active Render Queue + Interactive 4-Card Storyboard Timeline -->
+                    <div style="display:flex;flex-direction:column;gap:1.35rem;">
+                        <!-- Active Render Queue with 6-Stage Stepper -->
+                        <div class="panel-box surface-card">
+                            <div class="panel-head">
+                                <div>
+                                    <h2 class="panel-title">Active Render Queue</h2>
+                                    <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.15rem;">Live Episode Progress</div>
+                                </div>
+                                <button type="button" class="btn-ghost" onclick="refreshJobsAndSeries()">Refresh</button>
+                            </div>
+
+                            <div class="stack-list" id="jobs-list-container"></div>
+                            <div id="jobs-container" style="display:none;"></div>
+                        </div>
+
+                        <!-- Upgrade 3: Visual 4-Card Editable Timeline Grid for Storyboard Preview -->
+                        <div class="panel-box surface-card" id="storyboard-preview-box">
+                            <div class="panel-head" style="margin-bottom:0.65rem;">
+                                <div>
+                                    <h3 class="panel-title" style="font-size:1.02rem;">Interactive 4-Card Storyboard Timeline</h3>
+                                    <div style="font-family:var(--font-mono);font-size:0.7rem;color:var(--cerulean-bright);margin-top:0.15rem;" id="preview-compiler-tag">
+                                        4 × 10s Camera Choreography + EN/UR Script Sync
+                                    </div>
+                                </div>
+                                <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                                    <button type="button" class="btn-ghost" onclick="previewDirectorStoryboard()">
+                                        Regenerate 4 Scenes
+                                    </button>
+                                    <button type="button" class="btn btn-cerulean" style="height:30px;padding:0 0.75rem;font-size:0.75rem;" id="btn-lock-storyboard" onclick="lockEditedStoryboardForRender()">
+                                        <span>Use Edited Storyboard for Render</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="director-storyboard-preview" class="storyboard-timeline-grid"></div>
+                            <div id="storyboard-preview-content" style="display:none;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: AUTOMATION & DELIVERY (2-Column Layout: Saved Recurring Series Scheduler + Personal WhatsApp Handshake) -->
+                <div class="workspace-grid" id="ws-pane-automation">
+                    <!-- Left: Saved Recurring Series Scheduler -->
                     <div class="panel-box surface-card">
                         <div class="panel-head">
-                            <h2 class="panel-title">Render Queue</h2>
-                            <button type="button" class="btn-ghost" onclick="refreshJobsAndSeries()">Refresh</button>
+                            <div>
+                                <h2 class="panel-title">Saved Recurring Series Scheduler</h2>
+                                <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.15rem;">
+                                    Autonomous daily or starter episode production across your selected show format.
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-primary" style="height:32px;font-size:0.76rem;" onclick="createAutopilotSeries()">
+                                <span>+ Save Current Director Setup as Series</span>
+                            </button>
                         </div>
 
-                        <div class="stack-list" id="jobs-container"></div>
+                        <div id="series-list-container" class="stack-list"></div>
+                    </div>
 
-                        <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--border-subtle);">
-                            <div class="field-label" style="margin-bottom:0.65rem;">Saved Recurring Series</div>
-                            <div id="series-list-container" class="stack-list"></div>
+                    <!-- Right: Personal WhatsApp Delivery & Verification Handshake -->
+                    <div class="panel-box surface-card">
+                        <div class="panel-head" style="margin-bottom:0.65rem;">
+                            <h2 class="panel-title">Personal WhatsApp Delivery</h2>
+                            <span id="wa-status-badge" style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-muted);">Not connected</span>
+                        </div>
+                        <p style="font-size:0.8rem;color:var(--text-secondary);line-height:1.55;margin-bottom:0.85rem;">
+                            Connect your own WhatsApp Agent key so completed video links, captions, and hashtags are delivered directly to your personal number.
+                        </p>
+
+                        <details style="background:var(--bg-input);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:0.65rem 0.8rem;margin-bottom:0.85rem;font-size:0.76rem;color:var(--text-secondary);">
+                            <summary style="cursor:pointer;font-weight:500;color:var(--cerulean-bright);outline:none;">
+                                How to get your WhatsApp Agent Key &amp; User ID
+                            </summary>
+                            <ol style="margin:0.6rem 0 0 1.1rem;line-height:1.65;display:flex;flex-direction:column;gap:0.3rem;">
+                                <li>Open the <strong>WhatsApp Agent Portal</strong> (or Meta Cloud WhatsApp API setup) and generate your personal Bearer Token (starts with <code>WAA...</code>).</li>
+                                <li>Copy your personal <strong>Recipient User ID</strong> (formatted as <code>user:140986...</code> or your international WhatsApp phone number).</li>
+                                <li>Paste both below and click <strong>Send Test Message</strong>. Once you confirm receiving the test message on your phone, all future video renders will message your number automatically.</li>
+                            </ol>
+                        </details>
+
+                        <div class="field-group" style="margin-bottom:0.7rem;">
+                            <label class="field-label" for="wa-token-input">Your WhatsApp Agent Token</label>
+                            <input id="wa-token-input" class="clean-input" type="password" placeholder="WAA_your_whatsapp_agent_token">
                         </div>
 
-                        <!-- Personal WhatsApp Delivery & Verification Handshake -->
-                        <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--border-subtle);">
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
-                                <span style="font-size:0.86rem;font-weight:600;color:var(--text-primary);">Personal WhatsApp Delivery</span>
-                                <span id="wa-status-badge" style="font-family:var(--font-mono);font-size:0.68rem;color:var(--text-muted);">Not connected</span>
+                        <div class="field-group" style="margin-bottom:0.85rem;">
+                            <label class="field-label" for="wa-userid-input">Your WhatsApp User ID or Phone Number</label>
+                            <input id="wa-userid-input" class="clean-input" type="text" placeholder="user:your_recipient_id or +923001234567">
+                        </div>
+
+                        <div style="display:flex;gap:0.5rem;align-items:center;">
+                            <button type="button" class="btn btn-secondary" id="btn-wa-test" onclick="sendWhatsAppTest()">
+                                <span>Send Test Message</span>
+                            </button>
+                        </div>
+
+                        <!-- Live Confirmation Handshake Prompt (Shown after test message is sent) -->
+                        <div id="wa-confirm-box" style="display:none;margin-top:0.85rem;padding:0.85rem;background:var(--bg-input);border:1px solid var(--cerulean-border);border-radius:var(--radius-sm);">
+                            <div style="font-size:0.8rem;font-weight:500;color:var(--text-primary);margin-bottom:0.55rem;" id="wa-confirm-prompt-text">
+                                We just sent a verification message to your WhatsApp. Did you receive it on your phone?
                             </div>
-                            <p style="font-size:0.78rem;color:var(--text-secondary);line-height:1.5;margin-bottom:0.75rem;">
-                                Connect your own WhatsApp Agent key so completed video links and hashtags are delivered directly to your personal number.
-                            </p>
-
-                            <details style="background:var(--bg-input);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:0.65rem 0.8rem;margin-bottom:0.85rem;font-size:0.76rem;color:var(--text-secondary);">
-                                <summary style="cursor:pointer;font-weight:500;color:var(--cerulean-bright);outline:none;">
-                                    How to get your WhatsApp Agent Key &amp; User ID
-                                </summary>
-                                <ol style="margin:0.6rem 0 0 1.1rem;line-height:1.65;display:flex;flex-direction:column;gap:0.3rem;">
-                                    <li>Open the <strong>WhatsApp Agent Portal</strong> (or Meta Cloud WhatsApp API setup) and generate your personal Bearer Token (starts with <code>WAA...</code>).</li>
-                                    <li>Copy your personal <strong>Recipient User ID</strong> (formatted as <code>user:140986...</code> or your international WhatsApp phone number).</li>
-                                    <li>Paste both below and click <strong>Send Test Message</strong>. Once you confirm receiving the test message on your phone, all future video renders will message your number automatically.</li>
-                                </ol>
-                            </details>
-
-                            <div class="field-group" style="margin-bottom:0.7rem;">
-                                <label class="field-label" for="wa-token-input">Your WhatsApp Agent Token</label>
-                                <input id="wa-token-input" class="clean-input" type="password" placeholder="WAA_your_whatsapp_agent_token">
-                            </div>
-
-                            <div class="field-group" style="margin-bottom:0.85rem;">
-                                <label class="field-label" for="wa-userid-input">Your WhatsApp User ID or Phone Number</label>
-                                <input id="wa-userid-input" class="clean-input" type="text" placeholder="user:your_recipient_id or +923001234567">
-                            </div>
-
-                            <div style="display:flex;gap:0.5rem;align-items:center;">
-                                <button type="button" class="btn btn-secondary" id="btn-wa-test" onclick="sendWhatsAppTest()">
-                                    <span>Send Test Message</span>
+                            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                                <button type="button" class="btn btn-primary" id="btn-wa-confirm-yes" onclick="confirmWhatsAppReceipt(true)">
+                                    <span>Yes, I received it — Activate</span>
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="btn-wa-confirm-no" onclick="confirmWhatsAppReceipt(false)">
+                                    <span>No, check my key</span>
                                 </button>
                             </div>
-
-                            <!-- Live Confirmation Handshake Prompt (Shown after test message is sent) -->
-                            <div id="wa-confirm-box" style="display:none;margin-top:0.85rem;padding:0.85rem;background:var(--bg-input);border:1px solid var(--cerulean-border);border-radius:var(--radius-sm);">
-                                <div style="font-size:0.8rem;font-weight:500;color:var(--text-primary);margin-bottom:0.55rem;" id="wa-confirm-prompt-text">
-                                    We just sent a verification message to your WhatsApp. Did you receive it on your phone?
-                                </div>
-                                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                                    <button type="button" class="btn btn-primary" id="btn-wa-confirm-yes" onclick="confirmWhatsAppReceipt(true)">
-                                        <span>Yes, I received it — Activate</span>
-                                    </button>
-                                    <button type="button" class="btn btn-secondary" id="btn-wa-confirm-no" onclick="confirmWhatsAppReceipt(false)">
-                                        <span>No, check my key</span>
-                                    </button>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- 6-Node Google Flow Render Cluster & Live Token Ledger (Admin Only) -->
-                <div class="admin-only" style="margin-top:2.5rem;margin-bottom:0.85rem;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:0.75rem;">
-                    <div>
-                        <div class="eyebrow" style="margin-bottom:0.25rem;">
-                            <span>Google Flow 3D Engine Cluster</span>
-                        </div>
-                        <div style="font-size:1.15rem;font-weight:700;color:var(--text-primary);">
-                            Live Node Token Balances &amp; Render Capacity
-                        </div>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:0.6rem;">
-                        <div class="status-pill" style="font-family:var(--font-mono);font-size:0.78rem;">
-                            <span style="color:var(--text-secondary);">Cluster Balance:</span>
-                            <strong id="cluster-total-tokens-badge" style="color:var(--cerulean-bright);">— / — Tokens</strong>
-                        </div>
-                    </div>
-                </div>
-                <div class="cluster-grid admin-only" id="worker-pool-grid"></div>
             </div>
         </section>
 
         <!-- ============================================================
-             4B. FOUNDER ADMIN: CLIENT ACCOUNT PROVISIONING (Admin Only)
+             4B. FOUNDER ADMIN COMMAND CENTER (Admin Only — Tab 5)
              ============================================================ -->
-        <section class="section" id="admin-provision-sec" style="display:none;">
+        <section class="section admin-only" id="admin-provision-sec" style="display:none;">
             <div class="container">
-                <div class="section-header">
+                <div class="section-header" style="margin-bottom:1.75rem;">
                     <div class="eyebrow">
-                        <span>Founder Administration</span>
+                        <span>Founder Admin Command Center</span>
                     </div>
-                    <h2 class="section-heading">Client Accounts &amp; <em>Credit Quotas.</em></h2>
+                    <h2 class="section-heading">6-Node Render Cluster &amp; <em>Client Provisioning.</em></h2>
                     <p class="section-desc">
-                        Create or update client login credentials when a customer purchases a subscription plan. Updating an existing email resets their password and sets their new credit balance.
+                        Monitor and calibrate the 6-Node Google Flow Veo 3D cluster, review incoming checkout leads, and issue or top up client credentials in one unified command center.
                     </p>
+                </div>
+
+                <!-- 6-Node Google Flow Render Cluster & Live Token Ledger -->
+                <div class="panel-box surface-card" style="margin-bottom:1.5rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.5rem;">
+                        <div>
+                            <div class="eyebrow" style="margin-bottom:0.2rem;">
+                                <span>Google Flow 3D Engine Cluster</span>
+                            </div>
+                            <div style="font-size:1.1rem;font-weight:700;color:var(--text-primary);">
+                                Live 6-Node Token Balances &amp; Render Capacity
+                            </div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:0.6rem;">
+                            <div class="status-pill" style="font-family:var(--font-mono);font-size:0.78rem;">
+                                <span style="color:var(--text-secondary);">Cluster Balance:</span>
+                                <strong id="cluster-total-tokens-badge" style="color:var(--cerulean-bright);">— / — Tokens</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cluster-grid" id="worker-pool-grid" style="margin-top:1rem;"></div>
                 </div>
 
                 <div class="workspace-grid">
@@ -2713,7 +3112,7 @@
              ============================================================ -->
         <section class="section" id="vault-sec" style="border-bottom:none;">
             <div class="container">
-                <div class="section-header">
+                <div class="section-header" style="margin-bottom:1.5rem;">
                     <div class="eyebrow">
                         <span id="vault-eyebrow-text">Master Output Archive</span>
                     </div>
@@ -2721,6 +3120,22 @@
                     <p class="section-desc" id="vault-desc-text">
                         Completed 1080×1920 vertical episodes paired across English and Urdu streams.
                     </p>
+                </div>
+
+                <!-- Upgrade 5: Vault Channel Filter Pill Bar + Live Search Input -->
+                <div class="vault-toolbar">
+                    <div class="vault-filter-bar" id="vault-channel-filter-bar" role="group" aria-label="Filter by Channel">
+                        <button type="button" class="chip-btn active" data-vault-channel="all" onclick="setVaultChannelFilter('all', this)">All Channels</button>
+                        <button type="button" class="chip-btn" data-vault-channel="body_simulator" onclick="setVaultChannelFilter('body_simulator', this)">Body 3D</button>
+                        <button type="button" class="chip-btn" data-vault-channel="xray_mechanics" onclick="setVaultChannelFilter('xray_mechanics', this)">X-Ray</button>
+                        <button type="button" class="chip-btn" data-vault-channel="crazy_characters" onclick="setVaultChannelFilter('crazy_characters', this)">Sitcom</button>
+                        <button type="button" class="chip-btn" data-vault-channel="health_coach" onclick="setVaultChannelFilter('health_coach', this)">Health</button>
+                        <button type="button" class="chip-btn" data-vault-channel="garage_guru" onclick="setVaultChannelFilter('garage_guru', this)">Garage</button>
+                        <button type="button" class="chip-btn" data-vault-channel="code_classroom" onclick="setVaultChannelFilter('code_classroom', this)">Code</button>
+                    </div>
+                    <div class="vault-search-wrap">
+                        <input id="vault-search-input" class="clean-input" type="search" placeholder="Search episodes by title, slug, caption, or #tags..." oninput="renderVaultGrid()">
+                    </div>
                 </div>
 
                 <div class="vault-grid" id="vault-grid-container"></div>
@@ -2908,82 +3323,62 @@
         </div>
     </div>
 
+    <!-- Vault Script & Metadata Inspector Modal -->
+    <div class="modal-backdrop" id="vault-inspector-backdrop" onclick="if(event.target===this) closeVaultInspectorModal()">
+        <div class="inspector-modal-card">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:1.1rem;">
+                <div>
+                    <div style="font-family:var(--font-mono);font-size:0.68rem;color:var(--cerulean-bright);" id="vinsp-channel-line">BODY SIMULATOR · EN + UR</div>
+                    <h3 style="font-size:1.18rem;font-weight:700;margin-top:0.2rem;" id="vinsp-title-line">Episode Script &amp; Metadata</h3>
+                </div>
+                <button type="button" class="btn-ghost" onclick="closeVaultInspectorModal()">Close</button>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem;margin-bottom:1rem;">
+                <div class="kpi-box">
+                    <div class="kpi-box-label">Active Stream</div>
+                    <div class="kpi-box-val" style="font-size:0.9rem;color:var(--cerulean-bright);" id="vinsp-lang-val">English</div>
+                </div>
+                <div class="kpi-box">
+                    <div class="kpi-box-label">Master File Size</div>
+                    <div class="kpi-box-val" style="font-size:0.9rem;" id="vinsp-size-val">12.0 MB</div>
+                </div>
+                <div class="kpi-box">
+                    <div class="kpi-box-label">Resolution</div>
+                    <div class="kpi-box-val" style="font-size:0.9rem;color:var(--emerald);">1080×1920</div>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem;">
+                    <label class="field-label" style="margin:0;">Viral Caption &amp; Hashtags</label>
+                    <button type="button" class="btn-ghost" style="height:24px;padding:0 0.55rem;font-size:0.7rem;" onclick="copyInspectorField('caption')">Copy Caption + Tags</button>
+                </div>
+                <div class="inspector-script-pre" id="vinsp-caption-box" style="max-height:95px;"></div>
+            </div>
+
+            <div class="field-group" style="margin-bottom:1.1rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem;">
+                    <label class="field-label" style="margin:0;">Spoken Dialogue &amp; Scene Script</label>
+                    <button type="button" class="btn-ghost" style="height:24px;padding:0 0.55rem;font-size:0.7rem;" onclick="copyInspectorField('script')">Copy Full Script</button>
+                </div>
+                <div class="inspector-script-pre" id="vinsp-script-box"></div>
+            </div>
+
+            <div style="display:flex;gap:0.65rem;flex-wrap:wrap;">
+                <a id="vinsp-download-btn" href="#" download target="_blank" rel="noopener" class="btn btn-primary" style="flex:1;text-decoration:none;">
+                    <span>Download Master .MP4</span>
+                </a>
+                <button type="button" class="btn btn-secondary" style="flex:1;" onclick="copyInspectorField('title')">
+                    <span>Copy Episode Title</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="toast" id="app-toast" role="status" aria-live="polite"></div>
 
     <script>
-        const PIPELINE_STAGES = [
-            {
-                step: 'Stage 01',
-                code: 'Stage 01 · Dual-Language AI Director',
-                name: 'Showrunner & Camera Choreography',
-                sub: 'Compiles custom prompts or show concepts into 4 camera-motion shots with 1:1 English & Urdu scripts.',
-                latency: '420ms',
-                payload: {
-                    module: 'brain/multi_channel_director.py',
-                    modes: ['Preset Shows', 'Custom Prompt Director', '4-Scene Manual Editor'],
-                    alignment: 'Strict 4-scene English + Urdu dialogue sync'
-                }
-            },
-            {
-                step: 'Stage 02',
-                code: 'Stage 02 · Multi-Node 3D Render Cluster',
-                name: '6-Node Google Flow Veo 3D Engine',
-                sub: 'File-locked isolated browser profiles with automatic scene failover across nodes.',
-                latency: '68s',
-                payload: {
-                    module: 'video_engine/pool_manager.py',
-                    concurrency: '4 parallel 10-second 3D renders',
-                    locking: 'Cross-process profile lock + orphan process cleanup'
-                }
-            },
-            {
-                step: 'Stage 03',
-                code: 'Stage 03 · Vision Quality Gate',
-                name: 'Gemini Vision Motion & Framing Check',
-                sub: 'Scores rendered clips for composition lighting and motion dynamics while keeping timeline sync.',
-                latency: '890ms',
-                payload: {
-                    module: 'video_engine/clip_quality_scorer.py',
-                    metrics: ['cinematic_quality', 'motion_presence']
-                }
-            },
-            {
-                step: 'Stage 04',
-                code: 'Stage 04 · Multi-Persona Voice Engine',
-                name: '19 Character Voices & 24 kHz DSP',
-                sub: '8-key Gemini TTS rotation + Edge-TTS fallback with 70 Hz high-pass and soft-knee limiting.',
-                latency: '3.2s',
-                payload: {
-                    module: 'voice/voxstudio_engine.py',
-                    sample_rate: '24000 Hz Mono PCM',
-                    crossfade: '15ms cosine boundary smoothing'
-                }
-            },
-            {
-                step: 'Stage 05',
-                code: 'Stage 05 · FFmpeg Vertical Compositor',
-                name: 'Frame-Accurate Ducking & Subtitles',
-                sub: 'Ducks stereo BGM during speech, restores in pauses, and burns per-channel ASS subtitles.',
-                latency: '9.8s',
-                payload: {
-                    module: 'compositor/video_editor.py',
-                    loudness: 'EBU R128 (-16 LUFS, -1.5 dBTP)',
-                    output: '1080x1920 @ 30fps H.264'
-                }
-            },
-            {
-                step: 'Stage 06',
-                code: 'Stage 06 · Cloud Archive & Alerts',
-                name: 'Google Drive & Webhook Delivery',
-                sub: 'Packages MP4, thumbnail, and metadata sidecars without blocking the API event loop.',
-                latency: '4.1s',
-                payload: {
-                    module: 'drive_uploader.py + notifications.py',
-                    execution: 'Non-blocking background worker thread'
-                }
-            }
-        ];
-
         let catalogData = { channels: [], visual_styles: [], plans: [], pool: {} };
         let vaultEpisodes = [];
         let vaultScope = 'public_showcase';
@@ -2994,7 +3389,6 @@
         let selectedCreationMode = 'prebuilt';
         let selectedVisualStyle = 'pixar_3d';
         let lastCompiledPreview = null;
-        let activeStageIdx = 0;
 
         // WebGL pause/resume controller so Workspace scrolling uses 0% GPU
         let webglActive = false;
@@ -3009,6 +3403,20 @@
         let isTrialSignupMode = false;
         let isPasswordRecoveryMode = false;
         let vaultCardActiveLang = {};
+        let activeWorkspaceTab = 'studio';
+        let selectedVoicePersona = 'Charon';
+        let activeVaultChannelFilter = 'all';
+        let currentInspectedEpisode = null;
+        let lockedStoryboardScenes = null;
+
+        const CHANNEL_VOICE_DEFAULTS = {
+            body_simulator: 'Charon',
+            xray_mechanics: 'Fenrir',
+            crazy_characters: 'Puck',
+            health_coach: 'Kore',
+            garage_guru: 'Fenrir',
+            code_classroom: 'Aoede'
+        };
 
         const DEFAULT_MANUAL_SCENES = [
             {
@@ -3128,34 +3536,12 @@
             }
         }
 
-        function renderPipelineStages() {
-            const list = document.getElementById('pipeline-steps-list');
-            if (!list) return;
-            list.innerHTML = PIPELINE_STAGES.map((st, idx) => `
-                <button type="button" class="stage-btn ${idx === activeStageIdx ? 'active' : ''}"
-                        onclick="selectPipelineStage(${idx})">
-                    <div>
-                        <div class="stage-index">${st.step}</div>
-                        <div class="stage-name">${st.name}</div>
-                        <div class="stage-desc">${st.sub}</div>
-                    </div>
-                    <span class="stage-time">${st.latency}</span>
-                </button>
-            `).join('');
-            const cur = PIPELINE_STAGES[activeStageIdx];
-            document.getElementById('term-stage-code').textContent = cur.code;
-            document.getElementById('term-latency-readout').textContent = `Avg latency: ${cur.latency}`;
-            document.getElementById('term-json-payload').textContent = JSON.stringify(cur.payload, null, 2);
-        }
-
-        function selectPipelineStage(idx) {
-            activeStageIdx = idx;
-            renderPipelineStages();
-        }
-
         async function bootApp() {
-            renderPipelineStages();
+            if (!document.body.getAttribute('data-ws-tab')) {
+                document.body.setAttribute('data-ws-tab', 'studio');
+            }
             renderManualSceneInputs(DEFAULT_MANUAL_SCENES);
+            renderStoryboardCards(DEFAULT_MANUAL_SCENES, 'Default 4-Scene Template');
             await initSupabaseAuth();
             initThreeHero();
             await Promise.all([
@@ -3163,6 +3549,22 @@
                 Promise.resolve(updateRevenueEstimator())
             ]);
             setInterval(refreshJobsAndSeries, 6000);
+        }
+
+        function switchWorkspaceTab(tabId) {
+            const validTabs = ['studio', 'automation', 'vault', 'pricing', 'admin'];
+            const resolved = validTabs.includes(tabId) ? tabId : 'studio';
+            activeWorkspaceTab = resolved;
+            document.body.setAttribute('data-ws-tab', resolved);
+
+            document.querySelectorAll('[data-ws-tab-btn]').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-ws-tab-btn') === resolved);
+            });
+            document.querySelectorAll('[data-ws-nav]').forEach(navBtn => {
+                navBtn.classList.toggle('active', navBtn.getAttribute('data-ws-nav') === resolved);
+            });
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         async function initSupabaseAuth() {
@@ -3233,18 +3635,18 @@
                 if (heroVid) heroVid.pause();
 
                 const planMap = {
-                    starter: ['Creator Starter ($29)', '12 videos/mo', 'both'],
-                    daily: ['Pro Daily ($79)', '30 videos/mo', 'both'],
-                    free: ['Free Sandbox Trial', 'Simulation Only', 'both'],
-                    urdu_starter: ['Desi Creator Starter ($19)', '12 Urdu videos/mo', 'urdu'],
-                    urdu_daily: ['Desi Viral Daily ($35)', '30 Urdu videos/mo', 'urdu'],
-                    english_starter: ['US/UK Monetizer Starter ($39)', '12 English videos/mo', 'english'],
-                    english_daily: ['US/UK Monetizer Pro ($69)', '30 English videos/mo', 'english'],
-                    both_starter: ['Dual-Channel Arbitrage Starter ($49)', '24 Dual-Stream videos/mo', 'both'],
+                    starter: ['Creator Starter ($29)', '12 Dual-Stream videos/mo', 'both'],
+                    daily: ['Pro Daily ($79)', '30 Dual-Stream videos/mo', 'both'],
+                    free: ['Free Sandbox Trial', 'Simulation · EN + UR Standard', 'both'],
+                    urdu_starter: ['Creator Starter ($19)', '12 Dual-Stream videos/mo', 'both'],
+                    urdu_daily: ['Viral Daily ($35)', '30 Dual-Stream videos/mo', 'both'],
+                    english_starter: ['Creator Starter ($39)', '12 Dual-Stream videos/mo', 'both'],
+                    english_daily: ['Monetizer Pro ($69)', '30 Dual-Stream videos/mo', 'both'],
+                    both_starter: ['Dual-Stream Starter ($49)', '24 Dual-Stream videos/mo', 'both'],
                     both_daily: ['Global Dual-Stream Autopilot ($89)', '60 Dual-Stream videos/mo', 'both']
                 };
-                const [planTitle, streamTitle, allowedLang] = isAdmin
-                    ? ['Founder Admin', 'All Languages', 'all']
+                const [planTitle, streamTitle] = isAdmin
+                    ? ['Founder Admin', 'All Languages (EN + UR Standard)']
                     : (planMap[planTier] || planMap.both_daily);
 
                 document.getElementById('ws-user-email').textContent = session.user.email;
@@ -3255,18 +3657,11 @@
                     : `${credits.toLocaleString()} episodes`;
 
                 if (langSelect) {
-                    const allowAllLangs = isAdmin || allowedLang === 'both' || allowedLang === 'all';
                     Array.from(langSelect.options).forEach(opt => {
-                        opt.disabled = allowAllLangs ? false : (opt.value !== allowedLang);
+                        opt.disabled = false;
                     });
-                    if (allowAllLangs) {
-                        if (!langSelect.value || langSelect.options[langSelect.selectedIndex]?.disabled) {
-                            langSelect.value = 'both';
-                        } else {
-                            langSelect.value = 'both';
-                        }
-                    } else {
-                        langSelect.value = allowedLang;
+                    if (!langSelect.value) {
+                        langSelect.value = 'both';
                     }
                 }
 
@@ -4137,6 +4532,56 @@ Credits  : ${data.credits_balance} 3D Episodes`;
             selectedStudioChannel = chId;
             document.querySelectorAll('#studio-channel-picker .select-tile').forEach(b => b.classList.remove('selected'));
             if (btnEl) btnEl.classList.add('selected');
+            const defaultVoice = CHANNEL_VOICE_DEFAULTS[chId] || 'Charon';
+            selectedVoicePersona = defaultVoice;
+            const vSel = document.getElementById('studio-voice-select');
+            if (vSel) vSel.value = defaultVoice;
+        }
+
+        function selectStudioVoicePersona(voiceId) {
+            selectedVoicePersona = voiceId || 'Charon';
+        }
+
+        async function auditionStudioVoice(lang) {
+            const voiceId = (document.getElementById('studio-voice-select')?.value || selectedVoicePersona || 'Charon');
+            const statusEl = document.getElementById('voice-audition-status');
+            const btnEl = document.getElementById(lang === 'urdu' ? 'btn-audition-ur' : 'btn-audition-en');
+            const wrapEl = document.getElementById('voice-player-wrap');
+            const labelEl = document.getElementById('voice-player-label');
+            const audioEl = document.getElementById('voice-audition-audio');
+
+            if (btnEl) btnEl.disabled = true;
+            if (statusEl) statusEl.textContent = `Synthesizing ${voiceId} (${lang.toUpperCase()})...`;
+
+            try {
+                const res = await fetch('/api/voices/preview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        voice_id: voiceId,
+                        channel: selectedStudioChannel,
+                        lang: lang
+                    })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.audio_url) {
+                    showToast(data.detail || 'Could not synthesize voice preview.');
+                    if (statusEl) statusEl.textContent = '24 kHz Neural DSP Ready';
+                    return;
+                }
+                if (wrapEl) wrapEl.classList.add('active');
+                if (labelEl) labelEl.textContent = `${data.voice_id} · ${lang.toUpperCase()}`;
+                if (statusEl) statusEl.textContent = `Playing ${data.voice_id} (${lang.toUpperCase()})`;
+                if (audioEl) {
+                    audioEl.src = data.audio_url;
+                    audioEl.play().catch(() => {});
+                }
+            } catch (err) {
+                showToast(`Voice preview error: ${err.message}`);
+                if (statusEl) statusEl.textContent = '24 kHz Neural DSP Ready';
+            } finally {
+                if (btnEl) btnEl.disabled = false;
+            }
         }
 
         function selectVisualStyle(styleId, btnEl) {
@@ -4212,24 +4657,95 @@ Credits  : ${data.credits_balance} 3D Episodes`;
             return out;
         }
 
-        async function compileDirectorPreview() {
-            const promptText = (document.getElementById('custom-prompt-input').value || '').trim();
-            if (promptText.length < 4) {
-                showToast('Enter a custom concept (at least 4 characters) first.');
+        function renderStoryboardCards(scenesArray, titleLabel) {
+            const grid = document.getElementById('director-storyboard-preview');
+            const tagEl = document.getElementById('preview-compiler-tag');
+            if (tagEl && titleLabel) {
+                tagEl.textContent = `Storyboard · ${titleLabel}`;
+            }
+            if (!grid) return;
+            const arcNames = ['Scene 01 · Hook', 'Scene 02 · Escalation', 'Scene 03 · Climax', 'Scene 04 · Payoff'];
+            grid.innerHTML = scenesArray.slice(0, 4).map((sc, i) => {
+                const fp = (sc.flow_prompt || sc.scene || '').replace(/"/g, '&quot;');
+                const sp = (sc.speaker || 'narrator').replace(/"/g, '&quot;');
+                const enLine = (sc.english_line || '').replace(/"/g, '&quot;');
+                const urLine = (sc.urdu_line || '').replace(/"/g, '&quot;');
+                return `
+                    <div class="storyboard-scene-card">
+                        <div class="storyboard-scene-head">
+                            <span class="storyboard-scene-tag">${arcNames[i] || `Scene 0${i + 1}`}</span>
+                            <input id="sb-card-speaker-${i}" class="clean-input" style="width:110px;padding:0.2rem 0.45rem;font-size:0.7rem;font-family:var(--font-mono);" value="${sp}" placeholder="Speaker">
+                        </div>
+                        <div>
+                            <label class="field-label" style="font-size:0.66rem;margin-bottom:0.2rem;display:block;">10s 3D Camera &amp; Visual Prompt</label>
+                            <textarea id="sb-card-prompt-${i}" class="clean-textarea" style="min-height:54px;font-size:0.76rem;padding:0.45rem 0.6rem;">${sc.flow_prompt || sc.scene || ''}</textarea>
+                        </div>
+                        <div>
+                            <label class="field-label" style="font-size:0.66rem;margin-bottom:0.2rem;display:block;">English Line</label>
+                            <input id="sb-card-en-${i}" class="clean-input" style="padding:0.36rem 0.55rem;font-size:0.76rem;" value="${enLine}">
+                        </div>
+                        <div>
+                            <label class="field-label" style="font-size:0.66rem;margin-bottom:0.2rem;display:block;color:var(--rose-soft);">Urdu / Roman Urdu Line</label>
+                            <input id="sb-card-ur-${i}" class="clean-input" style="padding:0.36rem 0.55rem;font-size:0.76rem;" value="${urLine}">
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function collectStoryboardCardsFromDOM() {
+            const out = [];
+            for (let i = 0; i < 4; i++) {
+                const fp = (document.getElementById(`sb-card-prompt-${i}`)?.value || '').trim();
+                const sp = (document.getElementById(`sb-card-speaker-${i}`)?.value || 'narrator').trim();
+                const en = (document.getElementById(`sb-card-en-${i}`)?.value || '').trim();
+                const ur = (document.getElementById(`sb-card-ur-${i}`)?.value || '').trim();
+                if (fp) {
+                    out.push({ flow_prompt: fp, speaker: sp, english_line: en, urdu_line: ur });
+                }
+            }
+            return out;
+        }
+
+        function lockEditedStoryboardForRender() {
+            const edited = collectStoryboardCardsFromDOM();
+            if (!edited.length) {
+                showToast('Compile or enter 4 scenes on the timeline first.');
                 return;
             }
+            lockedStoryboardScenes = edited;
+            renderManualSceneInputs(edited);
+            const btn = document.getElementById('btn-lock-storyboard');
+            if (btn) {
+                btn.innerHTML = '<span>✓ Locked for Render (4 Scenes)</span>';
+            }
+            showToast('4-Card Storyboard locked! Click "Render Episode Now" to render your edited scenes.');
+        }
+
+        async function previewDirectorStoryboard() {
+            return compileDirectorPreview();
+        }
+
+        async function compileDirectorPreview() {
+            const promptInput = document.getElementById('custom-prompt-input');
+            const seriesInput = document.getElementById('series-name-input');
+            const rawPrompt = (promptInput?.value || '').trim() || (seriesInput?.value || '').trim() || 'Autonomous 3D Episode';
             const btn = document.getElementById('btn-compile-preview');
-            btn.disabled = true;
-            btn.querySelector('span').textContent = 'Compiling Storyboard...';
+            if (btn) {
+                btn.disabled = true;
+                const sp = btn.querySelector('span');
+                if (sp) sp.textContent = 'Compiling Storyboard...';
+            }
             try {
                 const res = await fetch('/api/director/preview', {
                     method: 'POST',
                     headers: buildAuthHeaders(),
                     body: JSON.stringify({
-                        creation_mode: 'custom_director',
+                        creation_mode: selectedCreationMode === 'manual_scenes' ? 'manual_scenes' : 'custom_director',
                         channel: selectedStudioChannel,
-                        custom_prompt: promptText,
-                        visual_style: selectedVisualStyle
+                        custom_prompt: rawPrompt,
+                        visual_style: selectedVisualStyle,
+                        custom_scenes: selectedCreationMode === 'manual_scenes' ? collectManualScenesFromDOM() : undefined
                     })
                 });
                 const data = await res.json().catch(() => ({}));
@@ -4238,27 +4754,23 @@ Credits  : ${data.credits_balance} 3D Episodes`;
                     return;
                 }
                 lastCompiledPreview = data;
+                const mapped = (data.scenes || []).map((sc, i) => ({
+                    flow_prompt: sc,
+                    speaker: (data.dialogue_english?.[i] || {}).speaker || 'narrator',
+                    english_line: (data.dialogue_english?.[i] || {}).line || '',
+                    urdu_line: (data.dialogue_urdu?.[i] || {}).line || ''
+                }));
+                renderStoryboardCards(mapped, data.title_english || rawPrompt);
+                renderManualSceneInputs(mapped);
                 const box = document.getElementById('storyboard-preview-box');
-                const content = document.getElementById('storyboard-preview-content');
-                document.getElementById('preview-compiler-tag').textContent = `Storyboard · ${data.title_english}`;
-                content.innerHTML = data.scenes.map((sc, i) => {
-                    const enObj = data.dialogue_english[i] || { speaker: 'narrator', line: '' };
-                    const urObj = data.dialogue_urdu[i] || { speaker: 'narrator', line: '' };
-                    return `
-                        <div style="padding:0.55rem 0;border-bottom:1px solid var(--border-subtle);">
-                            <div style="font-family:var(--font-mono);font-size:0.7rem;color:var(--cerulean-bright);margin-bottom:0.2rem;">
-                                Scene ${i + 1} · ${enObj.speaker}
-                            </div>
-                            <div style="color:var(--text-primary);font-size:0.8rem;margin-bottom:0.22rem;">${sc}</div>
-                            <div style="font-size:0.76rem;color:var(--text-secondary);">EN: "${enObj.line}"</div>
-                            <div style="font-size:0.76rem;color:var(--rose-soft);">UR: "${urObj.line}"</div>
-                        </div>
-                    `;
-                }).join('');
-                box.style.display = 'block';
+                if (box) box.style.display = 'block';
+                showToast(`Compiled 4-Scene Storyboard: ${data.title_english || 'Ready'}`);
             } finally {
-                btn.disabled = false;
-                btn.querySelector('span').textContent = 'Preview 4-Scene Storyboard';
+                if (btn) {
+                    btn.disabled = false;
+                    const sp = btn.querySelector('span');
+                    if (sp) sp.textContent = 'Preview 4-Scene Storyboard';
+                }
             }
         }
 
@@ -4504,15 +5016,21 @@ Credits  : ${data.credits_balance} 3D Episodes`;
                 return;
             }
 
+            const useLockedStoryboard = Array.isArray(lockedStoryboardScenes) && lockedStoryboardScenes.length === 4;
+            const resolvedCreationMode = useLockedStoryboard ? 'manual_scenes' : selectedCreationMode;
+            const resolvedCustomScenes = resolvedCreationMode === 'manual_scenes'
+                ? (useLockedStoryboard ? lockedStoryboardScenes : collectManualScenesFromDOM())
+                : null;
+
             const payload = {
                 channel: selectedStudioChannel,
                 lang,
                 mock: mode === 'mock',
                 scenes: mode === 'mock' ? 2 : 4,
-                creation_mode: selectedCreationMode,
+                creation_mode: resolvedCreationMode,
                 custom_prompt: customPrompt,
                 visual_style: selectedVisualStyle,
-                custom_scenes: selectedCreationMode === 'manual_scenes' ? collectManualScenesFromDOM() : null
+                custom_scenes: resolvedCustomScenes
             };
 
             const res = await fetch('/api/generate', {
@@ -4548,38 +5066,93 @@ Credits  : ${data.credits_balance} 3D Episodes`;
 
                 if (poolData) renderWorkerPool(poolData);
 
-                const jobsEl = document.getElementById('jobs-container');
-                const jobs = (jobsData.jobs || []).slice(0, 8);
-                if (!jobs.length) {
-                    jobsEl.innerHTML = `<div class="item-row-card"><div class="item-row-sub">No active render jobs. Click "Render Episode Now" to start.</div></div>`;
-                } else {
-                    jobsEl.innerHTML = jobs.map(j => {
-                        const isActive = j.status === 'queued' || j.status === 'running';
-                        const stColor = j.status === 'completed'
-                            ? 'var(--emerald)'
-                            : ((j.status === 'failed' || j.status === 'cancelled') ? 'var(--danger)' : 'var(--cerulean-bright)');
-                        return `
-                            <div class="item-row-card">
-                                <div class="item-row-top">
-                                    <strong>${j.channel.replace('_', ' ')} · ${j.lang.toUpperCase()}</strong>
-                                    <div style="display:flex;align-items:center;gap:0.5rem;">
-                                        <span style="font-family:var(--font-mono);font-size:0.72rem;color:${stColor};">${j.status}</span>
-                                        ${isActive ? `<button type="button" class="btn-ghost" style="height:24px;padding:0 0.55rem;font-size:0.7rem;color:var(--danger);border-color:rgba(244,63,94,0.35);" onclick="cancelRenderJob('${j.job_id}')">Cancel</button>` : ''}
-                                    </div>
-                                </div>
-                                <div class="item-row-sub">${j.stage}${j.error ? ' — ' + j.error : ''}</div>
-                                <div class="progress-track">
-                                    <div class="progress-fill" style="width:${j.progress || 10}%;"></div>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-                }
-
+                renderJobsList(jobsData.jobs || []);
                 renderSeriesList(serData.series || []);
             } catch (e) {
                 console.warn('Telemetry refresh notice:', e);
             }
+        }
+
+        function resolveJobStageIndex(stageStr, progressVal, statusVal) {
+            if (statusVal === 'completed') return 6;
+            const s = (stageStr || '').toLowerCase();
+            if (s.includes('[6/6]') || s.includes('cloud') || s.includes('drive') || s.includes('upload')) return 5;
+            if (s.includes('[5/6]') || s.includes('compos') || s.includes('subtitle') || s.includes('ffmpeg')) return 4;
+            if (s.includes('[4/6]') || s.includes('tts') || s.includes('voice') || s.includes('audio')) return 3;
+            if (s.includes('[3/6]') || s.includes('vision') || s.includes('quality') || s.includes('score')) return 2;
+            if (s.includes('[2/6]') || s.includes('flow') || s.includes('3d') || s.includes('scene')) return 1;
+            if (s.includes('[1/6]') || s.includes('director') || s.includes('script')) return 0;
+            const p = Number(progressVal || 0);
+            if (p >= 90) return 5;
+            if (p >= 75) return 4;
+            if (p >= 55) return 3;
+            if (p >= 40) return 2;
+            if (p >= 20) return 1;
+            return 0;
+        }
+
+        function formatJobElapsed(createdAt) {
+            if (!createdAt) return '00:12';
+            const started = new Date(createdAt).getTime();
+            if (isNaN(started)) return '00:12';
+            const diffSec = Math.max(1, Math.floor((Date.now() - started) / 1000));
+            const mins = String(Math.floor(diffSec / 60)).padStart(2, '0');
+            const secs = String(diffSec % 60).padStart(2, '0');
+            return `${mins}:${secs}`;
+        }
+
+        function renderJobsList(rawJobs) {
+            const jobsEl = document.getElementById('jobs-list-container') || document.getElementById('jobs-container');
+            const legacyEl = document.getElementById('jobs-container');
+            if (!jobsEl) return;
+            const jobs = (rawJobs || []).slice(0, 8);
+            if (!jobs.length) {
+                const emptyMarkup = `<div class="item-row-card"><div class="item-row-sub">No active render jobs. Click "Render Episode Now" to start.</div></div>`;
+                jobsEl.innerHTML = emptyMarkup;
+                if (legacyEl && legacyEl !== jobsEl) legacyEl.innerHTML = emptyMarkup;
+                return;
+            }
+            const stepLabels = ['1. Script', '2. 3D Scenes', '3. Quality Check', '4. Voiceover', '5. Captions', '6. Ready'];
+            const html = jobs.map(j => {
+                const isActive = j.status === 'queued' || j.status === 'running';
+                const isDone = j.status === 'completed';
+                const stColor = isDone
+                    ? 'var(--emerald)'
+                    : ((j.status === 'failed' || j.status === 'cancelled') ? 'var(--danger)' : 'var(--cerulean-bright)');
+                const activeStep = resolveJobStageIndex(j.stage, j.progress, j.status);
+                const elapsed = formatJobElapsed(j.created_at);
+
+                const stepperHtml = (isActive || isDone) ? `
+                    <div class="job-stepper-grid">
+                        ${stepLabels.map((lbl, idx) => {
+                            const cls = (isDone || idx < activeStep) ? 'done' : (idx === activeStep && isActive ? 'current' : '');
+                            return `<div class="job-step-pill ${cls}">${lbl}</div>`;
+                        }).join('')}
+                    </div>
+                ` : '';
+
+                return `
+                    <div class="item-row-card">
+                        <div class="item-row-top">
+                            <strong>${(j.channel || 'body_simulator').replace('_', ' ')} · ${(j.lang || 'both').toUpperCase()}</strong>
+                            <div style="display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap;">
+                                ${isActive ? `<span class="job-elapsed-badge">⏱ ${elapsed}</span>` : ''}
+                                <span style="font-family:var(--font-mono);font-size:0.72rem;color:${stColor};font-weight:600;">${(j.status || 'queued').toUpperCase()}</span>
+                                ${isActive ? `<button type="button" class="btn-ghost" style="height:24px;padding:0 0.55rem;font-size:0.7rem;color:var(--danger);border-color:rgba(244,63,94,0.35);" onclick="cancelRenderJob('${j.job_id}')">Cancel</button>` : ''}
+                                ${isDone ? `<button type="button" class="btn-ghost" style="height:24px;padding:0 0.6rem;font-size:0.7rem;color:var(--emerald);border-color:rgba(16,185,129,0.4);" onclick="switchWorkspaceTab('vault')">Watch in Vault →</button>` : ''}
+                            </div>
+                        </div>
+                        <div class="item-row-sub">${j.stage || 'Queued'}${j.error ? ' — ' + j.error : ''}</div>
+                        <div class="progress-track">
+                            <div class="progress-fill" style="width:${isDone ? 100 : (j.progress || 14)}%;"></div>
+                        </div>
+                        ${stepperHtml}
+                    </div>
+                `;
+            }).join('');
+
+            jobsEl.innerHTML = html;
+            if (legacyEl && legacyEl !== jobsEl) legacyEl.innerHTML = html;
         }
 
         function renderSeriesList(seriesList) {
@@ -4665,8 +5238,19 @@ Credits  : ${data.credits_balance} 3D Episodes`;
             }
         }
 
+        function setVaultChannelFilter(chId, btnEl) {
+            activeVaultChannelFilter = chId || 'all';
+            document.querySelectorAll('#vault-channel-filter-bar .chip-btn').forEach(b => b.classList.remove('active'));
+            if (btnEl) btnEl.classList.add('active');
+            renderVaultGrid();
+        }
+
         function renderVaultGrid() {
             const grid = document.getElementById('vault-grid-container');
+            const countPill = document.getElementById('ws-tab-vault-count');
+            if (countPill) {
+                countPill.textContent = `${vaultEpisodes.length} Pairs`;
+            }
             if (!grid) return;
             if (!vaultEpisodes.length) {
                 if (vaultScope === 'client_private') {
@@ -4683,10 +5267,35 @@ Credits  : ${data.credits_balance} 3D Episodes`;
                 }
                 return;
             }
-            grid.innerHTML = vaultEpisodes.map((pair, idx) => {
-                const defaultLang = pair.english ? 'english' : 'urdu';
+
+            const q = (document.getElementById('vault-search-input')?.value || '').trim().toLowerCase();
+            const indexed = vaultEpisodes
+                .map((pair, idx) => ({ pair, idx }))
+                .filter(({ pair }) => {
+                    if (activeVaultChannelFilter !== 'all' && pair.channel !== activeVaultChannelFilter) {
+                        return false;
+                    }
+                    if (!q) return true;
+                    const en = pair.english || {};
+                    const ur = pair.urdu || {};
+                    const hay = `${pair.channel || ''} ${pair.slug || ''} ${en.title || ''} ${ur.title || ''} ${en.caption || ''} ${ur.caption || ''} ${en.hashtags || ''} ${ur.hashtags || ''}`.toLowerCase();
+                    return hay.includes(q);
+                });
+
+            if (!indexed.length) {
+                grid.innerHTML = `
+                    <div class="panel-box surface-card" style="grid-column: 1 / -1; text-align: center; padding: 2rem 1.25rem;">
+                        <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.3rem;">No Matching Vault Episodes</div>
+                        <div style="font-size: 0.82rem; color: var(--text-secondary);">Try clearing your search filter or switching to "All Channels".</div>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = indexed.map(({ pair, idx }) => {
+                const defaultLang = vaultCardActiveLang[idx] || (pair.english ? 'english' : 'urdu');
                 vaultCardActiveLang[idx] = defaultLang;
-                const defaultStream = pair.english || pair.urdu;
+                const defaultStream = pair[defaultLang] || pair.english || pair.urdu;
                 const hasBoth = Boolean(pair.english && pair.urdu);
                 return `
                     <div class="vault-card surface-card">
@@ -4699,20 +5308,24 @@ Credits  : ${data.credits_balance} 3D Episodes`;
                         <div class="vault-meta-row">
                             <span class="vault-channel">${pair.channel.replace('_', ' ')}</span>
                             <div class="stream-toggle">
-                                ${pair.english ? `<button class="stream-pill active-en" id="vbtn-en-${idx}" onclick="switchVaultCardLang(${idx}, 'english')">EN</button>` : ''}
-                                ${pair.urdu ? `<button class="stream-pill ${!pair.english ? 'active-ur' : ''}" id="vbtn-ur-${idx}" onclick="switchVaultCardLang(${idx}, 'urdu')">UR</button>` : ''}
+                                ${pair.english ? `<button class="stream-pill ${defaultLang === 'english' ? 'active-en' : ''}" id="vbtn-en-${idx}" onclick="switchVaultCardLang(${idx}, 'english')">EN</button>` : ''}
+                                ${pair.urdu ? `<button class="stream-pill ${defaultLang === 'urdu' ? 'active-ur' : ''}" id="vbtn-ur-${idx}" onclick="switchVaultCardLang(${idx}, 'urdu')">UR</button>` : ''}
                             </div>
                         </div>
                         <div class="vault-title" id="vtitle-${idx}">${defaultStream.title}</div>
                         <div class="vault-tags" id="vtags-${idx}">${defaultStream.hashtags || '#VoxFlowStudio'}</div>
-                        <div style="display:flex;gap:0.45rem;margin-top:0.65rem;">
+                        <div style="display:flex;gap:0.4rem;margin-top:0.65rem;flex-wrap:wrap;">
                             <a id="vdl-${idx}" href="${defaultStream.video_url}" download target="_blank" rel="noopener"
-                               class="btn-ghost" style="flex:1;text-decoration:none;font-size:0.72rem;">
+                               class="btn-ghost" style="flex:1;text-decoration:none;font-size:0.7rem;">
                                 Download .MP4
                             </a>
-                            <button type="button" id="vcopy-${idx}" class="btn-ghost" style="flex:1;font-size:0.72rem;"
+                            <button type="button" id="vcopy-${idx}" class="btn-ghost" style="flex:1;font-size:0.7rem;"
                                     onclick="copyVaultCardMeta(${idx})">
-                                Copy Tags &amp; Caption
+                                Copy Tags
+                            </button>
+                            <button type="button" class="btn-ghost" style="width:100%;font-size:0.7rem;color:var(--cerulean-bright);border-color:var(--cerulean-border);"
+                                    onclick="openVaultInspectorModal(${idx})">
+                                Script &amp; Details →
                             </button>
                         </div>
                         <div style="font-family:var(--font-mono);font-size:0.68rem;color:${hasBoth ? 'var(--cerulean-bright)' : 'var(--text-muted)'};margin-top:0.55rem;">
@@ -4721,6 +5334,52 @@ Credits  : ${data.credits_balance} 3D Episodes`;
                     </div>
                 `;
             }).join('');
+        }
+
+        function openVaultInspectorModal(idx) {
+            const pair = vaultEpisodes[idx];
+            if (!pair) return;
+            const activeLang = vaultCardActiveLang[idx] || (pair.english ? 'english' : 'urdu');
+            const stream = pair[activeLang] || pair.english || pair.urdu;
+            if (!stream) return;
+
+            currentInspectedEpisode = { pair, stream, lang: activeLang };
+            document.getElementById('vinsp-channel-line').textContent = `${(pair.channel || '').replace('_', ' ').toUpperCase()} · ${activeLang.toUpperCase()}`;
+            document.getElementById('vinsp-title-line').textContent = stream.title || 'Rendered Episode';
+            document.getElementById('vinsp-lang-val').textContent = activeLang === 'urdu' ? 'Urdu (اردو)' : 'English';
+            document.getElementById('vinsp-size-val').textContent = `${Number(stream.size_mb || 12.0).toFixed(1)} MB`;
+
+            const captionPart = (stream.caption || stream.title || '').trim();
+            const tagsPart = (stream.hashtags || '#VoxFlowStudio').trim();
+            document.getElementById('vinsp-caption-box').textContent = `${captionPart}\n\n${tagsPart}`.trim();
+            document.getElementById('vinsp-script-box').textContent = (stream.dialogue || stream.caption || 'Full spoken voiceover mastered in 1080×1920 MP4 stream.').trim();
+            const dlBtn = document.getElementById('vinsp-download-btn');
+            if (dlBtn) dlBtn.href = stream.video_url || '#';
+
+            document.getElementById('vault-inspector-backdrop').classList.add('open');
+        }
+
+        function closeVaultInspectorModal() {
+            const modal = document.getElementById('vault-inspector-backdrop');
+            if (modal) modal.classList.remove('open');
+        }
+
+        function copyInspectorField(fieldType) {
+            if (!currentInspectedEpisode || !currentInspectedEpisode.stream) return;
+            const s = currentInspectedEpisode.stream;
+            let textToCopy = '';
+            if (fieldType === 'title') {
+                textToCopy = s.title || '';
+            } else if (fieldType === 'script') {
+                textToCopy = (s.dialogue || s.caption || s.title || '').trim();
+            } else {
+                textToCopy = `${(s.caption || s.title || '').trim()} ${(s.hashtags || '#VoxFlowStudio').trim()}`.trim();
+            }
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                showToast(`Copied ${fieldType} to clipboard!`);
+            }).catch(() => {
+                showToast(textToCopy);
+            });
         }
 
         function activateVaultVideo(idx) {
