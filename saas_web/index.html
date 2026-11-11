@@ -4990,58 +4990,50 @@ Credits  : ${data.credits_balance} 3D Episodes`;
         }
 
         async function auditionStudioVoice(lang) {
-            const voiceId = (document.getElementById('studio-voice-select')?.value || selectedVoicePersona || 'Charon');
+            const validVoices = ['Charon', 'Kore', 'Puck', 'Fenrir', 'Aoede'];
+            const rawVoice = (document.getElementById('studio-voice-select')?.value || selectedVoicePersona || 'Charon');
+            const voiceId = validVoices.includes(rawVoice) ? rawVoice : 'Charon';
+            const validChannels = ['body_simulator', 'xray_mechanics', 'crazy_characters', 'health_coach', 'garage_guru', 'code_classroom'];
+            const chKey = validChannels.includes(selectedStudioChannel) ? selectedStudioChannel : 'body_simulator';
+            const langKey = lang === 'urdu' ? 'urdu' : 'english';
+
             const statusEl = document.getElementById('voice-audition-status');
-            const btnEl = document.getElementById(lang === 'urdu' ? 'btn-audition-ur' : 'btn-audition-en');
+            const btnEl = document.getElementById(langKey === 'urdu' ? 'btn-audition-ur' : 'btn-audition-en');
             const wrapEl = document.getElementById('voice-player-wrap');
             const labelEl = document.getElementById('voice-player-label');
             const audioEl = document.getElementById('voice-audition-audio');
 
-            if (btnEl) btnEl.disabled = true;
-            if (wrapEl) wrapEl.classList.add('active');
-            if (statusEl) statusEl.textContent = `Synthesizing ${voiceId} (${lang.toUpperCase()})...`;
-            if (labelEl) labelEl.textContent = `Loading ${voiceId} · ${lang.toUpperCase()}...`;
+            const cdnUrl = `https://ouqjlqqgnboytjvudylv.supabase.co/storage/v1/object/public/vault-videos/voice-previews/${voiceId}_${chKey}_${langKey}.mp3`;
 
-            // Unlock HTML5 audio element synchronously inside the user click gesture
+            if (wrapEl) wrapEl.classList.add('active');
+            if (labelEl) labelEl.textContent = `${voiceId} · ${langKey.toUpperCase()}`;
+            if (statusEl) statusEl.textContent = `Playing ${voiceId} (${langKey.toUpperCase()})`;
+
             if (audioEl) {
                 audioEl.muted = false;
                 audioEl.volume = 1.0;
-                try { audioEl.pause(); } catch (e) {}
+                audioEl.src = cdnUrl;
+                const playPromise = audioEl.play();
+                if (playPromise && typeof playPromise.catch === 'function') {
+                    playPromise.catch(async () => {
+                        try {
+                            const res = await fetch('/api/voices/preview', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ voice_id: voiceId, channel: chKey, lang: langKey })
+                            });
+                            const data = await res.json().catch(() => ({}));
+                            const fallbackSrc = data.audio_data_url || data.audio_url;
+                            if (res.ok && fallbackSrc) {
+                                audioEl.src = fallbackSrc;
+                                audioEl.play().catch(() => {});
+                            }
+                        } catch (e) {}
+                    });
+                }
             }
-
-            try {
-                const res = await fetch('/api/voices/preview', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        voice_id: voiceId,
-                        channel: selectedStudioChannel,
-                        lang: lang
-                    })
-                });
-                const data = await res.json().catch(() => ({}));
-                const playSrc = data.audio_data_url || data.audio_url;
-                if (!res.ok || !playSrc) {
-                    showToast(data.detail || 'Could not synthesize voice preview.');
-                    if (statusEl) statusEl.textContent = 'Voice Preview Ready';
-                    return;
-                }
-                if (labelEl) labelEl.textContent = `${data.voice_id} · ${lang.toUpperCase()}`;
-                if (statusEl) statusEl.textContent = `Playing ${data.voice_id} (${lang.toUpperCase()})`;
-                if (audioEl) {
-                    audioEl.src = playSrc;
-                    const playPromise = audioEl.play();
-                    if (playPromise && typeof playPromise.catch === 'function') {
-                        playPromise.catch(() => {
-                            showToast(`Voice ready — press ▶ on the audio bar to listen.`);
-                        });
-                    }
-                }
-            } catch (err) {
-                showToast(`Voice preview error: ${err.message}`);
-                if (statusEl) statusEl.textContent = 'Voice Preview Ready';
-            } finally {
-                if (btnEl) btnEl.disabled = false;
+            if (btnEl) {
+                btnEl.disabled = false;
             }
         }
 
@@ -5533,11 +5525,65 @@ Credits  : ${data.credits_balance} 3D Episodes`;
             const data = await res.json().catch(() => ({}));
             if (res.ok) {
                 showToast(`Queued ${data.job_id} (${lang.toUpperCase()})`);
+                if (mode === 'mock' && data.job_id) {
+                    driveClientSandboxJob(data.job_id, selectedStudioChannel, lang);
+                }
                 if (currentSession) await applyAuthSession(currentSession);
                 await refreshJobsAndSeries();
             } else {
                 showToast(data.detail || 'Authorization required.');
                 if (res.status === 401 || res.status === 402) openAuthModal();
+            }
+        }
+
+        const SANDBOX_DEMO_VIDEOS = {
+            body_simulator: {
+                english: 'https://ouqjlqqgnboytjvudylv.supabase.co/storage/v1/object/public/vault-videos/body_simulator/english/body_simulator_english_your_body_when_you_skip_sleep_for_36_hou_1774877920.mp4',
+                urdu: 'https://ouqjlqqgnboytjvudylv.supabase.co/storage/v1/object/public/vault-videos/body_simulator/urdu/body_simulator_urdu_your_body_when_you_skip_sleep_for_36_hou_1774877920.mp4'
+            },
+            xray_mechanics: {
+                english: 'https://ouqjlqqgnboytjvudylv.supabase.co/storage/v1/object/public/vault-videos/xray_mechanics/english/xray_mechanics_english_inside_a_jet_engine_sucking_in_a_flock_o_1774903356.mp4',
+                urdu: 'https://ouqjlqqgnboytjvudylv.supabase.co/storage/v1/object/public/vault-videos/xray_mechanics/urdu/xray_mechanics_urdu_inside_a_jet_engine_sucking_in_a_flock_o_1774903356.mp4'
+            },
+            crazy_characters: {
+                english: 'https://ouqjlqqgnboytjvudylv.supabase.co/storage/v1/object/public/vault-videos/crazy_characters/english/crazy_characters_english_when_aalu_and_tamatar_get_thrown_into_bo_1774879180.mp4',
+                urdu: 'https://ouqjlqqgnboytjvudylv.supabase.co/storage/v1/object/public/vault-videos/crazy_characters/urdu/crazy_characters_urdu_when_aalu_and_tamatar_get_thrown_into_bo_1774879180.mp4'
+            }
+        };
+
+        async function driveClientSandboxJob(jobCode, channel, lang) {
+            if (!supabaseClient || !currentSession) return;
+            const demoPair = SANDBOX_DEMO_VIDEOS[channel] || SANDBOX_DEMO_VIDEOS.body_simulator;
+            const steps = [
+                { delay: 800,  progress: 22, status: 'running',   stage: '[1/6] Sandbox Director: Compiling 4-scene storyboard...' },
+                { delay: 1100, progress: 42, status: 'running',   stage: '[2/6] Sandbox 3D Scenes: Simulating 4× 10s camera motion shots...' },
+                { delay: 1100, progress: 62, status: 'running',   stage: '[3/6] Sandbox Quality Check: Verifying framing & motion...' },
+                { delay: 1100, progress: 80, status: 'running',   stage: `[4/6] Sandbox Voiceover: Mixing ${(lang || 'both').toUpperCase()} character voices...` },
+                { delay: 1100, progress: 92, status: 'running',   stage: '[5/6] Sandbox Captions: Syncing karaoke subtitles...' },
+                { delay: 1000, progress: 100, status: 'completed', stage: '[6/6] Sandbox Preview Complete — Ready in Episode Vault' }
+            ];
+            for (const st of steps) {
+                await new Promise(r => setTimeout(r, st.delay));
+                const patchObj = {
+                    status: st.status,
+                    stage: st.stage,
+                    progress: st.progress,
+                    updated_at: new Date().toISOString()
+                };
+                if (st.status === 'completed') {
+                    patchObj.english_video = demoPair.english;
+                    patchObj.urdu_video = demoPair.urdu;
+                }
+                try {
+                    await supabaseClient
+                        .from('render_jobs')
+                        .update(patchObj)
+                        .eq('job_code', jobCode);
+                } catch (e) {}
+                await refreshJobsAndSeries();
+                if (st.status === 'completed') {
+                    await loadVault();
+                }
             }
         }
 
