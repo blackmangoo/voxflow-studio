@@ -22,19 +22,19 @@ from google.genai import types
 
 VOICE_CONFIGS = {
     # ── Urdu / Desi personas ──────────────────────────────────────────────────
-    "mehak":    {"voice": "Kore",   "edge_voice": "hi-IN-SwaraNeural",       "pitch": "+8Hz",  "rate": "+4%",  "style": "Soft, delicate nazaakat with lingering romantic warmth, gentle sighs"},
+    "mehak":    {"voice": "Kore",   "edge_voice": "ur-PK-UzmaNeural",        "pitch": "+8Hz",  "rate": "+4%",  "style": "Soft, delicate nazaakat with lingering romantic warmth, gentle sighs"},
     "farhan":   {"voice": "Charon", "edge_voice": "ur-PK-AsadNeural",        "pitch": "-4Hz",  "rate": "+2%",  "style": "Deep, velvety, soulful Urdu romantic baritone with poetic tehzeeb"},
-    "stomach":  {"voice": "Puck",   "edge_voice": "hi-IN-MadhurNeural",      "pitch": "+12Hz", "rate": "+12%", "style": "High-pitched comedic screaming, frantic rapid breaths, breathless cartoon panic"},
-    "pancreas": {"voice": "Puck",   "edge_voice": "hi-IN-MadhurNeural",      "pitch": "+14Hz", "rate": "+15%", "style": "Stressed, frantic logistics clerk shouting about emergency overtime"},
-    "kidney":   {"voice": "Puck",   "edge_voice": "hi-IN-MadhurNeural",      "pitch": "+10Hz", "rate": "+8%",  "style": "Panicked lab chemist realizing a critical chemical shortage, dramatic whispered alarm"},
-    "heart":    {"voice": "Puck",   "edge_voice": "hi-IN-MadhurNeural",      "pitch": "+6Hz",  "rate": "+20%", "style": "Hyper-energetic thumping athlete character, out of breath, rapid excited delivery"},
-    "muscle":   {"voice": "Fenrir", "edge_voice": "hi-IN-MadhurNeural",      "pitch": "-2Hz",  "rate": "+8%",  "style": "Pumped gym bro energy, loud, flexing confidence with grunting effort"},
-    "aalu":     {"voice": "Puck",   "edge_voice": "hi-IN-MadhurNeural",      "pitch": "+4Hz",  "rate": "+6%",  "style": "Emotional, sincere young desi hero speaking with proud motivational passion"},
-    "tamatar":  {"voice": "Charon", "edge_voice": "hi-IN-MadhurNeural",      "pitch": "-6Hz",  "rate": "+2%",  "style": "Chubby funny desi uncle or street vendor with enthusiastic banter"},
-    "pyaaz":    {"voice": "Puck",   "edge_voice": "hi-IN-MadhurNeural",      "pitch": "+2Hz",  "rate": "+4%",  "style": "Dramatic crying onion character, tears in the voice, layered emotional sadness"},
-    "mirchi":   {"voice": "Puck",   "edge_voice": "hi-IN-MadhurNeural",      "pitch": "+16Hz", "rate": "+18%", "style": "Fiery hot-headed short-tempered chili character, super fast aggressive delivery"},
-    "chai":     {"voice": "Aoede",  "edge_voice": "hi-IN-SwaraNeural",       "pitch": "+4Hz",  "rate": "+2%",  "style": "Warm cozy desi auntie energy, comforting, slightly gossip tone"},
-    "brain":    {"voice": "Charon", "edge_voice": "hi-IN-MadhurNeural",      "pitch": "-6Hz",  "rate": "+0%",  "style": "Deep condescending boss, calm sarcastic authority, relaxed dismissive tone"},
+    "stomach":  {"voice": "Puck",   "edge_voice": "ur-PK-AsadNeural",        "pitch": "+12Hz", "rate": "+12%", "style": "High-pitched comedic screaming, frantic rapid breaths, breathless cartoon panic"},
+    "pancreas": {"voice": "Puck",   "edge_voice": "ur-PK-AsadNeural",        "pitch": "+14Hz", "rate": "+15%", "style": "Stressed, frantic logistics clerk shouting about emergency overtime"},
+    "kidney":   {"voice": "Puck",   "edge_voice": "ur-PK-AsadNeural",        "pitch": "+10Hz", "rate": "+8%",  "style": "Panicked lab chemist realizing a critical chemical shortage, dramatic whispered alarm"},
+    "heart":    {"voice": "Puck",   "edge_voice": "ur-PK-AsadNeural",        "pitch": "+6Hz",  "rate": "+20%", "style": "Hyper-energetic thumping athlete character, out of breath, rapid excited delivery"},
+    "muscle":   {"voice": "Fenrir", "edge_voice": "ur-PK-AsadNeural",        "pitch": "-2Hz",  "rate": "+8%",  "style": "Pumped gym bro energy, loud, flexing confidence with grunting effort"},
+    "aalu":     {"voice": "Puck",   "edge_voice": "ur-PK-AsadNeural",        "pitch": "+4Hz",  "rate": "+6%",  "style": "Emotional, sincere young desi hero speaking with proud motivational passion"},
+    "tamatar":  {"voice": "Charon", "edge_voice": "ur-PK-AsadNeural",        "pitch": "-6Hz",  "rate": "+2%",  "style": "Chubby funny desi uncle or street vendor with enthusiastic banter"},
+    "pyaaz":    {"voice": "Puck",   "edge_voice": "ur-PK-AsadNeural",        "pitch": "+2Hz",  "rate": "+4%",  "style": "Dramatic crying onion character, tears in the voice, layered emotional sadness"},
+    "mirchi":   {"voice": "Puck",   "edge_voice": "ur-PK-AsadNeural",        "pitch": "+16Hz", "rate": "+18%", "style": "Fiery hot-headed short-tempered chili character, super fast aggressive delivery"},
+    "chai":     {"voice": "Aoede",  "edge_voice": "ur-PK-UzmaNeural",        "pitch": "+4Hz",  "rate": "+2%",  "style": "Warm cozy desi auntie energy, comforting, slightly gossip tone"},
+    "brain":    {"voice": "Charon", "edge_voice": "ur-PK-AsadNeural",        "pitch": "-6Hz",  "rate": "+0%",  "style": "Deep condescending boss, calm sarcastic authority, relaxed dismissive tone"},
 
     # ── English personas ──────────────────────────────────────────────────────
     "melody":        {"voice": "Aoede",  "edge_voice": "en-US-JennyNeural",       "pitch": "+6Hz",  "rate": "+4%",  "style": "Silky, honeyed softness, playful flirty teasing, seductive close-mic whisper"},
@@ -42,7 +42,7 @@ VOICE_CONFIGS = {
     "mechanic":      {"voice": "Fenrir", "edge_voice": "en-US-GuyNeural",         "pitch": "-4Hz",  "rate": "+2%",  "style": "Experienced gritty master mechanic, serious cautionary engineering tone, battle-hardened"},
     "doctor":        {"voice": "Charon", "edge_voice": "en-US-ChristopherNeural", "pitch": "-3Hz",  "rate": "+2%",  "style": "Warm, trustworthy medical expert voice. Evidence-based, authoritative but approachable. Slight urgency for health warnings"},
     "cpp_professor": {"voice": "Fenrir", "edge_voice": "en-US-GuyNeural",         "pitch": "-5Hz",  "rate": "+6%",  "style": "Brilliant sarcastic CS professor. Brutally honest, witty, challenging, slightly exasperated tone with dry humor"},
-    "student":       {"voice": "Puck",   "edge_voice": "en-US-JasonNeural",       "pitch": "+8Hz",  "rate": "+8%",  "style": "Confused, eager, slightly overwhelmed BS student. Natural young voice, genuine curiosity mixed with mild panic"},
+    "student":       {"voice": "Puck",   "edge_voice": "en-US-SteffanNeural",     "pitch": "+8Hz",  "rate": "+8%",  "style": "Confused, eager, slightly overwhelmed BS student. Natural young voice, genuine curiosity mixed with mild panic"},
 }
 
 SPEAKER_ALIASES = {
@@ -58,10 +58,10 @@ SPEAKER_ALIASES = {
 }
 
 GEMINI_TTS_MODELS = [
-    "gemini-3.8-flash-tts",
-    "gemini-3.8-flash-lite-tts",
-    "gemini-3.1-flash-tts-preview",
     "gemini-2.5-flash-preview-tts",
+    "gemini-3.1-flash-tts-preview",
+    "gemini-3.8-flash-lite-tts",
+    "gemini-3.8-flash-tts",
 ]
 
 
@@ -195,12 +195,32 @@ def _edge_tts_variation(character_key: str, base_rate: str, base_pitch: str) -> 
 
 
 def _probe_duration(wav_path: Path) -> float:
-    res = subprocess.run(
-        ["ffprobe", "-v", "error", "-show_entries", "format=duration",
-         "-of", "default=noprint_wrappers=1:nokey=1", str(wav_path)],
-        capture_output=True, text=True, check=True
-    )
-    return float(res.stdout.strip())
+    try:
+        with wave.open(str(wav_path), "rb") as w:
+            rate = w.getframerate()
+            if rate > 0:
+                return float(w.getnframes()) / float(rate)
+    except Exception:
+        pass
+    try:
+        res = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+             "-of", "default=noprint_wrappers=1:nokey=1", str(wav_path)],
+            capture_output=True, text=True, check=True
+        )
+        return float(res.stdout.strip())
+    except Exception:
+        return max(1.0, float(wav_path.stat().st_size) / 48000.0) if wav_path.exists() else 2.0
+
+
+async def asyncio_to_thread_ffmpeg(mp3_temp: Path, output_wav: Path) -> None:
+    import asyncio
+    def _conv():
+        subprocess.run(
+            ["ffmpeg", "-y", "-i", str(mp3_temp), "-ar", "24000", "-ac", "1", "-c:a", "pcm_s16le", str(output_wav)],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
+        )
+    await asyncio.to_thread(_conv)
 
 
 class VoxStudioEngine:
@@ -226,15 +246,16 @@ class VoxStudioEngine:
         return self._tts_pool.generate_tts(spec["voice"], spec["style"], text, output_wav)
 
     async def _synthesize_turn_edge(self, spec: Dict[str, Any], text: str, output_wav: Path, character_key: str = "") -> float:
+        import asyncio
         import edge_tts
         varied_rate, varied_pitch = _edge_tts_variation(character_key, spec["rate"], spec["pitch"])
         communicate = edge_tts.Communicate(text, voice=spec["edge_voice"], rate=varied_rate, pitch=varied_pitch)
         mp3_temp = output_wav.with_suffix(".mp3")
-        await communicate.save(str(mp3_temp))
-        subprocess.run(
-            ["ffmpeg", "-y", "-i", str(mp3_temp), "-ar", "24000", "-ac", "1", "-c:a", "pcm_s16le", str(output_wav)],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
-        )
+        try:
+            await asyncio.wait_for(communicate.save(str(mp3_temp)), timeout=10.0)
+            await asyncio_to_thread_ffmpeg(mp3_temp, output_wav)
+        finally:
+            mp3_temp.unlink(missing_ok=True)
         return _probe_duration(output_wav)
 
     async def generate_dialogue_async(
@@ -243,73 +264,79 @@ class VoxStudioEngine:
         lang: str = "urdu",
         output_prefix: str = "voxstudio_dialogue"
     ) -> Dict[str, Any]:
+        import asyncio
         pid_prefix = f"{output_prefix}_{os.getpid()}"
         turn_wavs = []
         turn_durations = []
         all_words = []
         cumulative_ms = 0
 
-        for idx, item in enumerate(script_lines):
-            spk_raw = item.get("speaker", "stomach")
-            spk_key = self._resolve_speaker(spk_raw, lang)
-            spec = VOICE_CONFIGS[spk_key]
-            seg_wav = TEMP_DIR / f"{pid_prefix}_turn_{idx}.wav"
+        try:
+            for idx, item in enumerate(script_lines):
+                spk_raw = item.get("speaker", "stomach")
+                spk_key = self._resolve_speaker(spk_raw, lang)
+                spec = VOICE_CONFIGS[spk_key]
+                seg_wav = TEMP_DIR / f"{pid_prefix}_turn_{idx}.wav"
 
-            # Tier 1: Gemini TTS
-            try:
-                print(f"    [Gemini TTS – {spec['voice']}] {spk_key.upper()}: '{item['line'][:55]}...'")
-                dur = self._synthesize_turn_gemini(spec, item["line"], seg_wav)
-                print(f"       OK — {dur:.2f}s")
-            except Exception as e1:
-                print(f"    [Gemini failed: {e1!r}] -> Edge-TTS ({spec['edge_voice']})...")
-                # Tier 2: Edge-TTS
-                dur = await self._synthesize_turn_edge(spec, item["line"], seg_wav, character_key=spk_key)
-                print(f"       OK (Edge-TTS) — {dur:.2f}s")
+                # Tier 1: Gemini TTS
+                try:
+                    print(f"    [Gemini TTS – {spec['voice']}] {spk_key.upper()}: '{item['line'][:55]}...'")
+                    dur = await asyncio.to_thread(self._synthesize_turn_gemini, spec, item["line"], seg_wav)
+                    print(f"       OK — {dur:.2f}s")
+                except Exception as e1:
+                    print(f"    [Gemini failed: {e1!r}] -> Edge-TTS ({spec['edge_voice']})...")
+                    # Tier 2: Edge-TTS
+                    dur = await self._synthesize_turn_edge(spec, item["line"], seg_wav, character_key=spk_key)
+                    print(f"       OK (Edge-TTS) — {dur:.2f}s")
 
-            turn_wavs.append(seg_wav)
-            turn_durations.append(dur + 0.18)
+                turn_wavs.append(seg_wav)
+                turn_durations.append(dur + 0.18)
 
-            words = item["line"].split()
-            if words:
-                line_dur_ms = int(dur * 1000)
-                weights = []
-                for w in words:
-                    clean_tail = w.rstrip("\"'”’)]}")
-                    pause_bonus = 0.0
-                    if clean_tail.endswith((".", "?", "!")):
-                        pause_bonus = 2.5
-                    elif clean_tail.endswith((",", ";", ":")):
-                        pause_bonus = 1.5
-                    weights.append(max(2.0, float(len(w)) + pause_bonus))
+                words = item["line"].split()
+                if words:
+                    line_dur_ms = int(dur * 1000)
+                    weights = []
+                    for w in words:
+                        clean_tail = w.rstrip("\"'”’)]}")
+                        pause_bonus = 0.0
+                        if clean_tail.endswith((".", "?", "!")):
+                            pause_bonus = 2.5
+                        elif clean_tail.endswith((",", ";", ":")):
+                            pause_bonus = 1.5
+                        weights.append(max(2.0, float(len(w)) + pause_bonus))
 
-                total_weight = sum(weights) or 1.0
-                running_weight = 0.0
-                for w_i, (w, weight) in enumerate(zip(words, weights)):
-                    w_start_rel = int(round(line_dur_ms * (running_weight / total_weight)))
-                    running_weight += weight
-                    w_end_rel = (
-                        line_dur_ms
-                        if w_i == len(words) - 1
-                        else int(round(line_dur_ms * (running_weight / total_weight)))
-                    )
-                    all_words.append({
-                        "word": w,
-                        "speaker": spk_raw,
-                        "start_ms": cumulative_ms + w_start_rel,
-                        "end_ms": cumulative_ms + max(w_start_rel + 1, w_end_rel),
-                    })
+                    total_weight = sum(weights) or 1.0
+                    running_weight = 0.0
+                    for w_i, (w, weight) in enumerate(zip(words, weights)):
+                        w_start_rel = int(round(line_dur_ms * (running_weight / total_weight)))
+                        running_weight += weight
+                        w_end_rel = (
+                            line_dur_ms
+                            if w_i == len(words) - 1
+                            else int(round(line_dur_ms * (running_weight / total_weight)))
+                        )
+                        all_words.append({
+                            "word": w,
+                            "speaker": spk_raw,
+                            "start_ms": cumulative_ms + w_start_rel,
+                            "end_ms": cumulative_ms + max(w_start_rel + 10, w_end_rel),
+                        })
 
-            cumulative_ms += int(dur * 1000) + 180
+                cumulative_ms += int(dur * 1000) + 180
 
-        master_clean_wav = TEMP_DIR / f"{pid_prefix}_clean.wav"
-        print("    [DSP] Applying crossfades + high-pass filter...")
-        final_total_dur = stitch_segments_clean(
-            segment_paths=turn_wavs,
-            output_path=master_clean_wav,
-            rate=24000,
-            gap_ms=180,
-            crossfade_ms=15
-        )
+            master_clean_wav = TEMP_DIR / f"{pid_prefix}_clean.wav"
+            print("    [DSP] Applying crossfades + high-pass filter...")
+            final_total_dur = await asyncio.to_thread(
+                stitch_segments_clean,
+                segment_paths=turn_wavs,
+                output_path=master_clean_wav,
+                rate=24000,
+                gap_ms=180,
+                crossfade_ms=15,
+            )
+        finally:
+            for seg in turn_wavs:
+                Path(seg).unlink(missing_ok=True)
 
         return {
             "audio_path": str(master_clean_wav),

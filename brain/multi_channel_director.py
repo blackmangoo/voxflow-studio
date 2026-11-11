@@ -586,7 +586,7 @@ class MultiChannelDirector:
             "5. Each prompt must be at least 60 words. Close with the channel's FLOW_DNA style string."
         )
 
-        candidate_models = ["gemini-3.8-flash", "gemini-flash-lite-latest", "gemini-3.0-flash"]
+        candidate_models = ["gemini-flash-lite-latest", "gemini-2.5-flash", "gemini-2.0-flash"]
         for m in candidate_models:
             try:
                 res = client.models.generate_content(
@@ -916,9 +916,9 @@ class MultiChannelDirector:
 
         for idx, item in enumerate(custom_scenes[:4]):
             raw_v = (item.get("flow_prompt") or item.get("visual") or title).strip()
-            raw_en = (item.get("line_en") or item.get("line") or f"Scene {idx + 1}: {raw_v[:70]}").strip()
-            raw_ur = (item.get("line_ur") or raw_en).strip()
-            persona = (item.get("voice_persona") or "narrator").strip().lower()
+            raw_en = (item.get("english_line") or item.get("line_en") or item.get("line") or f"Scene {idx + 1}: {raw_v[:70]}").strip()
+            raw_ur = (item.get("urdu_line") or item.get("line_ur") or raw_en).strip()
+            persona = (item.get("speaker") or item.get("voice_persona") or "narrator").strip().lower()
 
             # Ensure shot directive & camera motion exist
             lower_v = raw_v.lower()

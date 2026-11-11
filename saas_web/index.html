@@ -163,7 +163,126 @@
         }
 
         .workspace-top-shell {
-            padding: 5.5rem 2rem 0;
+            padding: 5.15rem 2rem 0;
+        }
+
+        /* Hide duplicate top-header nav links when the full Workspace Tab Bar is visible */
+        body.authenticated-workspace .site-header .desktop-nav {
+            display: none !important;
+        }
+
+        /* ─── Studio-Grade 6-Cell Cryptographic OTP Verification Matrix ─── */
+        .otp-vault-shell {
+            background: linear-gradient(180deg, rgba(2, 132, 199, 0.08) 0%, rgba(18, 18, 21, 0.95) 100%);
+            border: 1px solid var(--cerulean-border);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .otp-header-row {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            margin-bottom: 0.9rem;
+        }
+
+        .otp-shield-badge {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: rgba(2, 132, 199, 0.16);
+            border: 1px solid var(--cerulean-bright);
+            display: grid;
+            place-items: center;
+            color: var(--cerulean-bright);
+            font-size: 1.15rem;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.22);
+            flex-shrink: 0;
+        }
+
+        .otp-email-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.45rem 0.75rem;
+            border-radius: var(--radius-sm);
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.76rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .otp-digit-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0.5rem;
+            margin: 0.65rem 0 1rem;
+        }
+
+        .otp-digit-box {
+            width: 100%;
+            height: 54px;
+            border-radius: 10px;
+            background: #09090B;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            color: #FFFFFF;
+            font-family: var(--font-mono);
+            font-size: 1.35rem;
+            font-weight: 700;
+            text-align: center;
+            caret-color: var(--cerulean-bright);
+            transition: all 0.16s ease;
+        }
+
+        .otp-digit-box:focus {
+            outline: none;
+            border-color: var(--cerulean-bright);
+            background: rgba(2, 132, 199, 0.1);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18), 0 0 16px rgba(2, 132, 199, 0.32);
+            transform: translateY(-1px);
+        }
+
+        .otp-digit-box.filled {
+            border-color: var(--emerald);
+            background: rgba(16, 185, 129, 0.08);
+            color: #FFFFFF;
+        }
+
+        .otp-digit-box.error-state {
+            border-color: var(--rose);
+            background: rgba(244, 63, 94, 0.1);
+        }
+
+        .otp-telemetry-strip {
+            background: rgba(9, 9, 11, 0.75);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 0.6rem 0.75rem;
+            margin-bottom: 0.9rem;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .otp-quickfill-banner {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: var(--radius-sm);
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.38);
+            margin-bottom: 0.85rem;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--emerald);
         }
 
         .ws-tab-bar {
@@ -361,20 +480,16 @@
             margin-top: 0.65rem;
             padding-top: 0.55rem;
             border-top: 1px solid var(--border-subtle);
-            display: none;
+            display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 0.75rem;
             flex-wrap: wrap;
         }
 
-        .voice-player-wrap.active {
-            display: flex;
-        }
-
         .voice-player-wrap audio {
-            height: 30px;
-            max-width: 240px;
+            height: 32px;
+            max-width: 260px;
             flex: 1;
         }
 
@@ -2258,6 +2373,9 @@
                 min-height: 60px;
                 padding: 0.4rem 0;
             }
+            .workspace-top-shell {
+                padding: 7.25rem 1.25rem 0;
+            }
             .nav-container {
                 height: auto;
                 flex-wrap: wrap;
@@ -2453,17 +2571,6 @@
              ============================================================ -->
         <div class="workspace-top-shell workspace-only">
             <div class="container">
-                <div class="workspace-founder-bar">
-                    <div class="ws-founder-left">
-                        <span class="ws-live-indicator">CLUSTER ONLINE</span>
-                        <span class="ws-version-tag">VoxFlow v2.4 Master Engine</span>
-                        <span class="ws-arch-tag">English + Urdu Dual-Stream Included Standard</span>
-                    </div>
-                    <a href="mailto:ammar.akbar2002@gmail.com?subject=Custom%20Language%20Request" class="custom-lang-badge">
-                        <span>Need Arabic, Spanish, Hindi, or French? Request a Custom Language →</span>
-                    </a>
-                </div>
-
                 <div class="workspace-banner">
                     <div>
                         <div class="ws-stat-label">Signed-In Account</div>
@@ -2474,8 +2581,8 @@
                         <div class="ws-stat-val" id="ws-plan-name" style="color:var(--cerulean-bright);">—</div>
                     </div>
                     <div>
-                        <div class="ws-stat-label">Videos / Month</div>
-                        <div class="ws-stat-val" id="ws-allowed-stream">—</div>
+                        <div class="ws-stat-label">Output Languages</div>
+                        <div class="ws-stat-val" id="ws-allowed-stream">English + Urdu Standard</div>
                     </div>
                     <div>
                         <div class="ws-stat-label">Available 3D Credits</div>
@@ -3305,6 +3412,67 @@
                     </button>
                 </div>
 
+                <!-- 6-Cell Cryptographic Email OTP Verification Matrix -->
+                <div id="auth-otp-fields" style="display:none;">
+                    <div class="otp-vault-shell">
+                        <div class="otp-header-row">
+                            <div class="otp-shield-badge" aria-hidden="true">🛡</div>
+                            <div>
+                                <div style="font-family:var(--font-mono);font-size:0.66rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--cerulean-bright);">
+                                    Cryptographic Email Gate
+                                </div>
+                                <div style="font-size:0.98rem;font-weight:700;color:var(--text-primary);">
+                                    Enter 6-Digit Verification Code
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="otp-email-pill">
+                            <span id="otp-target-email-readout">you@domain.com</span>
+                            <button type="button" onclick="cancelOtpVerificationView()" style="background:none;border:none;color:var(--cerulean-bright);font-size:0.72rem;cursor:pointer;font-family:var(--font-sans);font-weight:600;">
+                                Edit Email
+                            </button>
+                        </div>
+
+                        <div class="otp-quickfill-banner" id="otp-quickfill-banner">
+                            <span>Instant Verification Code: <strong id="otp-quickfill-code">------</strong></span>
+                            <button type="button" class="btn-ghost" style="height:22px;padding:0 0.5rem;font-size:0.68rem;color:var(--emerald);border-color:rgba(16,185,129,0.45);" onclick="applyQuickfillOtp()">
+                                1-Click Fill
+                            </button>
+                        </div>
+
+                        <div class="otp-digit-grid" role="group" aria-label="6-Digit Verification Code">
+                            <input id="otp-cell-0" class="otp-digit-box" type="text" inputmode="numeric" maxlength="1" autocomplete="one-time-code" oninput="handleOtpCellInput(0, this)" onkeydown="handleOtpCellKeydown(0, event)" onpaste="handleOtpPaste(event)">
+                            <input id="otp-cell-1" class="otp-digit-box" type="text" inputmode="numeric" maxlength="1" oninput="handleOtpCellInput(1, this)" onkeydown="handleOtpCellKeydown(1, event)" onpaste="handleOtpPaste(event)">
+                            <input id="otp-cell-2" class="otp-digit-box" type="text" inputmode="numeric" maxlength="1" oninput="handleOtpCellInput(2, this)" onkeydown="handleOtpCellKeydown(2, event)" onpaste="handleOtpPaste(event)">
+                            <input id="otp-cell-3" class="otp-digit-box" type="text" inputmode="numeric" maxlength="1" oninput="handleOtpCellInput(3, this)" onkeydown="handleOtpCellKeydown(3, event)" onpaste="handleOtpPaste(event)">
+                            <input id="otp-cell-4" class="otp-digit-box" type="text" inputmode="numeric" maxlength="1" oninput="handleOtpCellInput(4, this)" onkeydown="handleOtpCellKeydown(4, event)" onpaste="handleOtpPaste(event)">
+                            <input id="otp-cell-5" class="otp-digit-box" type="text" inputmode="numeric" maxlength="1" oninput="handleOtpCellInput(5, this)" onkeydown="handleOtpCellKeydown(5, event)" onpaste="handleOtpPaste(event)">
+                        </div>
+
+                        <div class="otp-telemetry-strip">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem;">
+                                <span id="otp-channel-readout">SHA-256 Challenge Active</span>
+                                <span id="otp-timer-readout" style="color:var(--cerulean-bright);font-weight:600;">10:00</span>
+                            </div>
+                            <div class="progress-track" style="margin-top:0.2rem;height:3px;">
+                                <div class="progress-fill" id="otp-timer-fill" style="width:100%;"></div>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-primary" style="width:100%;" id="otp-verify-submit-btn" onclick="submitOtpVerification()">
+                            <span>Verify Code &amp; Activate Workspace</span>
+                        </button>
+
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.75rem;font-size:0.75rem;">
+                            <span style="color:var(--text-muted);">Didn't receive the email?</span>
+                            <button type="button" id="otp-resend-btn" onclick="resendOtpChallenge()" style="background:none;border:none;color:var(--cerulean-bright);font-weight:600;cursor:pointer;font-family:inherit;">
+                                Resend 6-Digit Code
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="auth-key-fields" style="display:none;">
                     <div class="field-group">
                         <label class="field-label" for="studio-admin-key">Local Workstation Key</label>
@@ -3548,7 +3716,8 @@
                 loadCatalog(),
                 Promise.resolve(updateRevenueEstimator())
             ]);
-            setInterval(refreshJobsAndSeries, 6000);
+            setInterval(refreshJobsAndSeries, 4500);
+            setInterval(tickActiveJobTimers, 1000);
         }
 
         function switchWorkspaceTab(tabId) {
@@ -3824,6 +3993,8 @@
             }
             const recFields = document.getElementById('auth-recovery-fields');
             if (recFields) recFields.style.display = 'none';
+            const otpFields = document.getElementById('auth-otp-fields');
+            if (otpFields) otpFields.style.display = 'none';
             const tabsBar = document.getElementById('auth-mode-tabs-bar');
             if (tabsBar) tabsBar.style.display = 'grid';
             switchAuthTab(currentAuthTab || 'signin');
@@ -3832,6 +4003,7 @@
 
         function closeAuthModal() {
             isPasswordRecoveryMode = false;
+            clearInterval(window._otpCountdownInterval);
             setAuthModalFeedback('');
             document.getElementById('auth-modal-backdrop').classList.remove('open');
         }
@@ -3845,6 +4017,8 @@
             });
             const recFields = document.getElementById('auth-recovery-fields');
             if (recFields) recFields.style.display = 'none';
+            const otpFields = document.getElementById('auth-otp-fields');
+            if (otpFields) otpFields.style.display = 'none';
             document.getElementById('auth-email-fields').style.display = tab === 'key' ? 'none' : 'block';
             document.getElementById('auth-key-fields').style.display = tab === 'key' ? 'block' : 'none';
         }
@@ -3965,6 +4139,271 @@
             }
         }
 
+        let pendingOtpContext = null;
+
+        function openOtpVerificationView(otpData, pendingCredentials) {
+            pendingOtpContext = {
+                ...pendingCredentials,
+                expiresIn: Number(otpData.expires_in || 600),
+                startedAt: Date.now(),
+                previewCode: otpData.verification_preview_code || null
+            };
+            const tabsBar = document.getElementById('auth-mode-tabs-bar');
+            const emailFields = document.getElementById('auth-email-fields');
+            const keyFields = document.getElementById('auth-key-fields');
+            const recFields = document.getElementById('auth-recovery-fields');
+            const otpFields = document.getElementById('auth-otp-fields');
+
+            if (tabsBar) tabsBar.style.display = 'none';
+            if (emailFields) emailFields.style.display = 'none';
+            if (keyFields) keyFields.style.display = 'none';
+            if (recFields) recFields.style.display = 'none';
+            if (otpFields) otpFields.style.display = 'block';
+
+            const emailReadout = document.getElementById('otp-target-email-readout');
+            if (emailReadout) emailReadout.textContent = otpData.email || pendingCredentials.email;
+
+            const chReadout = document.getElementById('otp-channel-readout');
+            if (chReadout) chReadout.textContent = `${otpData.delivery_channel || 'Supabase Auth Mailer'} · 6-Digit SHA-256`;
+
+            const qfBanner = document.getElementById('otp-quickfill-banner');
+            const qfCode = document.getElementById('otp-quickfill-code');
+            if (qfBanner && qfCode) {
+                if (otpData.verification_preview_code) {
+                    qfCode.textContent = otpData.verification_preview_code;
+                    qfBanner.style.display = 'flex';
+                } else {
+                    qfBanner.style.display = 'none';
+                }
+            }
+
+            for (let i = 0; i < 6; i++) {
+                const cell = document.getElementById(`otp-cell-${i}`);
+                if (cell) {
+                    cell.value = '';
+                    cell.classList.remove('filled', 'error-state');
+                }
+            }
+
+            startOtpCountdownTimer(pendingOtpContext.expiresIn);
+            setAuthModalFeedback(otpData.message || `6-digit verification code sent to ${otpData.masked_email || pendingCredentials.email}.`, true);
+            setTimeout(() => document.getElementById('otp-cell-0')?.focus(), 60);
+        }
+
+        function cancelOtpVerificationView() {
+            clearInterval(window._otpCountdownInterval);
+            const tabsBar = document.getElementById('auth-mode-tabs-bar');
+            const emailFields = document.getElementById('auth-email-fields');
+            const otpFields = document.getElementById('auth-otp-fields');
+            if (otpFields) otpFields.style.display = 'none';
+            if (tabsBar) tabsBar.style.display = 'grid';
+            if (emailFields) emailFields.style.display = 'block';
+            setAuthModalFeedback('');
+        }
+
+        function startOtpCountdownTimer(totalSeconds) {
+            clearInterval(window._otpCountdownInterval);
+            const timerEl = document.getElementById('otp-timer-readout');
+            const fillEl = document.getElementById('otp-timer-fill');
+            let remaining = totalSeconds || 600;
+            const updateTick = () => {
+                const m = String(Math.floor(remaining / 60)).padStart(2, '0');
+                const s = String(remaining % 60).padStart(2, '0');
+                if (timerEl) timerEl.textContent = `Expires in ${m}:${s}`;
+                if (fillEl) fillEl.style.width = `${Math.max(0, (remaining / totalSeconds) * 100)}%`;
+                if (remaining <= 0) {
+                    clearInterval(window._otpCountdownInterval);
+                    if (timerEl) timerEl.textContent = 'Expired';
+                }
+                remaining -= 1;
+            };
+            updateTick();
+            window._otpCountdownInterval = setInterval(updateTick, 1000);
+        }
+
+        function handleOtpCellInput(idx, inputEl) {
+            const digit = (inputEl.value || '').replace(/\D/g, '').slice(-1);
+            inputEl.value = digit;
+            inputEl.classList.remove('error-state');
+            if (digit) {
+                inputEl.classList.add('filled');
+                if (idx < 5) {
+                    document.getElementById(`otp-cell-${idx + 1}`)?.focus();
+                } else {
+                    const code = collectOtpCodeFromCells();
+                    if (code.length === 6) {
+                        submitOtpVerification();
+                    }
+                }
+            } else {
+                inputEl.classList.remove('filled');
+            }
+        }
+
+        function handleOtpCellKeydown(idx, ev) {
+            const inputEl = ev.target;
+            if (ev.key === 'Backspace') {
+                if (!inputEl.value && idx > 0) {
+                    const prev = document.getElementById(`otp-cell-${idx - 1}`);
+                    if (prev) {
+                        prev.value = '';
+                        prev.classList.remove('filled');
+                        prev.focus();
+                    }
+                    ev.preventDefault();
+                } else {
+                    inputEl.classList.remove('filled');
+                }
+            } else if (ev.key === 'ArrowLeft' && idx > 0) {
+                document.getElementById(`otp-cell-${idx - 1}`)?.focus();
+                ev.preventDefault();
+            } else if (ev.key === 'ArrowRight' && idx < 5) {
+                document.getElementById(`otp-cell-${idx + 1}`)?.focus();
+                ev.preventDefault();
+            } else if (ev.key === 'Enter') {
+                submitOtpVerification();
+            }
+        }
+
+        function handleOtpPaste(ev) {
+            ev.preventDefault();
+            const pasted = ((ev.clipboardData || window.clipboardData)?.getData('text') || '').replace(/\D/g, '').slice(0, 6);
+            if (!pasted) return;
+            fillOtpCells(pasted);
+            if (pasted.length === 6) {
+                submitOtpVerification();
+            }
+        }
+
+        function fillOtpCells(codeStr) {
+            const digits = (codeStr || '').replace(/\D/g, '').slice(0, 6);
+            for (let i = 0; i < 6; i++) {
+                const cell = document.getElementById(`otp-cell-${i}`);
+                if (!cell) continue;
+                const ch = digits[i] || '';
+                cell.value = ch;
+                cell.classList.toggle('filled', Boolean(ch));
+                cell.classList.remove('error-state');
+            }
+        }
+
+        function applyQuickfillOtp() {
+            if (!pendingOtpContext || !pendingOtpContext.previewCode) return;
+            fillOtpCells(pendingOtpContext.previewCode);
+            submitOtpVerification();
+        }
+
+        function collectOtpCodeFromCells() {
+            let out = '';
+            for (let i = 0; i < 6; i++) {
+                out += (document.getElementById(`otp-cell-${i}`)?.value || '').replace(/\D/g, '');
+            }
+            return out;
+        }
+
+        async function resendOtpChallenge() {
+            if (!pendingOtpContext || !pendingOtpContext.email) return;
+            const resendBtn = document.getElementById('otp-resend-btn');
+            if (resendBtn) resendBtn.disabled = true;
+            try {
+                const res = await fetch('/api/auth/send-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: pendingOtpContext.email,
+                        purpose: pendingOtpContext.purpose || 'trial_signup',
+                        full_name: pendingOtpContext.fullName || ''
+                    })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    setAuthModalFeedback(data.detail || 'Could not resend verification code.', false);
+                    return;
+                }
+                openOtpVerificationView(data, pendingOtpContext);
+                showToast(`Sent new 6-digit code to ${pendingOtpContext.email}`);
+            } finally {
+                if (resendBtn) setTimeout(() => { resendBtn.disabled = false; }, 5000);
+            }
+        }
+
+        async function submitOtpVerification() {
+            if (!pendingOtpContext) return;
+            const code = collectOtpCodeFromCells();
+            if (code.length < 6) {
+                setAuthModalFeedback('Please enter all 6 digits of your verification code.', false);
+                for (let i = 0; i < 6; i++) {
+                    const cell = document.getElementById(`otp-cell-${i}`);
+                    if (cell && !cell.value) cell.classList.add('error-state');
+                }
+                return;
+            }
+
+            const btn = document.getElementById('otp-verify-submit-btn');
+            if (btn) btn.disabled = true;
+            try {
+                if (pendingOtpContext.purpose === 'checkout_lead' && typeof pendingOtpContext.onVerified === 'function') {
+                    const vRes = await fetch('/api/auth/verify-otp', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: pendingOtpContext.email, otp_code: code })
+                    });
+                    const vData = await vRes.json().catch(() => ({}));
+                    if (!vRes.ok) {
+                        for (let i = 0; i < 6; i++) {
+                            document.getElementById(`otp-cell-${i}`)?.classList.add('error-state');
+                        }
+                        setAuthModalFeedback(vData.detail || 'Invalid 6-digit verification code.', false);
+                        return;
+                    }
+                    clearInterval(window._otpCountdownInterval);
+                    closeAuthModal();
+                    await pendingOtpContext.onVerified(code);
+                    return;
+                }
+
+                // Trial signup completion with verified 6-digit OTP
+                const res = await fetch('/api/auth/trial-signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        full_name: pendingOtpContext.fullName || pendingOtpContext.email.split('@')[0],
+                        email: pendingOtpContext.email,
+                        password: pendingOtpContext.password,
+                        otp_code: code
+                    })
+                });
+                const trialData = await res.json().catch(() => ({}));
+                if (!res.ok || trialData.status !== 'created') {
+                    for (let i = 0; i < 6; i++) {
+                        document.getElementById(`otp-cell-${i}`)?.classList.add('error-state');
+                    }
+                    const errMsg = trialData.detail || trialData.message || 'Invalid verification code.';
+                    setAuthModalFeedback(errMsg, false);
+                    return;
+                }
+
+                clearInterval(window._otpCountdownInterval);
+                setAuthModalFeedback('Email verified! Activating your Sandbox Workspace...', true);
+                if (supabaseClient) {
+                    const { data, error } = await supabaseClient.auth.signInWithPassword({
+                        email: pendingOtpContext.email,
+                        password: pendingOtpContext.password
+                    });
+                    if (error) {
+                        setAuthModalFeedback(`Verified, but sign-in returned: ${error.message}`, false);
+                        return;
+                    }
+                    toggleTrialSignupMode(false);
+                    closeAuthModal();
+                    window.scrollTo({ top: 0, behavior: 'instant' });
+                    showToast(`Verified ${data.user.email}! 3 Free Sandbox Preview Runs unlocked.`);
+                }
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
         async function submitSupabaseAuth() {
             setAuthModalFeedback('');
             const email = (document.getElementById('auth-email-input').value || '').trim();
@@ -3987,16 +4426,24 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             full_name: fullName || email.split('@')[0],
-                            name: fullName || email.split('@')[0],
                             email,
                             password
                         })
                     });
                     const trialData = await res.json().catch(() => ({}));
                     if (!res.ok) {
-                        const errMsg = trialData.detail || 'Could not create sandbox trial account.';
+                        const errMsg = trialData.detail || 'Could not start trial verification.';
                         setAuthModalFeedback(errMsg, false);
                         showToast(errMsg);
+                        return;
+                    }
+                    if (trialData.status === 'otp_required') {
+                        openOtpVerificationView(trialData, {
+                            email,
+                            password,
+                            fullName: fullName || email.split('@')[0],
+                            purpose: 'trial_signup'
+                        });
                         return;
                     }
                     setAuthModalFeedback('Sandbox Trial activated! Signing you in...', true);
@@ -4551,7 +4998,16 @@ Credits  : ${data.credits_balance} 3D Episodes`;
             const audioEl = document.getElementById('voice-audition-audio');
 
             if (btnEl) btnEl.disabled = true;
+            if (wrapEl) wrapEl.classList.add('active');
             if (statusEl) statusEl.textContent = `Synthesizing ${voiceId} (${lang.toUpperCase()})...`;
+            if (labelEl) labelEl.textContent = `Loading ${voiceId} · ${lang.toUpperCase()}...`;
+
+            // Unlock HTML5 audio element synchronously inside the user click gesture
+            if (audioEl) {
+                audioEl.muted = false;
+                audioEl.volume = 1.0;
+                try { audioEl.pause(); } catch (e) {}
+            }
 
             try {
                 const res = await fetch('/api/voices/preview', {
@@ -4564,21 +5020,26 @@ Credits  : ${data.credits_balance} 3D Episodes`;
                     })
                 });
                 const data = await res.json().catch(() => ({}));
-                if (!res.ok || !data.audio_url) {
+                const playSrc = data.audio_data_url || data.audio_url;
+                if (!res.ok || !playSrc) {
                     showToast(data.detail || 'Could not synthesize voice preview.');
-                    if (statusEl) statusEl.textContent = '24 kHz Neural DSP Ready';
+                    if (statusEl) statusEl.textContent = 'Voice Preview Ready';
                     return;
                 }
-                if (wrapEl) wrapEl.classList.add('active');
                 if (labelEl) labelEl.textContent = `${data.voice_id} · ${lang.toUpperCase()}`;
                 if (statusEl) statusEl.textContent = `Playing ${data.voice_id} (${lang.toUpperCase()})`;
                 if (audioEl) {
-                    audioEl.src = data.audio_url;
-                    audioEl.play().catch(() => {});
+                    audioEl.src = playSrc;
+                    const playPromise = audioEl.play();
+                    if (playPromise && typeof playPromise.catch === 'function') {
+                        playPromise.catch(() => {
+                            showToast(`Voice ready — press ▶ on the audio bar to listen.`);
+                        });
+                    }
                 }
             } catch (err) {
                 showToast(`Voice preview error: ${err.message}`);
-                if (statusEl) statusEl.textContent = '24 kHz Neural DSP Ready';
+                if (statusEl) statusEl.textContent = 'Voice Preview Ready';
             } finally {
                 if (btnEl) btnEl.disabled = false;
             }
@@ -4923,45 +5384,76 @@ Credits  : ${data.credits_balance} 3D Episodes`;
             const form = emailInput.closest('.checkout-email-form');
             const normalizedTier = planKey === 'starter' ? 'both_starter' : (planKey === 'daily' ? 'both_daily' : planKey);
 
+            // Step 1: Send 6-digit OTP challenge to verify the buyer's email address
             try {
-                await fetch('/api/checkout/lead', {
+                const otpRes = await fetch('/api/auth/send-otp', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         email,
-                        whatsapp,
-                        plan_tier: normalizedTier,
-                        payment_method: paymentMethod
+                        purpose: 'checkout_lead',
+                        full_name: planName
                     })
                 });
+                const otpData = await otpRes.json().catch(() => ({}));
+                if (!otpRes.ok) {
+                    showToast(otpData.detail || 'Please enter a valid email address.');
+                    return;
+                }
+
+                openAuthModal(`Verify ${email} to finalize your ${planName} activation request.`);
+                openOtpVerificationView(otpData, {
+                    email,
+                    purpose: 'checkout_lead',
+                    onVerified: async (verifiedOtpCode) => {
+                        try {
+                            await fetch('/api/checkout/lead', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    email,
+                                    whatsapp,
+                                    plan_tier: normalizedTier,
+                                    payment_method: paymentMethod,
+                                    otp_code: verifiedOtpCode
+                                })
+                            });
+                        } catch (e) {
+                            console.warn('Checkout lead capture notice:', e);
+                        }
+
+                        const subjectEnc = encodeURIComponent(`VoxFlow Studio Activation — ${planName} (${email})`);
+                        const bodyEnc = encodeURIComponent(`Hi Ammar,\n\nI just verified my email and requested ${planName} (${normalizedTier}) on VoxFlow Studio.\nEmail: ${email}\nWhatsApp: ${whatsapp || 'Not provided'}\nPayment Preference: ${paymentMethod}\n\nPlease share activation details!`);
+                        const safeEmail = email.replace(/'/g, "\\'");
+
+                        if (form) {
+                            form.innerHTML = `
+                                <div style="text-align:center;padding:0.9rem 0.25rem;">
+                                    <div style="font-size:1.35rem;margin-bottom:0.4rem;color:var(--emerald);">&#10003;</div>
+                                    <div style="font-weight:700;margin-bottom:0.35rem;">Verified Request Logged for ${planName}</div>
+                                    <p style="font-size:0.8rem;color:var(--text-secondary);line-height:1.5;margin-bottom:0.85rem;">
+                                        Verified <strong>${email}</strong>. Activate your credits immediately via concierge or test the 3D Sandbox now:
+                                    </p>
+                                    <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                                        <a href="mailto:ammar.akbar2002@gmail.com?subject=${subjectEnc}&amp;body=${bodyEnc}"
+                                           target="_blank" rel="noopener"
+                                           class="btn btn-primary" style="width:100%;text-decoration:none;">
+                                            <span>Instant Activation via WhatsApp →</span>
+                                        </a>
+                                        <button type="button" class="btn btn-secondary" style="width:100%;"
+                                                onclick="openAuthModalForTrial('${safeEmail}')">
+                                            <span>Try Free Sandbox Now</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        showToast(`Email ${email} verified & ${planName} request logged!`);
+                    }
+                });
             } catch (e) {
-                console.warn('Checkout lead capture notice:', e);
+                showToast(`Verification error: ${e.message}`);
             }
-
-            const subjectEnc = encodeURIComponent(`VoxFlow Studio Activation — ${planName} (${email})`);
-            const bodyEnc = encodeURIComponent(`Hi Ammar,\n\nI just requested ${planName} (${normalizedTier}) on VoxFlow Studio.\nEmail: ${email}\nWhatsApp: ${whatsapp || 'Not provided'}\nPayment Preference: ${paymentMethod}\n\nPlease share activation details!`);
-            const safeEmail = email.replace(/'/g, "\\'");
-
-            form.innerHTML = `
-                <div style="text-align:center;padding:0.9rem 0.25rem;">
-                    <div style="font-size:1.35rem;margin-bottom:0.4rem;color:var(--emerald);">&#10003;</div>
-                    <div style="font-weight:700;margin-bottom:0.35rem;">Request Logged for ${planName}</div>
-                    <p style="font-size:0.8rem;color:var(--text-secondary);line-height:1.5;margin-bottom:0.85rem;">
-                        We logged your request for <strong>${email}</strong>. Activate your credits immediately via concierge or test the 3D Sandbox now:
-                    </p>
-                    <div style="display:flex;flex-direction:column;gap:0.5rem;">
-                        <a href="mailto:ammar.akbar2002@gmail.com?subject=${subjectEnc}&amp;body=${bodyEnc}"
-                           target="_blank" rel="noopener"
-                           class="btn btn-primary" style="width:100%;text-decoration:none;">
-                            <span>Instant Activation via WhatsApp →</span>
-                        </a>
-                        <button type="button" class="btn btn-secondary" style="width:100%;"
-                                onclick="openAuthModalForTrial('${safeEmail}')">
-                            <span>Try Free Sandbox Now</span>
-                        </button>
-                    </div>
-                </div>
-            `;
         }
 
         function cancelPlanPurchase(planKey) {
@@ -5076,11 +5568,12 @@ Credits  : ${data.credits_balance} 3D Episodes`;
         function resolveJobStageIndex(stageStr, progressVal, statusVal) {
             if (statusVal === 'completed') return 6;
             const s = (stageStr || '').toLowerCase();
+            if (s.includes('[0/6]') || statusVal === 'queued') return 0;
             if (s.includes('[6/6]') || s.includes('cloud') || s.includes('drive') || s.includes('upload')) return 5;
-            if (s.includes('[5/6]') || s.includes('compos') || s.includes('subtitle') || s.includes('ffmpeg')) return 4;
+            if (s.includes('[5/6]') || s.includes('compos') || s.includes('subtitle') || s.includes('caption') || s.includes('ffmpeg')) return 4;
             if (s.includes('[4/6]') || s.includes('tts') || s.includes('voice') || s.includes('audio')) return 3;
             if (s.includes('[3/6]') || s.includes('vision') || s.includes('quality') || s.includes('score')) return 2;
-            if (s.includes('[2/6]') || s.includes('flow') || s.includes('3d') || s.includes('scene')) return 1;
+            if (s.includes('[2/6]') || s.includes('3d') || s.includes('scene') || s.includes('shot')) return 1;
             if (s.includes('[1/6]') || s.includes('director') || s.includes('script')) return 0;
             const p = Number(progressVal || 0);
             if (p >= 90) return 5;
@@ -5091,14 +5584,32 @@ Credits  : ${data.credits_balance} 3D Episodes`;
             return 0;
         }
 
+        function parseJobStartEpochMs(createdAt) {
+            if (!createdAt) return Date.now();
+            if (typeof createdAt === 'number') {
+                return createdAt < 1e12 ? createdAt * 1000 : createdAt;
+            }
+            const asNum = Number(createdAt);
+            if (!isNaN(asNum) && asNum > 100000) {
+                return asNum < 1e12 ? asNum * 1000 : asNum;
+            }
+            const parsed = new Date(createdAt).getTime();
+            return isNaN(parsed) ? Date.now() : parsed;
+        }
+
         function formatJobElapsed(createdAt) {
-            if (!createdAt) return '00:12';
-            const started = new Date(createdAt).getTime();
-            if (isNaN(started)) return '00:12';
+            const started = parseJobStartEpochMs(createdAt);
             const diffSec = Math.max(1, Math.floor((Date.now() - started) / 1000));
             const mins = String(Math.floor(diffSec / 60)).padStart(2, '0');
             const secs = String(diffSec % 60).padStart(2, '0');
             return `${mins}:${secs}`;
+        }
+
+        function tickActiveJobTimers() {
+            document.querySelectorAll('.job-elapsed-badge[data-job-created]').forEach(el => {
+                const rawCreated = el.getAttribute('data-job-created');
+                el.textContent = `⏱ ${formatJobElapsed(rawCreated)}`;
+            });
         }
 
         function renderJobsList(rawJobs) {
@@ -5120,7 +5631,8 @@ Credits  : ${data.credits_balance} 3D Episodes`;
                     ? 'var(--emerald)'
                     : ((j.status === 'failed' || j.status === 'cancelled') ? 'var(--danger)' : 'var(--cerulean-bright)');
                 const activeStep = resolveJobStageIndex(j.stage, j.progress, j.status);
-                const elapsed = formatJobElapsed(j.created_at);
+                const createdStamp = j.created_at || Date.now();
+                const elapsed = formatJobElapsed(createdStamp);
 
                 const stepperHtml = (isActive || isDone) ? `
                     <div class="job-stepper-grid">
@@ -5136,7 +5648,7 @@ Credits  : ${data.credits_balance} 3D Episodes`;
                         <div class="item-row-top">
                             <strong>${(j.channel || 'body_simulator').replace('_', ' ')} · ${(j.lang || 'both').toUpperCase()}</strong>
                             <div style="display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap;">
-                                ${isActive ? `<span class="job-elapsed-badge">⏱ ${elapsed}</span>` : ''}
+                                ${isActive ? `<span class="job-elapsed-badge" data-job-created="${createdStamp}">⏱ ${elapsed}</span>` : ''}
                                 <span style="font-family:var(--font-mono);font-size:0.72rem;color:${stColor};font-weight:600;">${(j.status || 'queued').toUpperCase()}</span>
                                 ${isActive ? `<button type="button" class="btn-ghost" style="height:24px;padding:0 0.55rem;font-size:0.7rem;color:var(--danger);border-color:rgba(244,63,94,0.35);" onclick="cancelRenderJob('${j.job_id}')">Cancel</button>` : ''}
                                 ${isDone ? `<button type="button" class="btn-ghost" style="height:24px;padding:0 0.6rem;font-size:0.7rem;color:var(--emerald);border-color:rgba(16,185,129,0.4);" onclick="switchWorkspaceTab('vault')">Watch in Vault →</button>` : ''}

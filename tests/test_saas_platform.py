@@ -360,6 +360,61 @@ class TestSaaSPlatform(unittest.TestCase):
         )
         self.assertEqual(r_unauth_wa.status_code, 401)
 
+    def test_voice_audition_otp_matrix_and_sandbox_completion(self):
+        """Voice audition, 6-Cell OTP matrix, and Sandbox completion must work end-to-end."""
+        client = TestClient(app)
+
+        # 1. Voice audition must return instant base64 audio_data_url & valid WAV stream
+        r_v = client.post(
+            "/api/voices/preview",
+            json={"voice_id": "Puck", "channel": "body_simulator", "lang": "english"},
+        )
+        self.assertEqual(r_v.status_code, 200)
+        v_json = r_v.json()
+        self.assertTrue(v_json["audio_data_url"].startswith("data:audio/wav;base64,"))
+        self.assertGreater(len(v_json["audio_data_url"]), 50_000)
+
+        r_wav = client.get(v_json["audio_url"])
+        self.assertEqual(r_wav.status_code, 200)
+        self.assertIn("audio/wav", r_wav.headers.get("content-type", ""))
+
+        # 2. 6-Digit Email OTP Challenge & disposable domain guard
+        r_disp = client.post(
+            "/api/auth/send-otp",
+            json={"email": "spam@mailinator.com", "purpose": "checkout_lead"},
+        )
+        self.assertEqual(r_disp.status_code, 400)
+
+        r_otp = client.post(
+            "/api/auth/send-otp",
+            json={"email": "verified.creator@gmail.com", "purpose": "checkout_lead"},
+        )
+        self.assertEqual(r_otp.status_code, 200)
+        otp_payload = r_otp.json()
+        self.assertEqual(otp_payload["status"], "otp_sent")
+        code = otp_payload["verification_preview_code"]
+        self.assertEqual(len(code), 6)
+
+        r_bad_otp = client.post(
+            "/api/auth/verify-otp",
+            json={"email": "verified.creator@gmail.com", "otp_code": "000000"},
+        )
+        self.assertEqual(r_bad_otp.status_code, 400)
+
+        r_ok_otp = client.post(
+            "/api/auth/verify-otp",
+            json={"email": "verified.creator@gmail.com", "otp_code": code},
+        )
+        self.assertEqual(r_ok_otp.status_code, 200)
+        self.assertTrue(r_ok_otp.json()["verified"])
+
+        # 3. Verify 6-Cell OTP Matrix & 1s Job Timer Ticker exist in UI
+        ui_html = client.get("/").text
+        self.assertIn("id=\"auth-otp-fields\"", ui_html)
+        self.assertIn("id=\"otp-cell-0\"", ui_html)
+        self.assertIn("id=\"otp-cell-5\"", ui_html)
+        self.assertIn("tickActiveJobTimers", ui_html)
+
 
 if __name__ == "__main__":
     unittest.main()

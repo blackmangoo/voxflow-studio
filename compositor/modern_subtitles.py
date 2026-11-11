@@ -11,6 +11,7 @@ from config import TEMP_DIR, CHANNEL_SUBTITLE_CONFIGS, SUBTITLE_CONFIG_DEFAULT
 
 def ms_to_ass_time(ms: int) -> str:
     """Converts milliseconds to ASS timestamp: H:MM:SS.cc"""
+    ms = max(0, int(ms))
     hours = ms // 3600000
     ms %= 3600000
     minutes = ms // 60000
@@ -18,6 +19,18 @@ def ms_to_ass_time(ms: int) -> str:
     seconds = ms // 1000
     centiseconds = (ms % 1000) // 10
     return f"{hours}:{minutes:02d}:{seconds:02d}.{centiseconds:02d}"
+
+
+def _escape_ass_text(raw: str) -> str:
+    """Escapes literal braces and backslashes so libass never misinterprets dialogue as override tags."""
+    return (
+        (raw or "")
+        .replace("\\", "\\\\")
+        .replace("{", "&#123;")
+        .replace("}", "&#125;")
+        .replace("\r", "")
+        .replace("\n", "\\N")
+    )
 
 
 class ModernSubtitleGenerator:
@@ -38,6 +51,9 @@ class ModernSubtitleGenerator:
     ) -> Path:
         if output_path is None:
             output_path = TEMP_DIR / f"{lang}_subtitles.ass"
+        else:
+            output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
 
         cfg = CHANNEL_SUBTITLE_CONFIGS.get(channel or "", SUBTITLE_CONFIG_DEFAULT)
 
@@ -84,7 +100,7 @@ class ModernSubtitleGenerator:
         # Hook text — top 3 seconds, full-screen banner
         if hook_text:
             end_time = ms_to_ass_time(3000)
-            clean_hook = hook_text.replace("\n", "\\N")
+            clean_hook = _escape_ass_text(hook_text)
             events.append(
                 f"Dialogue: 1,0:00:00.00,{end_time},HookStyle,,0,0,0,,{{\\fad(200,200)}} {clean_hook} "
             )
@@ -96,11 +112,14 @@ class ModernSubtitleGenerator:
             if not chunk:
                 continue
             for idx, active_word in enumerate(chunk):
-                w_start = ms_to_ass_time(active_word["start_ms"])
-                w_end   = ms_to_ass_time(active_word["end_ms"])
+                start_ms = max(0, int(active_word.get("start_ms", 0)))
+                end_ms = max(start_ms + 10, int(active_word.get("end_ms", start_ms + 100)))
+                w_start = ms_to_ass_time(start_ms)
+                w_end   = ms_to_ass_time(end_ms)
                 parts = []
                 for o_idx, o_word in enumerate(chunk):
-                    w_text = o_word["word"].upper() if lang == "english" else o_word["word"]
+                    raw_word = str(o_word.get("word", ""))
+                    w_text = _escape_ass_text(raw_word.upper() if lang == "english" else raw_word)
                     if o_idx == idx:
                         parts.append(
                             f"{{\\c{highlight}\\fscx112\\fscy112}}{w_text}{{\\r}}"
@@ -123,5 +142,5 @@ if __name__ == "__main__":
     gen = ModernSubtitleGenerator()
     dummy = [{"word": "Test", "start_ms": 0, "end_ms": 500}]
     for ch in ["body_simulator", "xray_mechanics", "crazy_characters", "health_coach", "garage_guru", "code_classroom"]:
-        p = gen.generate_ass(dummy, channel=ch, output_path=Path(f"/tmp/sub_{ch}.ass"))
+        p = gen.generate_ass(dummy, channel=ch, output_path=TEMP_DIR / f"sub_{ch}.ass")
         print(f"{ch}: {p}")

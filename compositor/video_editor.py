@@ -87,139 +87,155 @@ class VideoCompositor:
             raise ValueError("No video clips provided.")
 
         if len(scene_durations) != num_clips:
-            duration_per_clip = total_audio_duration / num_clips
+            duration_per_clip = max(0.5, total_audio_duration / num_clips)
             scene_durations = [duration_per_clip] * num_clips
+        else:
+            scene_durations = [max(0.5, float(d)) for d in scene_durations]
 
         # ── 1. Normalize each clip to its exact line duration (preserving real motion) ──
         tag = f"{channel or 'ch'}_{os.getpid()}_{random.randint(100,999)}"
         processed_clips = []
-        for idx, (clip, dur) in enumerate(zip(clip_paths, scene_durations)):
-            out_clip = TEMP_DIR / f"synced_{tag}_clip_{idx}.mp4"
-            vf = (
-                f"scale={self.width}:{self.height}:force_original_aspect_ratio=increase,"
-                f"crop={self.width}:{self.height},"
-                f"fps={self.fps},setsar=1"
-            )
+        concat_txt = TEMP_DIR / f"synced_{tag}_concat.txt"
+        stitched_video = TEMP_DIR / f"stitched_{tag}_synced.mp4"
+
+        try:
+            for idx, (clip, dur) in enumerate(zip(clip_paths, scene_durations)):
+                out_clip = TEMP_DIR / f"synced_{tag}_clip_{idx}.mp4"
+                vf = (
+                    f"scale={self.width}:{self.height}:force_original_aspect_ratio=increase,"
+                    f"crop={self.width}:{self.height},"
+                    f"fps={self.fps},setsar=1"
+                )
+                subprocess.run(
+                    [
+                        "ffmpeg", "-y",
+                        "-stream_loop", "-1",
+                        "-i", str(clip),
+                        "-t", f"{dur:.3f}",
+                        "-vf", vf,
+                        "-an",
+                        "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+                        str(out_clip)
+                    ],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
+                )
+                processed_clips.append(str(out_clip))
+
+            # ── 2. Concatenate normalized clips ────────────────────────────────
+            with open(concat_txt, "w", encoding="utf-8") as f:
+                for p in processed_clips:
+                    f.write(f"file '{Path(p).as_posix()}'\n")
+
             subprocess.run(
-                [
-                    "ffmpeg", "-y",
-                    "-stream_loop", "-1",
-                    "-i", str(clip),
-                    "-t", f"{dur:.3f}",
-                    "-vf", vf,
-                    "-an",
-                    "-c:v", "libx264", "-preset", "fast", "-crf", "18",
-                    str(out_clip)
-                ],
+                ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_txt), "-c", "copy", str(stitched_video)],
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
             )
-            processed_clips.append(str(out_clip))
 
-        # ── 2. Concatenate normalized clips ────────────────────────────────
-        concat_txt = TEMP_DIR / f"synced_{tag}_concat.txt"
-        with open(concat_txt, "w", encoding="utf-8") as f:
-            for p in processed_clips:
-                f.write(f"file '{Path(p).as_posix()}'\n")
+            # ── 3. Build filter_complex ────────────────────────────────────────
+            vocal_filter = (
+                "highpass=f=80,"
+                "compand=attacks=0.02:decays=0.2:points=-80/-80|-40/-30|-20/-15|0/-10,"
+                "loudnorm=I=-16:TP=-1.5:LRA=11,"
+                "aresample=44100"
+            )
 
-        stitched_video = TEMP_DIR / f"stitched_{tag}_synced.mp4"
-        subprocess.run(
-            ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_txt), "-c", "copy", str(stitched_video)],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
-        )
-
-        # ── 3. Build filter_complex ────────────────────────────────────────
-        vocal_filter = (
-            "highpass=f=80,"
-            "compand=attacks=0.02:decays=0.2:points=-80/-80|-40/-30|-20/-15|0/-10,"
-            "loudnorm=I=-16:TP=-1.5:LRA=11"
-        )
-
-        sub_filter = ""
-        if subtitles_path and Path(subtitles_path).exists():
-            clean_sub = Path(subtitles_path).as_posix().replace(":", "\\:")
-            sub_filter = f"ass='{clean_sub}'"
-
-        from video_engine.asset_fetcher import get_random_audio
-        sfx_path = get_random_audio(ROOT_DIR / "assets" / "sfx")
-        sfx_delays = []
-        if sfx_path:
-            t = 0.0
-            for dur in scene_durations[:-1]:
-                t += dur
-                sfx_delays.append(int(t * 1000))
-
-        final_cmd = ["ffmpeg", "-y", "-i", str(stitched_video), "-i", str(audio_path)]
-        filter_complex = []
-        video_map = "0:v"
-
-        if sub_filter:
-            filter_complex.append(f"[{video_map}]{sub_filter}[v_out]")
-            video_map = "[v_out]"
-
-        filter_complex.append(f"[1:a]{vocal_filter}[vocal]")
-
-        if sfx_delays and sfx_path:
-            final_cmd.extend(["-i", str(sfx_path)])
-            sfx_idx = 2
-            delayed = []
-            for i, delay in enumerate(sfx_delays):
-                filter_complex.append(
-                    f"[{sfx_idx}:a]adelay={delay}|{delay}[sfx_d_{i}];"
-                    f"[sfx_d_{i}]volume=0.35[sfx_{i}]"
+            sub_filter = ""
+            if subtitles_path and Path(subtitles_path).exists():
+                clean_sub = (
+                    Path(subtitles_path)
+                    .as_posix()
+                    .replace("\\", "/")
+                    .replace(":", "\\:")
+                    .replace("'", "\\'")
                 )
-                delayed.append(f"[sfx_{i}]")
-            amix_in = "[vocal]" + "".join(delayed)
-            filter_complex.append(
-                f"{amix_in}amix=inputs={1 + len(delayed)}:duration=first:dropout_transition=2:normalize=0[vocal_sfx]"
+                sub_filter = f"ass='{clean_sub}'"
+
+            from video_engine.asset_fetcher import get_random_audio
+            sfx_path = get_random_audio(ROOT_DIR / "assets" / "sfx")
+            sfx_delays = []
+            if sfx_path:
+                t = 0.0
+                for dur in scene_durations[:-1]:
+                    t += dur
+                    sfx_delays.append(int(t * 1000))
+
+            final_cmd = ["ffmpeg", "-y", "-i", str(stitched_video), "-i", str(audio_path)]
+            filter_complex = []
+            video_map = "0:v"
+
+            if sub_filter:
+                filter_complex.append(f"[{video_map}]{sub_filter}[v_out]")
+                video_map = "[v_out]"
+
+            filter_complex.append(f"[1:a]{vocal_filter}[vocal]")
+
+            if sfx_delays and sfx_path:
+                final_cmd.extend(["-i", str(sfx_path)])
+                sfx_idx = 2
+                n_sfx = len(sfx_delays)
+                if n_sfx > 1:
+                    split_outs = "".join(f"[sfx_src_{i}]" for i in range(n_sfx))
+                    filter_complex.append(f"[{sfx_idx}:a]asplit={n_sfx}{split_outs}")
+                delayed = []
+                for i, delay in enumerate(sfx_delays):
+                    src_pad = f"[sfx_src_{i}]" if n_sfx > 1 else f"[{sfx_idx}:a]"
+                    filter_complex.append(
+                        f"{src_pad}adelay={delay}:all=1[sfx_d_{i}];"
+                        f"[sfx_d_{i}]aresample=44100,volume=0.35[sfx_{i}]"
+                    )
+                    delayed.append(f"[sfx_{i}]")
+                amix_in = "[vocal]" + "".join(delayed)
+                filter_complex.append(
+                    f"{amix_in}amix=inputs={1 + len(delayed)}:duration=first:dropout_transition=2:normalize=0[vocal_sfx]"
+                )
+                main_audio = "[vocal_sfx]"
+                bgm_idx = 3
+            else:
+                main_audio = "[vocal]"
+                bgm_idx = 2
+
+            if music_path and Path(music_path).exists():
+                bgm_duration = self.get_media_duration(music_path)
+                start_offset = 0
+                if bgm_duration > total_audio_duration + 10:
+                    start_offset = random.randint(2, max(2, int(bgm_duration - total_audio_duration - 2)))
+                final_cmd.extend(["-stream_loop", "-1", "-ss", str(start_offset), "-i", str(music_path)])
+
+                duck_filter = self._build_duck_filter(scene_durations, f"[{bgm_idx}:a]aresample=44100,")
+                filter_complex.append(duck_filter)
+                filter_complex.append(
+                    f"{main_audio}[bgm_ducked]amix=inputs=2:duration=first:dropout_transition=1:normalize=0[a_out]"
+                )
+                audio_map = "[a_out]"
+            else:
+                filter_complex.append(f"{main_audio}anull[a_out]")
+                audio_map = "[a_out]"
+
+            final_cmd.extend(["-filter_complex", ";".join(filter_complex)])
+            final_cmd.extend([
+                "-map", video_map,
+                "-map", audio_map,
+                "-c:v", "libx264", "-preset", "medium", "-crf", "19",
+                "-c:a", "aac", "-b:a", "192k",
+                "-t", f"{total_audio_duration:.3f}",
+                str(final_output)
+            ])
+
+            subprocess.run(final_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+
+            # ── 4. Thumbnail at 30% ────────────────────────────────────────────
+            subprocess.run(
+                ["ffmpeg", "-y", "-ss", str(total_audio_duration * 0.3),
+                 "-i", str(final_output), "-vframes", "1", "-q:v", "2",
+                 str(final_output.with_suffix(".jpg"))],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )
-            main_audio = "[vocal_sfx]"
-            bgm_idx = 3
-        else:
-            main_audio = "[vocal]"
-            bgm_idx = 2
-
-        if music_path and Path(music_path).exists():
-            bgm_duration = self.get_media_duration(music_path)
-            start_offset = 0
-            if bgm_duration > total_audio_duration + 10:
-                start_offset = random.randint(2, max(2, int(bgm_duration - total_audio_duration - 2)))
-            final_cmd.extend(["-stream_loop", "-1", "-ss", str(start_offset), "-i", str(music_path)])
-
-            duck_filter = self._build_duck_filter(scene_durations, f"[{bgm_idx}:a]")
-            filter_complex.append(duck_filter)
-            filter_complex.append(
-                f"{main_audio}[bgm_ducked]amix=inputs=2:duration=first:dropout_transition=1:normalize=0[a_out]"
-            )
-            audio_map = "[a_out]"
-        else:
-            filter_complex.append(f"{main_audio}anull[a_out]")
-            audio_map = "[a_out]"
-
-        final_cmd.extend(["-filter_complex", ";".join(filter_complex)])
-        final_cmd.extend([
-            "-map", video_map,
-            "-map", audio_map,
-            "-c:v", "libx264", "-preset", "medium", "-crf", "19",
-            "-c:a", "aac", "-b:a", "192k",
-            "-t", f"{total_audio_duration:.3f}",
-            str(final_output)
-        ])
-
-        subprocess.run(final_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-
-        # ── 4. Thumbnail at 30% ────────────────────────────────────────────
-        subprocess.run(
-            ["ffmpeg", "-y", "-ss", str(total_audio_duration * 0.3),
-             "-i", str(final_output), "-vframes", "1", "-q:v", "2",
-             str(final_output.with_suffix(".jpg"))],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-        )
-
-        # Clean up intermediate per-run synced clips to save disk space
-        for p in processed_clips:
-            Path(p).unlink(missing_ok=True)
-        concat_txt.unlink(missing_ok=True)
-        stitched_video.unlink(missing_ok=True)
+        finally:
+            # Clean up intermediate per-run synced clips even on exception
+            for p in processed_clips:
+                Path(p).unlink(missing_ok=True)
+            concat_txt.unlink(missing_ok=True)
+            stitched_video.unlink(missing_ok=True)
 
         return final_output
 

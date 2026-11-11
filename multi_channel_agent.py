@@ -138,20 +138,33 @@ async def produce_dual_language_episode(
     compositor = VideoCompositor()
 
     urdu_final, english_final = None, None
-    safe_concept = "".join(c for c in episode.concept if c.isalnum() or c in (" ", "_")).strip().replace(" ", "_").lower()[:30]
+    safe_concept = "".join(c for c in episode.concept if c.isascii() and (c.isalnum() or c in (" ", "_"))).strip().replace(" ", "_").lower()[:30]
+    if not safe_concept:
+        safe_concept = "episode"
     timestamp = int(time.time())
+    run_uid = f"{os.getpid()}_{timestamp}"
 
     # --- URDU PROCESSING ---
     if target_lang in ["urdu", "both"]:
+        if progress_callback:
+            try:
+                progress_callback(stage="[4/6] Synthesizing Urdu Neural Character Voiceover...", progress=74)
+            except Exception:
+                pass
         print("\n🎙️ [VOICE URDU]: Synthesizing native character voice acting...")
         urdu_payload = [{"speaker": d.voice_persona, "line": d.line} for d in episode.dialogue_urdu]
         urdu_voice_data = await vox_engine.generate_dialogue_async(urdu_payload, lang="urdu", output_prefix=f"{episode.channel}_urdu_audio")
 
+        if progress_callback:
+            try:
+                progress_callback(stage="[5/6] Burning Branded Urdu Subtitles & Sidechain Ducking...", progress=86)
+            except Exception:
+                pass
         print("✨ [SUBTITLES URDU]: Formatting lower-third animated captions...")
         urdu_sub_path = sub_gen.generate_ass(
             urdu_voice_data["words"],
             lang="urdu",
-            output_path=TEMP_DIR / f"{episode.channel}_urdu.ass",
+            output_path=TEMP_DIR / f"{episode.channel}_urdu_{run_uid}.ass",
             hook_text=getattr(episode, "hook_text_urdu", ""),
             channel=channel
         )
@@ -159,16 +172,20 @@ async def produce_dual_language_episode(
         print("🎞️ [COMPOSITING URDU]: Assembling final vertical release...")
         urdu_filename = f"{channel}_urdu_{safe_concept}_{timestamp}.mp4"
         urdu_final = urdu_dir / urdu_filename
-        await asyncio.to_thread(
-            compositor.assemble_video_synced,
-            clip_paths=clip_paths,
-            audio_path=urdu_voice_data["audio_path"],
-            scene_durations=urdu_voice_data.get("line_durations", []),
-            subtitles_path=str(urdu_sub_path),
-            output_filename=str(urdu_final),
-            music_path=actual_bgm,
-            channel=channel,
-        )
+        try:
+            await asyncio.to_thread(
+                compositor.assemble_video_synced,
+                clip_paths=clip_paths,
+                audio_path=urdu_voice_data["audio_path"],
+                scene_durations=urdu_voice_data.get("line_durations", []),
+                subtitles_path=str(urdu_sub_path),
+                output_filename=str(urdu_final),
+                music_path=actual_bgm,
+                channel=channel,
+            )
+        finally:
+            Path(urdu_sub_path).unlink(missing_ok=True)
+            Path(urdu_voice_data["audio_path"]).unlink(missing_ok=True)
         # Save Urdu Metadata
         urdu_meta = urdu_final.with_suffix(".txt")
         with open(urdu_meta, "w", encoding="utf-8") as f:
@@ -181,15 +198,25 @@ async def produce_dual_language_episode(
 
     # --- ENGLISH PROCESSING ---
     if target_lang in ["english", "both"]:
+        if progress_callback:
+            try:
+                progress_callback(stage="[4/6] Synthesizing English Neural Character Voiceover...", progress=78)
+            except Exception:
+                pass
         print("\n🎙️ [VOICE ENGLISH]: Synthesizing character dialogue...")
         english_payload = [{"speaker": d.voice_persona, "line": d.line} for d in episode.dialogue_english]
         english_voice_data = await vox_engine.generate_dialogue_async(english_payload, lang="english", output_prefix=f"{episode.channel}_english_audio")
 
+        if progress_callback:
+            try:
+                progress_callback(stage="[5/6] Burning Branded English Subtitles & Sidechain Ducking...", progress=90)
+            except Exception:
+                pass
         print("✨ [SUBTITLES ENGLISH]: Formatting lower-third animated captions...")
         english_sub_path = sub_gen.generate_ass(
             english_voice_data["words"],
             lang="english",
-            output_path=TEMP_DIR / f"{episode.channel}_english.ass",
+            output_path=TEMP_DIR / f"{episode.channel}_english_{run_uid}.ass",
             hook_text=getattr(episode, "hook_text_english", ""),
             channel=channel
         )
@@ -197,16 +224,20 @@ async def produce_dual_language_episode(
         print("🎞️ [COMPOSITING ENGLISH]: Assembling final vertical release...")
         english_filename = f"{channel}_english_{safe_concept}_{timestamp}.mp4"
         english_final = english_dir / english_filename
-        await asyncio.to_thread(
-            compositor.assemble_video_synced,
-            clip_paths=clip_paths,
-            audio_path=english_voice_data["audio_path"],
-            scene_durations=english_voice_data.get("line_durations", []),
-            subtitles_path=str(english_sub_path),
-            output_filename=str(english_final),
-            music_path=actual_bgm,
-            channel=channel,
-        )
+        try:
+            await asyncio.to_thread(
+                compositor.assemble_video_synced,
+                clip_paths=clip_paths,
+                audio_path=english_voice_data["audio_path"],
+                scene_durations=english_voice_data.get("line_durations", []),
+                subtitles_path=str(english_sub_path),
+                output_filename=str(english_final),
+                music_path=actual_bgm,
+                channel=channel,
+            )
+        finally:
+            Path(english_sub_path).unlink(missing_ok=True)
+            Path(english_voice_data["audio_path"]).unlink(missing_ok=True)
         # Save English Metadata
         english_meta = english_final.with_suffix(".txt")
         with open(english_meta, "w", encoding="utf-8") as f:
@@ -228,49 +259,50 @@ async def produce_dual_language_episode(
     print(f" Total Time:       {elapsed:.1f}s")
     print("=" * 80 + "\n")
 
-    # Upload all generated language packages to Google Drive
-    drive_result = {}
-    packages_to_upload = []
-    if english_final:
-        packages_to_upload.append((english_final, "english", episode.title_english, episode.caption_english))
-    if urdu_final:
-        packages_to_upload.append((urdu_final, "urdu", episode.title_urdu, episode.caption_urdu))
+    if not mock_video:
+        # Upload all generated language packages to Google Drive (live renders only)
+        drive_result = {}
+        packages_to_upload = []
+        if english_final:
+            packages_to_upload.append((english_final, "english", episode.title_english, episode.caption_english))
+        if urdu_final:
+            packages_to_upload.append((urdu_final, "urdu", episode.title_urdu, episode.caption_urdu))
 
-    for vid_path, lang_key, title_str, cap_str in packages_to_upload:
-        try:
-            res = await asyncio.to_thread(
-                upload_video_package,
-                channel=channel,
-                concept=episode.concept,
-                video_path=vid_path,
-                title=title_str,
-                caption=cap_str,
-                hashtags=episode.hashtags,
-                lang=lang_key,
-            )
-            if not drive_result:
-                drive_result = res
-            print(f" Drive ({lang_key}): {res.get('folder_url', 'uploaded')}")
-        except Exception as e:
-            print(f" [Drive] Upload skipped/failed ({lang_key}): {e}")
+        for vid_path, lang_key, title_str, cap_str in packages_to_upload:
+            try:
+                res = await asyncio.to_thread(
+                    upload_video_package,
+                    channel=channel,
+                    concept=episode.concept,
+                    video_path=vid_path,
+                    title=title_str,
+                    caption=cap_str,
+                    hashtags=episode.hashtags,
+                    lang=lang_key,
+                )
+                if not drive_result:
+                    drive_result = res
+                print(f" Drive ({lang_key}): {res.get('folder_url', 'uploaded')}")
+            except Exception as e:
+                print(f" [Drive] Upload skipped/failed ({lang_key}): {e}")
 
-    primary_final = english_final if english_final else urdu_final
-    primary_lang = "english" if english_final else "urdu"
-    primary_title = episode.title_english if primary_lang == "english" else episode.title_urdu
+        primary_final = english_final if english_final else urdu_final
+        primary_lang = "english" if english_final else "urdu"
+        primary_title = episode.title_english if primary_lang == "english" else episode.title_urdu
 
-    # Send WhatsApp/Discord/Telegram with Drive link + hashtags (isolated per user!)
-    await asyncio.to_thread(
-        notify_all,
-        title=primary_title,
-        concept=episode.concept,
-        channel=channel,
-        video_path=str(primary_final) if primary_final else "",
-        hashtags=episode.hashtags,
-        drive_folder_url=drive_result.get("folder_url", ""),
-        wa_token=wa_token,
-        wa_user_id=wa_user_id,
-        allow_env_fallback=allow_owner_wa_fallback,
-    )
+        # Send WhatsApp/Discord/Telegram with Drive link + hashtags (isolated per user!)
+        await asyncio.to_thread(
+            notify_all,
+            title=primary_title,
+            concept=episode.concept,
+            channel=channel,
+            video_path=str(primary_final) if primary_final else "",
+            hashtags=episode.hashtags,
+            drive_folder_url=drive_result.get("folder_url", ""),
+            wa_token=wa_token,
+            wa_user_id=wa_user_id,
+            allow_env_fallback=allow_owner_wa_fallback,
+        )
 
     return urdu_final, english_final
 

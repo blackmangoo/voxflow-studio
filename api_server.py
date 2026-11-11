@@ -1,17 +1,21 @@
 import asyncio
+import base64
 import collections
 import hashlib
 import json
 import math
 import os
 import secrets
+import smtplib
 import struct
 import sys
+import tempfile
 import threading
 import time
 import urllib.parse
 import wave
 from datetime import datetime, timezone
+from email.message import EmailMessage
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -35,6 +39,7 @@ from saas_store import (
     VISUAL_STYLE_CATALOG,
     calculate_pricing_comparison,
     create_checkout_lead,
+    create_email_otp_challenge,
     create_job_record,
     create_series_record,
     delete_checkout_lead,
@@ -43,6 +48,7 @@ from saas_store import (
     get_account_pool_telemetry,
     init_db,
     init_saas_db,
+    is_email_otp_verified,
     list_checkout_leads,
     list_job_records,
     list_series_records,
@@ -51,6 +57,7 @@ from saas_store import (
     update_job_record,
     update_series_status_record,
     upload_video_to_supabase_cdn,
+    verify_email_otp_challenge,
 )
 
 NICHE_NAMES = {ch["id"]: ch["id"] for ch in CHANNEL_CATALOG}
@@ -117,7 +124,7 @@ RATE_LIMIT_WINDOW_SECONDS = 60.0
 
 @app.middleware("http")
 async def security_headers_and_rate_limit(request: Request, call_next):
-    if request.method == "POST":
+    if request.method == "POST" and not request.url.path.startswith(("/api/voices/", "/api/director/preview")):
         client_ip = request.client.host if request.client else "unknown"
         now = time.time()
         dq = _ip_request_log[client_ip]
@@ -357,10 +364,22 @@ class ForgotPasswordRequest(BaseModel):
     redirect_to: Optional[str] = Field(None, max_length=300, description="Optional password reset redirect URL")
 
 
+class SendOtpRequest(BaseModel):
+    email: str = Field(..., min_length=5, max_length=120, description="Recipient email to verify")
+    purpose: str = Field("trial_signup", pattern="^(trial_signup|checkout_lead|login_verify)$")
+    full_name: str = Field("", max_length=80)
+
+
+class VerifyOtpRequest(BaseModel):
+    email: str = Field(..., min_length=5, max_length=120, description="Email address being verified")
+    otp_code: str = Field(..., min_length=6, max_length=8, description="6-digit verification code")
+
+
 class TrialSignupRequest(BaseModel):
     email: str = Field(..., min_length=5, max_length=120, description="New creator email address")
     password: str = Field(..., min_length=6, max_length=100, description="Account password")
     full_name: str = Field("", max_length=80, description="Creator or channel name")
+    otp_code: Optional[str] = Field(None, max_length=12, description="6-digit email verification code")
 
 
 class CheckoutLeadRequest(BaseModel):
@@ -372,6 +391,7 @@ class CheckoutLeadRequest(BaseModel):
     )
     payment_method: str = Field("whatsapp_concierge", max_length=60)
     notes: str = Field("", max_length=600)
+    otp_code: Optional[str] = Field(None, max_length=12, description="Optional 6-digit email verification code")
 
 
 class SeriesStatusUpdateRequest(BaseModel):
@@ -412,28 +432,63 @@ async def _execute_sandbox_demo_job(
 ) -> None:
     """
     Zero-API, Zero-Playwright public sandbox simulation.
-    Used when an unauthenticated visitor or free-tier user tests the UI in mock mode
-    so ZERO Google Flow credits and ZERO Chrome browser processes are touched.
+    Updates BOTH local SQLite and Supabase public.render_jobs across all 6 stages
+    and attaches the channel's showcase video pair so the user's Episode Vault
+    immediately receives a playable preview.
     """
     mode_tag = (
         f"Custom Prompt ('{custom_prompt[:36]}...')"
         if creation_mode == "custom_director" and custom_prompt
         else ("Manual 4-Scene Matrix" if creation_mode == "manual_scenes" else f"Show '{channel}'")
     )
+
+    en_demo_url = ""
+    ur_demo_url = ""
+    try:
+        showcase_pairs = discover_rendered_vault()
+        matched_pair = next((p for p in showcase_pairs if p.get("channel") == channel), None)
+        if not matched_pair and showcase_pairs:
+            matched_pair = showcase_pairs[0]
+        if matched_pair:
+            en_demo_url = (matched_pair.get("english") or {}).get("video_url", "")
+            ur_demo_url = (matched_pair.get("urdu") or {}).get("video_url", "")
+    except Exception:
+        pass
+
     stages = [
-        (20, f"[1/6] Sandbox Director: Compiling 4-scene storyboard for {mode_tag}..."),
-        (45, f"[2/6] Sandbox Engine: Simulating 4× 10s 3D shots ({visual_style}) — 0 Flow credits used..."),
-        (65, "[3/6] Sandbox Vision Gate: Verifying motion vectors & frame sharpness..."),
-        (82, f"[4/6] Sandbox Audio: Simulating {lang.upper()} neural voice acting & -18dB ducking..."),
-        (100, "[6/6] Sandbox Simulation Complete — Unlock Live Credits or Admin Key for Google Flow 3D Render"),
+        (18, f"[1/6] Sandbox Director: Compiling 4-scene storyboard for {mode_tag}..."),
+        (38, f"[2/6] Sandbox 3D Scenes: Simulating 4× 10s shots ({visual_style})..."),
+        (58, "[3/6] Sandbox Quality Check: Verifying motion vectors & frame sharpness..."),
+        (76, f"[4/6] Sandbox Voiceover: Simulating {lang.upper()} character voice acting..."),
+        (90, "[5/6] Sandbox Captions: Syncing karaoke subtitles & audio mix..."),
+        (100, "[6/6] Sandbox Preview Complete — Ready in Episode Vault"),
     ]
     for prog, label in stages:
-        await asyncio.sleep(0.45)
+        if job_id in _cancelled_jobs:
+            return
+        await asyncio.sleep(0.55)
+        is_done = prog == 100
+        new_status = "completed" if is_done else "running"
+        extra_fields: Dict[str, Any] = {}
+        if is_done:
+            if en_demo_url:
+                extra_fields["english_video"] = en_demo_url
+            if ur_demo_url:
+                extra_fields["urdu_video"] = ur_demo_url
         update_job_record(
             job_id,
-            status="completed" if prog == 100 else "running",
+            status=new_status,
             stage=label,
             progress=prog,
+            **extra_fields,
+        )
+        await asyncio.to_thread(
+            _patch_supabase_job_by_code,
+            job_id,
+            status=new_status,
+            stage=label,
+            progress=prog,
+            **extra_fields,
         )
 
 
@@ -734,24 +789,247 @@ async def api_forgot_password(req: ForgotPasswordRequest):
     }
 
 
+_DISPOSABLE_EMAIL_DOMAINS = {
+    "example.com", "test.com", "mailinator.com", "tempmail.com",
+    "10minutemail.com", "yopmail.com", "guerrillamail.com", "sharklasers.com",
+    "trashmail.com", "fakeinbox.com", "getnada.com",
+}
+
+
+def _validate_deliverable_email(raw_email: str) -> str:
+    clean_email = (raw_email or "").strip().lower()
+    if "@" not in clean_email or "." not in clean_email.split("@")[-1]:
+        raise HTTPException(status_code=400, detail="Please enter a valid email address.")
+    local_part, domain_part = clean_email.split("@", 1)
+    if len(local_part) < 2 or len(domain_part) < 4:
+        raise HTTPException(status_code=400, detail="Please enter a complete, valid email address.")
+    if domain_part in _DISPOSABLE_EMAIL_DOMAINS:
+        raise HTTPException(
+            status_code=400,
+            detail="Disposable or placeholder email domains are not allowed. Please use your real email address.",
+        )
+    return clean_email
+
+
+def _mask_email(email_str: str) -> str:
+    if "@" not in email_str:
+        return email_str
+    local, dom = email_str.split("@", 1)
+    if len(local) <= 2:
+        return f"{local[0]}***@{dom}"
+    return f"{local[:2]}***{local[-1]}@{dom}"
+
+
+def _send_otp_email_sync(recipient_email: str, otp_code: str, full_name: str = "") -> Dict[str, Any]:
+    """
+    Dispatches the 6-digit OTP code via configured SMTP or Supabase Auth OTP mailer.
+    """
+    smtp_host = (os.environ.get("SMTP_HOST") or "").strip()
+    smtp_port = int(os.environ.get("SMTP_PORT") or "587")
+    smtp_user = (os.environ.get("SMTP_USER") or "").strip()
+    smtp_pass = (os.environ.get("SMTP_PASS") or "").strip()
+
+    if smtp_host and smtp_user and smtp_pass:
+        try:
+            msg = EmailMessage()
+            msg["Subject"] = f"{otp_code} is your VoxFlow Studio verification code"
+            msg["From"] = f"VoxFlow Studio <{smtp_user}>"
+            msg["To"] = recipient_email
+            msg.set_content(
+                f"Hi {full_name or 'Creator'},\n\n"
+                f"Your 6-digit VoxFlow Studio verification code is:\n\n"
+                f"    {otp_code}\n\n"
+                f"This code expires in 10 minutes.\n"
+            )
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=8) as server:
+                server.starttls()
+                server.login(smtp_user, smtp_pass)
+                server.send_message(msg)
+            return {"sent_smtp": True, "sent_supabase": False, "channel": "SMTP Mailer"}
+        except Exception:
+            pass
+
+    if SUPABASE_URL and SUPABASE_ANON_KEY:
+        try:
+            r = _get_http_session().post(
+                f"{SUPABASE_URL}/auth/v1/otp",
+                headers={"apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json"},
+                json={"email": recipient_email, "create_user": True},
+                timeout=8,
+            )
+            if r.status_code in (200, 201, 204):
+                return {"sent_smtp": False, "sent_supabase": True, "channel": "Supabase Auth Mailer"}
+        except Exception:
+            pass
+
+    return {"sent_smtp": False, "sent_supabase": False, "channel": "Cryptographic Challenge"}
+
+
+@app.post("/api/auth/send-otp", tags=["Auth"])
+async def api_send_email_otp(req: SendOtpRequest):
+    """
+    Issues a 6-digit cryptographic OTP challenge to verify ownership of an email address
+    before trial account creation or checkout lead verification.
+    """
+    clean_email = _validate_deliverable_email(req.email)
+
+    if req.purpose == "trial_signup" and SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
+        def _check_existing():
+            enc_em = urllib.parse.quote(clean_email, safe="")
+            return _get_http_session().get(
+                f"{SUPABASE_URL}/rest/v1/profiles?email=eq.{enc_em}&select=id,email",
+                headers={
+                    "apikey": SUPABASE_SERVICE_ROLE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                },
+                timeout=8,
+            )
+        prof_check = await asyncio.to_thread(_check_existing)
+        if prof_check.status_code == 200 and prof_check.json():
+            raise HTTPException(
+                status_code=400,
+                detail="An account with this email already exists. Please sign in or use Forgot Password.",
+            )
+
+    challenge = create_email_otp_challenge(clean_email, purpose=req.purpose, ttl_seconds=600)
+    dispatch_info = await asyncio.to_thread(
+        _send_otp_email_sync,
+        clean_email,
+        challenge["otp_code"],
+        req.full_name,
+    )
+
+    smtp_configured = bool((os.environ.get("SMTP_HOST") or "").strip())
+    return {
+        "status": "otp_sent",
+        "email": clean_email,
+        "masked_email": _mask_email(clean_email),
+        "purpose": req.purpose,
+        "expires_in": challenge["ttl_seconds"],
+        "delivery_channel": dispatch_info["channel"],
+        "email_dispatched": bool(dispatch_info["sent_smtp"] or dispatch_info["sent_supabase"]),
+        "verification_preview_code": None if smtp_configured else challenge["otp_code"],
+        "message": f"6-digit verification code sent to {_mask_email(clean_email)}.",
+    }
+
+
+@app.post("/api/auth/verify-otp", tags=["Auth"])
+async def api_verify_email_otp(req: VerifyOtpRequest):
+    """
+    Verifies a 6-digit OTP code against either our salted SHA-256 OTP challenge store
+    or Supabase Auth's /auth/v1/verify endpoint.
+    """
+    clean_email = _validate_deliverable_email(req.email)
+    clean_code = "".join(ch for ch in (req.otp_code or "") if ch.isdigit())
+    if len(clean_code) < 6:
+        raise HTTPException(status_code=400, detail="Please enter all 6 digits of your verification code.")
+
+    local_res = verify_email_otp_challenge(clean_email, clean_code[:6])
+    if local_res.get("valid"):
+        return {
+            "status": "verified",
+            "verified": True,
+            "email": clean_email,
+            "message": "Email verified!",
+        }
+
+    # Also check if user entered the code sent directly by Supabase Auth /auth/v1/otp
+    if SUPABASE_URL and SUPABASE_ANON_KEY:
+        def _verify_sb():
+            for otp_type in ("email", "signup", "magiclink"):
+                r = _get_http_session().post(
+                    f"{SUPABASE_URL}/auth/v1/verify",
+                    headers={"apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json"},
+                    json={"type": otp_type, "email": clean_email, "token": clean_code},
+                    timeout=8,
+                )
+                if r.status_code == 200:
+                    return True
+            return False
+
+        if await asyncio.to_thread(_verify_sb):
+            return {
+                "status": "verified",
+                "verified": True,
+                "email": clean_email,
+                "message": "Email verified via Supabase Auth!",
+            }
+
+    raise HTTPException(status_code=400, detail=local_res.get("reason") or "Invalid verification code.")
+
+
 @app.post("/api/auth/trial-signup", tags=["Auth"])
 async def api_trial_signup(req: TrialSignupRequest):
     """
-    Self-serve Free Trial Signup (Debate 3 Option B):
-    Creates a confirmed user account with role='user', plan_tier='both_starter',
-    credits_balance=0, and sandbox_runs_remaining=3 so new creators can immediately
-    sign in, test the AI Director Storyboard Preview and 3 Sandbox simulations,
-    and hit the upgrade gate when attempting a Live 3D render.
+    Self-serve Free Trial Signup (Debate 3 Option B) with 6-Digit Email OTP Gate:
+    1. If email is not yet OTP-verified and no otp_code is provided, issues a 6-digit OTP
+       challenge and returns `status = 'otp_required'` so the UI opens the 6-Cell OTP Matrix.
+    2. Once verified, creates the user account with role='user', plan_tier='both_starter',
+       credits_balance=0, and sandbox_runs_remaining=3.
     """
-    clean_email = req.email.strip().lower()
-    if "@" not in clean_email or "." not in clean_email.split("@")[-1]:
-        raise HTTPException(status_code=400, detail="Please enter a valid email address.")
+    clean_email = _validate_deliverable_email(req.email)
     if len(req.password) < 6:
         raise HTTPException(status_code=400, detail="Password must be at least 6 characters.")
     if not SUPABASE_URL or not (SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY):
         raise HTTPException(status_code=500, detail="Supabase authentication is not configured.")
 
     clean_name = req.full_name.strip() or clean_email.split("@")[0]
+
+    # Enforce 6-digit OTP verification before creating the trial account
+    supplied_otp = "".join(ch for ch in (req.otp_code or "") if ch.isdigit())
+    if supplied_otp:
+        otp_check = verify_email_otp_challenge(clean_email, supplied_otp[:6])
+        if not otp_check.get("valid"):
+            # Fallback check against Supabase /auth/v1/verify
+            sb_ok = False
+            if SUPABASE_URL and SUPABASE_ANON_KEY:
+                def _verify_sb_signup():
+                    for otp_type in ("email", "signup", "magiclink"):
+                        r = _get_http_session().post(
+                            f"{SUPABASE_URL}/auth/v1/verify",
+                            headers={"apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json"},
+                            json={"type": otp_type, "email": clean_email, "token": supplied_otp},
+                            timeout=8,
+                        )
+                        if r.status_code == 200:
+                            return True
+                    return False
+                sb_ok = await asyncio.to_thread(_verify_sb_signup)
+            if not sb_ok:
+                raise HTTPException(status_code=400, detail=otp_check.get("reason") or "Invalid 6-digit OTP code.")
+    elif not is_email_otp_verified(clean_email):
+        # Check if account already exists before sending OTP
+        if SUPABASE_SERVICE_ROLE_KEY:
+            def _check_dup():
+                enc_em = urllib.parse.quote(clean_email, safe="")
+                return _get_http_session().get(
+                    f"{SUPABASE_URL}/rest/v1/profiles?email=eq.{enc_em}&select=id,email",
+                    headers={
+                        "apikey": SUPABASE_SERVICE_ROLE_KEY,
+                        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                    },
+                    timeout=8,
+                )
+            dup_res = await asyncio.to_thread(_check_dup)
+            if dup_res.status_code == 200 and dup_res.json():
+                raise HTTPException(
+                    status_code=400,
+                    detail="An account with this email already exists. Please sign in or use Forgot Password.",
+                )
+
+        challenge = create_email_otp_challenge(clean_email, purpose="trial_signup", ttl_seconds=600)
+        dispatch_info = await asyncio.to_thread(_send_otp_email_sync, clean_email, challenge["otp_code"], clean_name)
+        smtp_configured = bool((os.environ.get("SMTP_HOST") or "").strip())
+        return {
+            "status": "otp_required",
+            "email": clean_email,
+            "masked_email": _mask_email(clean_email),
+            "expires_in": challenge["ttl_seconds"],
+            "delivery_channel": dispatch_info["channel"],
+            "email_dispatched": bool(dispatch_info["sent_smtp"] or dispatch_info["sent_supabase"]),
+            "verification_preview_code": None if smtp_configured else challenge["otp_code"],
+            "message": f"Enter the 6-digit verification code sent to {_mask_email(clean_email)} to activate your trial.",
+        }
 
     def _signup_sync() -> Dict[str, Any]:
         sess = _get_http_session()
@@ -1133,10 +1411,16 @@ async def api_voice_preview(req: VoicePreviewRequest):
     ).hexdigest()[:16]
     filename = f"preview_{digest}.wav"
     preview_dir = OUTPUT_DIR / "voice_previews"
-    preview_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        preview_dir.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        preview_dir = Path(tempfile.gettempdir()) / "voxflow_voice_previews"
+        preview_dir.mkdir(parents=True, exist_ok=True)
     target_wav = preview_dir / filename
 
-    if target_wav.exists() and target_wav.stat().st_size > 200:
+    # Only serve from cache if file > 80KB (real neural speech, never the 76KB fallback chime)
+    if target_wav.exists() and target_wav.stat().st_size > 80_000:
+        b64_wav = base64.b64encode(target_wav.read_bytes()).decode("ascii")
         return {
             "status": "ok",
             "voice_id": canonical_voice,
@@ -1144,6 +1428,7 @@ async def api_voice_preview(req: VoicePreviewRequest):
             "lang": lang_key,
             "cached": True,
             "audio_url": f"/api/voices/sample/{filename}",
+            "audio_data_url": f"data:audio/wav;base64,{b64_wav}",
             "style": style_desc,
         }
 
@@ -1156,26 +1441,55 @@ async def api_voice_preview(req: VoicePreviewRequest):
     }
 
     vox = _get_vox_preview_engine()
-    try:
-        await asyncio.to_thread(vox._synthesize_turn_gemini, synth_spec, sample_text, target_wav)
-    except Exception:
-        try:
-            await vox._synthesize_turn_edge(
-                synth_spec,
-                sample_text,
-                target_wav,
-                character_key=canonical_voice.lower(),
-            )
-        except Exception:
-            await asyncio.to_thread(_write_fallback_tone_wav, target_wav)
+    synthesized_ok = False
 
+    # Fast path: use Edge-TTS first for sub-second interactive preview (< 1.2s),
+    # or Gemini TTS if Edge-TTS is unavailable
+    try:
+        await vox._synthesize_turn_edge(
+            synth_spec,
+            sample_text,
+            target_wav,
+            character_key=canonical_voice.lower(),
+        )
+        if target_wav.exists() and target_wav.stat().st_size > 10_000:
+            synthesized_ok = True
+    except Exception:
+        pass
+
+    if not synthesized_ok:
+        try:
+            await asyncio.to_thread(vox._synthesize_turn_gemini, synth_spec, sample_text, target_wav)
+            if target_wav.exists() and target_wav.stat().st_size > 10_000:
+                synthesized_ok = True
+        except Exception:
+            pass
+
+    if synthesized_ok and target_wav.exists():
+        b64_wav = base64.b64encode(target_wav.read_bytes()).decode("ascii")
+        return {
+            "status": "ok",
+            "voice_id": canonical_voice,
+            "channel": channel_key,
+            "lang": lang_key,
+            "cached": False,
+            "audio_url": f"/api/voices/sample/{filename}",
+            "audio_data_url": f"data:audio/wav;base64,{b64_wav}",
+            "style": style_desc,
+        }
+
+    # Ephemeral fallback chime (written to a separate temp path so it NEVER poisons target_wav cache)
+    fallback_wav = preview_dir / "preview_fallback_chime.wav"
+    await asyncio.to_thread(_write_fallback_tone_wav, fallback_wav)
+    b64_fallback = base64.b64encode(fallback_wav.read_bytes()).decode("ascii")
     return {
         "status": "ok",
         "voice_id": canonical_voice,
         "channel": channel_key,
         "lang": lang_key,
         "cached": False,
-        "audio_url": f"/api/voices/sample/{filename}",
+        "audio_url": "/api/voices/sample/preview_fallback_chime.wav",
+        "audio_data_url": f"data:audio/wav;base64,{b64_fallback}",
         "style": style_desc,
     }
 
@@ -1587,6 +1901,8 @@ async def api_list_jobs(request: Request):
                         "english_video": r.get("english_video", ""),
                         "urdu_video": r.get("urdu_video", ""),
                         "error": r.get("error", ""),
+                        "created_at": r.get("created_at", ""),
+                        "updated_at": r.get("updated_at", ""),
                     })
                 if normalized or os.environ.get("VERCEL"):
                     return {"jobs": normalized}
@@ -1699,12 +2015,16 @@ async def api_trigger_generate(
     # - Locally, if `api_server.py` executes the job directly, it inserts the Supabase record as
     #   `status = 'running'` so `supabase_worker.py` never claims or double-renders the same job.
     is_vercel = bool(os.environ.get("VERCEL"))
-    will_run_locally = bool(auth["can_live_render"] and not is_vercel)
-    initial_sb_status = "running" if will_run_locally else "queued"
+    will_run_locally = bool((auth["can_live_render"] or req.mock) and not is_vercel)
+    initial_sb_status = "running" if (will_run_locally or req.mock) else "queued"
     initial_sb_stage = (
-        "[1/6] Claimed by Local Studio Server — Initializing AI Director..."
-        if will_run_locally
-        else "[0/6] Queued in Flow Worker Pool"
+        "[1/6] Sandbox Director: Compiling 4-scene storyboard..."
+        if req.mock
+        else (
+            "[1/6] Claimed by Local Studio Server — Initializing AI Director..."
+            if will_run_locally
+            else "[0/6] Queued in Flow Worker Pool"
+        )
     )
 
     sb_user = auth.get("user")
@@ -1731,7 +2051,7 @@ async def api_trigger_generate(
                         "mock_mode": req.mock,
                         "status": initial_sb_status,
                         "stage": initial_sb_stage,
-                        "progress": 15 if will_run_locally else 5,
+                        "progress": 15 if (will_run_locally or req.mock) else 5,
                         "concept": (req.custom_prompt or req.channel)[:160],
                     },
                     timeout=8,
@@ -1750,6 +2070,18 @@ async def api_trigger_generate(
                     status_code=502,
                     detail=f"Failed to enqueue job in Supabase worker queue: {str(exc)[:160]}",
                 )
+
+    if req.mock:
+        background_tasks.add_task(
+            _execute_sandbox_demo_job,
+            job["job_id"],
+            req.channel,
+            req.lang,
+            req.creation_mode,
+            req.custom_prompt,
+            req.visual_style,
+        )
+        return job
 
     if is_vercel and sb_user:
         return job

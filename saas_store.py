@@ -369,6 +369,20 @@ def init_saas_db(db_path: Path = DB_PATH) -> None:
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS email_otp_challenges (
+                email TEXT PRIMARY KEY,
+                otp_hash TEXT NOT NULL,
+                salt TEXT NOT NULL,
+                purpose TEXT NOT NULL DEFAULT 'trial_signup',
+                expires_at INTEGER NOT NULL,
+                attempts INTEGER NOT NULL DEFAULT 0,
+                verified INTEGER NOT NULL DEFAULT 0,
+                created_at INTEGER NOT NULL
+            )
+            """
+        )
         # Safe schema evolution for existing local DBs
         for alter_sql in (
             "ALTER TABLE series ADD COLUMN creation_mode TEXT NOT NULL DEFAULT 'prebuilt'",
@@ -486,6 +500,124 @@ def delete_checkout_lead(
         cur = conn.execute("DELETE FROM checkout_leads WHERE id = ?", (lead_id,))
         conn.commit()
         return bool(cur.rowcount and cur.rowcount > 0)
+
+
+def create_email_otp_challenge(
+    email: str,
+    purpose: str = "trial_signup",
+    ttl_seconds: int = 600,
+    db_path: Path = DB_PATH,
+) -> Dict[str, Any]:
+    """Generates a cryptographically random 6-digit OTP and stores its salted SHA-256 hash."""
+    import hashlib
+    import secrets
+
+    init_saas_db(db_path)
+    clean_email = email.strip().lower()
+    otp_code = f"{secrets.randbelow(900000) + 100000:06d}"
+    salt = secrets.token_hex(8)
+    otp_hash = hashlib.sha256(f"{salt}:{clean_email}:{otp_code}".encode("utf-8")).hexdigest()
+    now_ts = int(time.time())
+    expires_at = now_ts + int(ttl_seconds)
+
+    with contextlib.closing(sqlite3.connect(str(db_path))) as conn:
+        conn.execute(
+            """
+            INSERT INTO email_otp_challenges (email, otp_hash, salt, purpose, expires_at, attempts, verified, created_at)
+            VALUES (?, ?, ?, ?, ?, 0, 0, ?)
+            ON CONFLICT(email) DO UPDATE SET
+                otp_hash = excluded.otp_hash,
+                salt = excluded.salt,
+                purpose = excluded.purpose,
+                expires_at = excluded.expires_at,
+                attempts = 0,
+                verified = 0,
+                created_at = excluded.created_at
+            """,
+            (clean_email, otp_hash, salt, purpose, expires_at, now_ts),
+        )
+        conn.commit()
+
+    return {
+        "email": clean_email,
+        "otp_code": otp_code,
+        "purpose": purpose,
+        "expires_at": expires_at,
+        "ttl_seconds": ttl_seconds,
+    }
+
+
+def verify_email_otp_challenge(
+    email: str,
+    otp_code: str,
+    db_path: Path = DB_PATH,
+) -> Dict[str, Any]:
+    """Verifies a 6-digit OTP code against the salted SHA-256 hash with brute-force attempt bounding."""
+    import hashlib
+    import hmac
+
+    init_saas_db(db_path)
+    clean_email = (email or "").strip().lower()
+    clean_code = "".join(ch for ch in (otp_code or "") if ch.isdigit())
+    if len(clean_code) != 6:
+        return {"valid": False, "reason": "Please enter all 6 digits of your verification code."}
+
+    now_ts = int(time.time())
+    with contextlib.closing(sqlite3.connect(str(db_path))) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            "SELECT * FROM email_otp_challenges WHERE email = ?",
+            (clean_email,),
+        ).fetchone()
+        if not row:
+            return {"valid": False, "reason": "No active verification code found for this email. Click Resend Code."}
+
+        if int(row["expires_at"]) < now_ts:
+            return {"valid": False, "reason": "Verification code expired. Please request a fresh 6-digit code."}
+
+        attempts = int(row["attempts"]) + 1
+        if attempts > 6:
+            return {"valid": False, "reason": "Too many invalid attempts. Please request a new code."}
+
+        expected_hash = hashlib.sha256(
+            f"{row['salt']}:{clean_email}:{clean_code}".encode("utf-8")
+        ).hexdigest()
+        matched = hmac.compare_digest(expected_hash, str(row["otp_hash"]))
+
+        if matched:
+            conn.execute(
+                "UPDATE email_otp_challenges SET verified = 1, attempts = ? WHERE email = ?",
+                (attempts, clean_email),
+            )
+            conn.commit()
+            return {"valid": True, "email": clean_email, "purpose": row["purpose"]}
+        else:
+            conn.execute(
+                "UPDATE email_otp_challenges SET attempts = ? WHERE email = ?",
+                (attempts, clean_email),
+            )
+            conn.commit()
+            rem = max(0, 6 - attempts)
+            return {"valid": False, "reason": f"Incorrect 6-digit code ({rem} attempts remaining)."}
+
+
+def is_email_otp_verified(
+    email: str,
+    max_age_seconds: int = 1800,
+    db_path: Path = DB_PATH,
+) -> bool:
+    init_saas_db(db_path)
+    clean_email = (email or "").strip().lower()
+    now_ts = int(time.time())
+    with contextlib.closing(sqlite3.connect(str(db_path))) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            "SELECT verified, created_at FROM email_otp_challenges WHERE email = ?",
+            (clean_email,),
+        ).fetchone()
+        if not row:
+            return False
+        return bool(int(row["verified"]) == 1 and (now_ts - int(row["created_at"])) <= max_age_seconds)
 
 
 def create_series_record(

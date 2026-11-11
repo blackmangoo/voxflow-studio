@@ -36,7 +36,7 @@ if str(ROOT_DIR) not in sys.path:
 
 import config  # loads .env into os.environ
 from multi_channel_agent import produce_dual_language_episode
-from saas_store import upload_video_to_supabase_cdn
+from saas_store import update_job_record, upload_video_to_supabase_cdn
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://ouqjlqqgnboytjvudylv.supabase.co").rstrip("/")
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
@@ -128,17 +128,24 @@ def check_and_enqueue_due_series() -> int:
             cutoff_iso = (now_utc - timedelta(hours=window_hours)).isoformat()
 
             enc_sid = urllib.parse.quote(str(series_id), safe="")
+            enc_uid = urllib.parse.quote(str(user_id), safe="")
+            enc_ch = urllib.parse.quote(str(s.get("channel") or "body_simulator"), safe="")
             enc_cutoff = urllib.parse.quote(cutoff_iso, safe="")
             recent_resp = requests.get(
                 f"{SUPABASE_URL}/rest/v1/render_jobs?series_id=eq.{enc_sid}&created_at=gte.{enc_cutoff}&select=id,created_at&limit=1",
                 headers=headers,
                 timeout=10,
             )
+            if recent_resp.status_code != 200:
+                # Fallback if series_id column is absent in Supabase render_jobs schema
+                recent_resp = requests.get(
+                    f"{SUPABASE_URL}/rest/v1/render_jobs?user_id=eq.{enc_uid}&channel=eq.{enc_ch}&created_at=gte.{enc_cutoff}&select=id,created_at&limit=1",
+                    headers=headers,
+                    timeout=10,
+                )
             if recent_resp.status_code == 200 and recent_resp.json():
                 # A render job was already created within the cadence window
                 continue
-
-            enc_uid = urllib.parse.quote(str(user_id), safe="")
             prof_resp = requests.get(
                 f"{SUPABASE_URL}/rest/v1/profiles?id=eq.{enc_uid}&select=id,role,credits_balance",
                 headers=headers,
@@ -237,16 +244,29 @@ async def process_supabase_job(job: Dict[str, Any]) -> None:
 
     def _on_progress(stage: str, progress: int, concept: str = None, script_preview: dict = None):
         patch_data: Dict[str, Any] = {"stage": stage, "progress": progress}
+        local_data: Dict[str, Any] = {"status": "running", "stage": stage, "progress": progress}
         if concept:
             patch_data["concept"] = concept[:200]
+            local_data["concept"] = concept[:200]
         if script_preview:
             patch_data["script_preview"] = script_preview
+            local_data["script_preview"] = json.dumps(script_preview, ensure_ascii=False)
+        try:
+            update_job_record(job_code, **local_data)
+        except Exception:
+            pass
         try:
             update_supabase_job(job_uuid, **patch_data)
         except Exception as exc:
             print(f"   ⚠️ Telemetry patch warning: {exc}")
 
     try:
+        update_job_record(
+            job_code,
+            status="running",
+            stage="[1/6] Claimed by Local Flow Worker Cluster — Initializing AI Director...",
+            progress=15,
+        )
         render_task = asyncio.create_task(
             produce_dual_language_episode(
                 channel=channel,
@@ -286,6 +306,7 @@ async def process_supabase_job(job: Dict[str, Any]) -> None:
             urdu_final, english_final = await render_task
         finally:
             watcher.cancel()
+            await asyncio.gather(watcher, return_exceptions=True)
 
         en_url = (
             await asyncio.to_thread(upload_video_to_supabase_cdn, Path(english_final), channel, "english")
@@ -298,6 +319,14 @@ async def process_supabase_job(job: Dict[str, Any]) -> None:
             else ""
         )
 
+        update_job_record(
+            job_code,
+            status="completed",
+            stage="[6/6] Completed — 3D Video Synced, Ducked & Exported",
+            progress=100,
+            english_video=en_url,
+            urdu_video=ur_url,
+        )
         update_supabase_job(
             job_uuid,
             status="completed",
@@ -311,6 +340,7 @@ async def process_supabase_job(job: Dict[str, Any]) -> None:
     except asyncio.CancelledError:
         print(f"🛑 [SUPABASE WORKER] Job {job_code} halted cleanly after user cancellation.")
         try:
+            update_job_record(job_code, status="cancelled", stage="Cancelled by user", error="")
             update_supabase_job(job_uuid, status="cancelled", stage="Cancelled by user", error="")
         except Exception:
             pass
@@ -318,6 +348,12 @@ async def process_supabase_job(job: Dict[str, Any]) -> None:
         err_msg = str(exc)[:300]
         print(f"❌ [SUPABASE WORKER] Failed Job {job_code}: {err_msg}")
         try:
+            update_job_record(
+                job_code,
+                status="failed",
+                stage="Pipeline halted with error",
+                error=err_msg,
+            )
             update_supabase_job(
                 job_uuid,
                 status="failed",
