@@ -17,16 +17,16 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=Noto+Nastaliq+Urdu:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 
     <style>
         /* ============================================================
-           VOXFLOW STUDIO — Production Design System
-           60% Jet Black (#0A0A0A) · 30% Cerulean (#007BA7) · 10% Neon Rose (#FF2D95)
-           Native 120Hz Compositor Scrolling · Zero Wheel Hijacking · Zero Slop
+           VOXFLOW STUDIO — Cyber-Bioluminescent Cinema Atelier Design System
+           60% Deep Obsidian (#06070A) · 30% Cerulean (#007BA7 / #38BDF8) · 10% Neon Rose (#FF2D95)
+           Native 120Hz Compositor Scrolling · Specular Rim Surfaces · Spring Micro-Motion
            ============================================================ */
         *, *::before, *::after {
             box-sizing: border-box;
@@ -35,39 +35,56 @@
         }
 
         :root {
-            --bg-canvas:        #09090B;
-            --bg-surface:       #111114;
-            --bg-elevated:      #18181C;
-            --bg-input:         #0D0D10;
+            --bg-canvas:        #06070A;
+            --bg-surface:       #0C0F16;
+            --bg-elevated:      #131824;
+            --bg-input:         #080B10;
 
-            --cerulean:         #0284C7;
+            --cerulean:         #007BA7;
             --cerulean-bright:  #38BDF8;
-            --cerulean-subtle:  rgba(56, 189, 248, 0.08);
-            --cerulean-border:  rgba(56, 189, 248, 0.2);
+            --cerulean-subtle:  rgba(56, 189, 248, 0.09);
+            --cerulean-border:  rgba(56, 189, 248, 0.26);
 
-            --rose:             #F43F5E;
-            --rose-soft:        #FB7185;
-            --rose-subtle:      rgba(244, 63, 94, 0.08);
-            --rose-border:      rgba(244, 63, 94, 0.22);
+            --rose:             #FF2D95;
+            --rose-soft:        #FF70BA;
+            --rose-subtle:      rgba(255, 45, 149, 0.09);
+            --rose-border:      rgba(255, 45, 149, 0.28);
 
-            --text-primary:     #F4F4F6;
-            --text-secondary:   #9E9EA8;
-            --text-muted:       #63636E;
+            --text-primary:     #F5F7FA;
+            --text-secondary:   #A3ADC2;
+            --text-muted:       #647087;
 
-            --border-subtle:    rgba(255, 255, 255, 0.08);
-            --border-strong:    rgba(255, 255, 255, 0.15);
-            --grid-line:        rgba(255, 255, 255, 0.02);
+            --border-subtle:    rgba(255, 255, 255, 0.075);
+            --border-strong:    rgba(255, 255, 255, 0.16);
+            --grid-line:        rgba(255, 255, 255, 0.032);
 
             --emerald:          #10B981;
-            --danger:           #EF4444;
+            --danger:           #F43F5E;
 
-            --font-sans:        'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            --font-serif:       'Instrument Serif', Georgia, serif;
+            --font-sans:        'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-serif:       'Cormorant Garamond', 'Instrument Serif', Georgia, serif;
             --font-mono:        'JetBrains Mono', monospace;
 
-            --radius-sm:        6px;
-            --radius-md:        8px;
-            --radius-lg:        12px;
+            --radius-sm:        8px;
+            --radius-md:        12px;
+            --radius-lg:        16px;
+            --ease-out-expo:    cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Custom Luxury Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #06070A;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1A2333;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--cerulean-bright);
         }
 
         html {
@@ -114,6 +131,7 @@
         }
 
         body.authenticated-workspace #hero-sec,
+        body.authenticated-workspace #shows-sec,
         body.authenticated-workspace #pipeline-sec,
         body.authenticated-workspace #pricing-sec,
         body.authenticated-workspace .marketing-only {
@@ -122,6 +140,51 @@
 
         body:not(.admin-workspace) .admin-only {
             display: none !important;
+        }
+
+        /* ─── Smooth Spring Tab-Switch Choreography ─── */
+        @keyframes wsPaneEnter {
+            0% {
+                opacity: 0;
+                transform: translate3d(0, 14px, 0) scale(0.994);
+            }
+            100% {
+                opacity: 1;
+                transform: translate3d(0, 0, 0) scale(1);
+            }
+        }
+
+        #ws-pane-studio,
+        #ws-pane-automation,
+        body.authenticated-workspace #vault-sec .container,
+        body.authenticated-workspace #pricing-sec .container,
+        body.authenticated-workspace #admin-provision-sec .container {
+            animation: wsPaneEnter 0.48s var(--ease-out-expo) both;
+        }
+
+        /* ─── 60fps Scroll-Triggered Reveal System (Compositor-Only) ─── */
+        .reveal-on-scroll {
+            opacity: 0;
+            transform: translate3d(0, 26px, 0);
+            transition: opacity 0.72s var(--ease-out-expo), transform 0.72s var(--ease-out-expo);
+            will-change: opacity, transform;
+        }
+
+        .reveal-on-scroll.is-visible {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+        }
+
+        .reveal-delay-1 { transition-delay: 90ms; }
+        .reveal-delay-2 { transition-delay: 180ms; }
+        .reveal-delay-3 { transition-delay: 270ms; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .reveal-on-scroll {
+                opacity: 1 !important;
+                transform: none !important;
+                transition: none !important;
+            }
         }
 
         /* ─── Instant Workspace Tab Routing (switchWorkspaceTab) ─── */
@@ -792,24 +855,33 @@
             border-color: rgba(239, 68, 68, 0.15);
         }
 
-        /* ─── Minimalist Production Buttons (Linear / Stripe Proportions) ─── */
+        /* ─── Luxury Buttons & Circular Ring Arrow CTAs ─── */
         .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 0.45rem;
+            gap: 0.6rem;
             font-family: var(--font-sans);
-            font-weight: 500;
-            font-size: 0.8125rem;
-            height: 36px;
-            padding: 0 0.95rem;
-            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.84rem;
+            height: 42px;
+            padding: 0 1.2rem;
+            border-radius: 999px;
             cursor: pointer;
-            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+            transition: transform 0.28s var(--ease-out-expo), box-shadow 0.28s var(--ease-out-expo), background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
             text-decoration: none;
             white-space: nowrap;
             border: 1px solid transparent;
             letter-spacing: -0.005em;
+            position: relative;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+
+        .btn:active:not(:disabled) {
+            transform: translateY(0);
         }
 
         .btn:disabled {
@@ -817,77 +889,207 @@
             cursor: not-allowed;
         }
 
-        .btn svg {
-            width: 14px;
-            height: 14px;
-            flex-shrink: 0;
+        .cta-ring-arrow {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 1px solid currentColor;
+            display: inline-grid;
+            place-items: center;
+            font-size: 0.76rem;
+            line-height: 1;
+            transition: transform 0.32s var(--ease-out-expo), background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+            margin-right: -0.25rem;
+        }
+
+        .btn:hover:not(:disabled) .cta-ring-arrow {
+            transform: translateX(3px) scale(1.06);
+            background: var(--rose);
+            border-color: var(--rose);
+            color: #FFFFFF;
         }
 
         .btn-primary {
-            background: #F5F7FA;
-            color: #0A0A0A;
+            background: linear-gradient(135deg, #FFFFFF 0%, #E6F4FE 100%);
+            color: #06070A;
             border-color: #FFFFFF;
-            font-weight: 600;
+            font-weight: 700;
+            box-shadow: 0 10px 28px -6px rgba(56, 189, 248, 0.38);
         }
 
         .btn-primary:hover:not(:disabled) {
             background: #FFFFFF;
+            box-shadow: 0 14px 36px -6px rgba(255, 45, 149, 0.42), 0 0 24px rgba(56, 189, 248, 0.35);
         }
 
         .btn-cerulean {
-            background: var(--cerulean);
+            background: linear-gradient(135deg, #0284C7 0%, #007BA7 100%);
             color: #FFFFFF;
-            border-color: rgba(255, 255, 255, 0.12);
+            border-color: rgba(56, 189, 248, 0.4);
+            box-shadow: 0 8px 24px -6px rgba(2, 132, 199, 0.45);
         }
 
         .btn-cerulean:hover:not(:disabled) {
-            background: #008CC0;
+            background: linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
+            box-shadow: 0 12px 30px -6px rgba(56, 189, 248, 0.55);
         }
 
         .btn-secondary {
-            background: #131822;
+            background: rgba(19, 24, 36, 0.85);
             color: var(--text-primary);
-            border-color: rgba(255, 255, 255, 0.11);
+            border-color: rgba(255, 255, 255, 0.14);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
         }
 
         .btn-secondary:hover:not(:disabled) {
-            border-color: rgba(255, 255, 255, 0.24);
-            background: #171E2A;
+            border-color: var(--cerulean-bright);
+            background: rgba(2, 132, 199, 0.14);
+            box-shadow: 0 10px 26px -8px rgba(56, 189, 248, 0.25);
         }
 
         .btn-ghost {
-            background: transparent;
+            background: rgba(255, 255, 255, 0.025);
             color: var(--text-secondary);
             border: 1px solid var(--border-subtle);
-            height: 28px;
-            padding: 0 0.65rem;
+            height: 30px;
+            padding: 0 0.75rem;
             font-size: 0.75rem;
-            border-radius: var(--radius-sm);
+            border-radius: 999px;
             cursor: pointer;
             font-family: var(--font-sans);
-            font-weight: 500;
+            font-weight: 600;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.15s ease;
+            transition: all 0.2s var(--ease-out-expo);
         }
 
         .btn-ghost:hover {
-            color: var(--text-primary);
-            border-color: var(--border-strong);
-            background: var(--bg-elevated);
+            color: #FFFFFF;
+            border-color: var(--cerulean-bright);
+            background: var(--cerulean-subtle);
+            transform: translateY(-1px);
         }
 
-        /* ─── Architectural Surface Card (Zero Backdrop-Blur Lag) ─── */
+        /* ─── Specular Surface Card with Pointer Spotlight Tracking ─── */
         .surface-card {
-            background: var(--bg-surface);
+            position: relative;
+            background:
+                radial-gradient(480px circle at var(--mx, 50%) var(--my, 0%), rgba(56, 189, 248, 0.065), transparent 55%),
+                linear-gradient(180deg, rgba(20, 26, 38, 0.92) 0%, rgba(11, 14, 21, 0.96) 100%);
             border: 1px solid var(--border-subtle);
             border-radius: var(--radius-lg);
-            transition: border-color 0.2s ease;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.09),
+                0 20px 50px -16px rgba(0, 0, 0, 0.72);
+            transition: transform 0.35s var(--ease-out-expo), border-color 0.25s ease, box-shadow 0.35s var(--ease-out-expo);
         }
 
         .surface-card:hover {
-            border-color: var(--border-strong);
+            border-color: rgba(56, 189, 248, 0.32);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.16),
+                0 24px 60px -14px rgba(0, 0, 0, 0.82),
+                0 0 28px -8px rgba(2, 132, 199, 0.2);
+        }
+
+        /* ─── Director Un-Numbered Sub-Modules & Filmstrip Cards ─── */
+        .director-module-box {
+            background: rgba(8, 11, 17, 0.72);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 1.05rem 1.15rem;
+            margin-bottom: 1rem;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transition: border-color 0.22s ease;
+        }
+
+        .director-module-box:hover {
+            border-color: rgba(56, 189, 248, 0.24);
+        }
+
+        .director-module-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--cerulean-bright);
+            margin-bottom: 0.65rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* ─── Act II: 6 Autonomous Show Formats Bento Grid ─── */
+        .shows-bento-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.25rem;
+        }
+
+        .show-bento-card {
+            padding: 1.45rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 1rem;
+            overflow: hidden;
+        }
+
+        .show-bento-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--cerulean-bright);
+        }
+
+        .show-bento-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .show-style-pill {
+            font-family: var(--font-mono);
+            font-size: 0.66rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 0.24rem 0.6rem;
+            border-radius: 999px;
+            background: var(--cerulean-subtle);
+            border: 1px solid var(--cerulean-border);
+            color: var(--cerulean-bright);
+        }
+
+        .show-bento-card.rose-accent .show-style-pill {
+            background: var(--rose-subtle);
+            border-color: var(--rose-border);
+            color: var(--rose-soft);
+        }
+
+        .show-bento-title {
+            font-family: var(--font-serif);
+            font-size: 1.6rem;
+            font-weight: 600;
+            line-height: 1.12;
+            color: #FFFFFF;
+            margin: 0.45rem 0 0.35rem;
+        }
+
+        .show-bento-desc {
+            font-size: 0.84rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .show-bento-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.45rem;
+            padding-top: 0.85rem;
+            border-top: 1px solid var(--border-subtle);
+            flex-wrap: wrap;
         }
 
         /* ─── Layout Containers & Typography ─── */
@@ -909,19 +1111,33 @@
         .eyebrow {
             display: inline-flex;
             align-items: center;
-            font-family: var(--font-sans);
-            font-size: 0.72rem;
+            gap: 0.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
             font-weight: 600;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.22em;
             text-transform: uppercase;
-            color: var(--text-muted);
-            margin-bottom: 0.65rem;
+            color: var(--cerulean-bright);
+            margin-bottom: 0.75rem;
+            padding: 0.28rem 0.75rem;
+            border-radius: 999px;
+            background: rgba(0, 123, 167, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.22);
+        }
+
+        .eyebrow::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--rose);
+            box-shadow: 0 0 10px var(--rose);
         }
 
         .section-heading {
             font-weight: 800;
-            font-size: clamp(2rem, 3.4vw, 2.85rem);
-            line-height: 1.08;
+            font-size: clamp(2.15rem, 3.6vw, 3.1rem);
+            line-height: 1.06;
             letter-spacing: -0.03em;
             margin-bottom: 0.85rem;
         }
@@ -929,8 +1145,11 @@
         .section-heading em {
             font-family: var(--font-serif);
             font-style: italic;
-            font-weight: 400;
-            color: var(--cerulean-bright);
+            font-weight: 500;
+            font-size: 1.08em;
+            background: linear-gradient(125deg, #38BDF8 0%, #BAE6FD 45%, #FF70BA 85%, #FF2D95 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .section-desc {
@@ -947,15 +1166,15 @@
         /* ─── 1. PUBLIC HERO SECTION ─── */
         .hero-section {
             position: relative;
-            min-height: 92vh;
-            padding: 7.5rem 2rem 4.5rem;
+            min-height: 94vh;
+            padding: 7.75rem 2rem 5rem;
             display: flex;
             align-items: center;
             overflow: hidden;
             border-bottom: 1px solid var(--border-subtle);
             background:
-                radial-gradient(circle 580px at 74% 45%, rgba(255, 45, 149, 0.09) 0%, transparent 65%),
-                radial-gradient(circle 580px at 52% 40%, rgba(0, 123, 167, 0.14) 0%, transparent 65%),
+                radial-gradient(circle 640px at 78% 42%, rgba(255, 45, 149, 0.13) 0%, transparent 65%),
+                radial-gradient(circle 680px at 44% 36%, rgba(0, 123, 167, 0.18) 0%, transparent 65%),
                 var(--bg-canvas);
         }
 
@@ -980,18 +1199,31 @@
 
         .hero-title {
             font-weight: 800;
-            font-size: clamp(2.85rem, 5.2vw, 4.5rem);
-            line-height: 1.02;
+            font-size: clamp(3rem, 5.4vw, 4.75rem);
+            line-height: 1.01;
             letter-spacing: -0.035em;
-            margin-bottom: 1.25rem;
+            margin-bottom: 1.35rem;
         }
 
         .hero-title .accent-cerulean {
-            color: var(--cerulean-bright);
+            font-family: var(--font-serif);
+            font-style: italic;
+            font-weight: 600;
+            background: linear-gradient(135deg, #FFFFFF 0%, #7DD3FC 45%, #007BA7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            padding-right: 0.08em;
         }
 
         .hero-title .accent-rose {
-            color: var(--rose);
+            font-family: var(--font-serif);
+            font-style: italic;
+            font-weight: 600;
+            background: linear-gradient(135deg, #FFD1E8 0%, #FF70BA 45%, #FF2D95 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 28px rgba(255, 45, 149, 0.25));
+            padding-right: 0.08em;
         }
 
         .hero-lead {
@@ -1037,20 +1269,35 @@
             color: var(--text-secondary);
         }
 
-        /* 9:16 Reference Monitor */
+        /* 9:16 Reference Monitor — Anodized Dual-Tone Rim-Lit Cinema Deck */
         .monitor-wrap {
             display: flex;
             justify-content: center;
+            position: relative;
         }
 
         .monitor-deck {
             width: 100%;
-            max-width: 390px;
-            background: var(--bg-surface);
-            border: 1px solid var(--cerulean-border);
-            border-radius: 22px;
-            padding: 0.95rem;
-            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.75);
+            max-width: 392px;
+            background: linear-gradient(165deg, rgba(16, 22, 34, 0.96) 0%, rgba(8, 10, 15, 0.98) 100%);
+            border: 1px solid rgba(56, 189, 248, 0.32);
+            border-radius: 26px;
+            padding: 1.05rem;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.16),
+                -22px -12px 60px -12px rgba(0, 123, 167, 0.35),
+                22px 14px 60px -12px rgba(255, 45, 149, 0.28),
+                0 30px 70px rgba(0, 0, 0, 0.85);
+            transition: transform 0.45s var(--ease-out-expo), box-shadow 0.45s var(--ease-out-expo);
+        }
+
+        .monitor-deck:hover {
+            transform: translateY(-4px);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.22),
+                -26px -14px 70px -10px rgba(56, 189, 248, 0.42),
+                26px 16px 70px -10px rgba(255, 45, 149, 0.36),
+                0 36px 80px rgba(0, 0, 0, 0.9);
         }
 
         .deck-toolbar {
@@ -2400,9 +2647,8 @@
             .workspace-grid {
                 grid-template-columns: 1fr;
             }
-            .workspace-banner {
-                grid-template-columns: repeat(2, 1fr);
-            }
+            .shows-bento-grid,
+            .workspace-banner,
             .cluster-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -2417,6 +2663,7 @@
 
         @media (max-width: 640px) {
             .hero-metrics,
+            .shows-bento-grid,
             .plan-pair,
             .cluster-grid,
             .tile-grid-2col,
@@ -2521,6 +2768,7 @@
             <nav class="desktop-nav" aria-label="Primary Navigation">
                 <!-- Public Visitors -->
                 <button class="nav-link active marketing-only" onclick="jumpTo('#hero-sec')">Overview</button>
+                <button class="nav-link marketing-only" onclick="jumpTo('#shows-sec')">Show Formats</button>
                 <button class="nav-link marketing-only" onclick="jumpTo('#pricing-sec')">Pricing</button>
                 <button class="nav-link marketing-only" onclick="jumpTo('#vault-sec')">Episode Vault</button>
 
@@ -2642,6 +2890,10 @@
                     <div class="hero-cta-row">
                         <button class="btn btn-primary" onclick="openAuthModal()">
                             <span>Sign In to Studio</span>
+                            <span class="cta-ring-arrow" aria-hidden="true">→</span>
+                        </button>
+                        <button class="btn btn-secondary" onclick="jumpTo('#shows-sec')">
+                            <span>Explore 6 Show Formats</span>
                         </button>
                         <button class="btn btn-secondary" onclick="jumpTo('#pricing-sec')">
                             <span>View Stream Pricing</span>
@@ -2705,6 +2957,163 @@
         </section>
 
         <!-- ============================================================
+             2. ACT II — SIX AUTONOMOUS 3D SHOW FORMATS BENTO (Public)
+             ============================================================ -->
+        <section class="section" id="shows-sec">
+            <div class="container">
+                <div class="section-header reveal-on-scroll">
+                    <div class="eyebrow">
+                        <span>Six Autonomous 3D Show Formats</span>
+                    </div>
+                    <h2 class="section-heading">Built for viral retention. <em>Six signature worlds.</em></h2>
+                    <p class="section-desc">
+                        Select an autonomous show format or write your own custom storyline. Every channel pairs bespoke 3D camera choreography with expressive English and Urdu character voice casts.
+                    </p>
+                </div>
+
+                <div class="shows-bento-grid">
+                    <!-- Show 1: Body Simulator 3D -->
+                    <div class="show-bento-card surface-card reveal-on-scroll">
+                        <div>
+                            <div class="show-bento-top">
+                                <span class="show-style-pill">Pixar 3D Biology Comedy</span>
+                                <span style="font-family:var(--font-mono);font-size:0.68rem;color:var(--text-muted);">Charon · Puck</span>
+                            </div>
+                            <h3 class="show-bento-title">Body Simulator 3D</h3>
+                            <p class="show-bento-desc">
+                                Inside-the-body emergencies where panicked 3D organs argue during caffeine spikes, midnight biryani, or 36 hours without sleep.
+                            </p>
+                        </div>
+                        <div class="show-bento-actions">
+                            <div style="display:flex;gap:0.35rem;">
+                                <button type="button" class="btn-ghost" onclick="auditionLandingShowVoice('body_simulator', 'Charon', 'english')">🔊 EN Voice</button>
+                                <button type="button" class="btn-ghost" onclick="auditionLandingShowVoice('body_simulator', 'Puck', 'urdu')">🔊 UR Voice</button>
+                            </div>
+                            <button type="button" class="btn-ghost" style="color:var(--cerulean-bright);" onclick="previewShowOnHeroMonitor('body_simulator')">
+                                Watch on Monitor →
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Show 2: X-Ray Mechanics -->
+                    <div class="show-bento-card surface-card rose-accent reveal-on-scroll reveal-delay-1">
+                        <div>
+                            <div class="show-bento-top">
+                                <span class="show-style-pill">8K Thermal X-Ray Cutaway</span>
+                                <span style="font-family:var(--font-mono);font-size:0.68rem;color:var(--text-muted);">Fenrir · Charon</span>
+                            </div>
+                            <h3 class="show-bento-title">X-Ray Mechanics CAD</h3>
+                            <p class="show-bento-desc">
+                                Translucent cutaway camera sweeps inside jet turbines, 800V EV battery thermal runaways, and hypercar transmissions under extreme load.
+                            </p>
+                        </div>
+                        <div class="show-bento-actions">
+                            <div style="display:flex;gap:0.35rem;">
+                                <button type="button" class="btn-ghost" onclick="auditionLandingShowVoice('xray_mechanics', 'Fenrir', 'english')">🔊 EN Voice</button>
+                                <button type="button" class="btn-ghost" onclick="auditionLandingShowVoice('xray_mechanics', 'Fenrir', 'urdu')">🔊 UR Voice</button>
+                            </div>
+                            <button type="button" class="btn-ghost" style="color:var(--rose-soft);" onclick="previewShowOnHeroMonitor('xray_mechanics')">
+                                Watch on Monitor →
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Show 3: Crazy Characters -->
+                    <div class="show-bento-card surface-card reveal-on-scroll reveal-delay-2">
+                        <div>
+                            <div class="show-bento-top">
+                                <span class="show-style-pill">3D Character Sitcom</span>
+                                <span style="font-family:var(--font-mono);font-size:0.68rem;color:var(--text-muted);">Puck · Aoede</span>
+                            </div>
+                            <h3 class="show-bento-title">Crazy Characters Comedy</h3>
+                            <p class="show-bento-desc">
+                                High-energy talking kitchen ingredients and street characters with rapid-fire comedic timing, expressive facial animation, and desi punchlines.
+                            </p>
+                        </div>
+                        <div class="show-bento-actions">
+                            <div style="display:flex;gap:0.35rem;">
+                                <button type="button" class="btn-ghost" onclick="auditionLandingShowVoice('crazy_characters', 'Puck', 'english')">🔊 EN Voice</button>
+                                <button type="button" class="btn-ghost" onclick="auditionLandingShowVoice('crazy_characters', 'Puck', 'urdu')">🔊 UR Voice</button>
+                            </div>
+                            <button type="button" class="btn-ghost" style="color:var(--cerulean-bright);" onclick="previewShowOnHeroMonitor('crazy_characters')">
+                                Watch on Monitor →
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Show 4: Health Coach MD -->
+                    <div class="show-bento-card surface-card reveal-on-scroll">
+                        <div>
+                            <div class="show-bento-top">
+                                <span class="show-style-pill">Cellular Medical 3D</span>
+                                <span style="font-family:var(--font-mono);font-size:0.68rem;color:var(--text-muted);">Kore · Charon</span>
+                            </div>
+                            <h3 class="show-bento-title">Health Coach MD</h3>
+                            <p class="show-bento-desc">
+                                Evidence-backed metabolic, nutritional, and longevity breakdowns visualized at the cellular receptor level with warm clinical narration.
+                            </p>
+                        </div>
+                        <div class="show-bento-actions">
+                            <div style="display:flex;gap:0.35rem;">
+                                <button type="button" class="btn-ghost" onclick="auditionLandingShowVoice('health_coach', 'Kore', 'english')">🔊 EN Voice</button>
+                                <button type="button" class="btn-ghost" onclick="auditionLandingShowVoice('health_coach', 'Kore', 'urdu')">🔊 UR Voice</button>
+                            </div>
+                            <button type="button" class="btn-ghost" style="color:var(--cerulean-bright);" onclick="openAuthModalForTrial()">
+                                Try in Studio →
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Show 5: Garage Guru 4x4 -->
+                    <div class="show-bento-card surface-card rose-accent reveal-on-scroll reveal-delay-1">
+                        <div>
+                            <div class="show-bento-top">
+                                <span class="show-style-pill">Photorealistic Workshop 3D</span>
+                                <span style="font-family:var(--font-mono);font-size:0.68rem;color:var(--text-muted);">Fenrir · Charon</span>
+                            </div>
+                            <h3 class="show-bento-title">Garage Guru 4x4</h3>
+                            <p class="show-bento-desc">
+                                Master-mechanic diagnostics, differential locks, turbocharger boost leaks, and off-road drivetrain physics rendered in gritty workshop 3D.
+                            </p>
+                        </div>
+                        <div class="show-bento-actions">
+                            <div style="display:flex;gap:0.35rem;">
+                                <button type="button" class="btn-ghost" onclick="auditionLandingShowVoice('garage_guru', 'Fenrir', 'english')">🔊 EN Voice</button>
+                                <button type="button" class="btn-ghost" onclick="auditionLandingShowVoice('garage_guru', 'Fenrir', 'urdu')">🔊 UR Voice</button>
+                            </div>
+                            <button type="button" class="btn-ghost" style="color:var(--rose-soft);" onclick="openAuthModalForTrial()">
+                                Try in Studio →
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Show 6: Code Classroom -->
+                    <div class="show-bento-card surface-card reveal-on-scroll reveal-delay-2">
+                        <div>
+                            <div class="show-bento-top">
+                                <span class="show-style-pill">Holographic Dev Studio</span>
+                                <span style="font-family:var(--font-mono);font-size:0.68rem;color:var(--text-muted);">Aoede · Fenrir</span>
+                            </div>
+                            <h3 class="show-bento-title">Code Classroom Tech</h3>
+                            <p class="show-bento-desc">
+                                Holographic visualizations of C++ memory heaps, pointer corruption, distributed systems race conditions, and AI architecture trade-offs.
+                            </p>
+                        </div>
+                        <div class="show-bento-actions">
+                            <div style="display:flex;gap:0.35rem;">
+                                <button type="button" class="btn-ghost" onclick="auditionLandingShowVoice('code_classroom', 'Aoede', 'english')">🔊 EN Voice</button>
+                                <button type="button" class="btn-ghost" onclick="auditionLandingShowVoice('code_classroom', 'Aoede', 'urdu')">🔊 UR Voice</button>
+                            </div>
+                            <button type="button" class="btn-ghost" style="color:var(--cerulean-bright);" onclick="openAuthModalForTrial()">
+                                Try in Studio →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================
              3. PRICING (Public & Workspace Upgrade View)
              ============================================================ -->
         <section class="section" id="pricing-sec">
@@ -2757,6 +3166,7 @@
                             <button type="button" class="btn btn-secondary" style="width:100%;"
                                     onclick="selectPlanForStudio('starter', 'Creator Starter')">
                                 <span>Get Starter</span>
+                                <span class="cta-ring-arrow" aria-hidden="true">→</span>
                             </button>
                         </div>
 
@@ -2784,6 +3194,7 @@
                             <button type="button" class="btn btn-primary" style="width:100%;"
                                     onclick="selectPlanForStudio('daily', 'Pro Daily')">
                                 <span>Get Pro Daily</span>
+                                <span class="cta-ring-arrow" aria-hidden="true">→</span>
                             </button>
                         </div>
                     </div>
@@ -2867,21 +3278,28 @@
                             </button>
                         </div>
 
-                        <div class="field-group">
-                            <label class="field-label" for="series-name-input">Episode or Series Title</label>
-                            <input id="series-name-input" class="clean-input" type="text" value="Anatomy Panic Daily" placeholder="e.g. Anatomy Panic Daily">
-                        </div>
+                        <div class="director-module-box">
+                            <div class="director-module-title">
+                                <span>Episode Concept &amp; Show Format</span>
+                                <span style="font-family:var(--font-mono);font-size:0.68rem;color:var(--text-muted);">9:16 Vertical Cinema</span>
+                            </div>
 
-                        <div class="field-group">
-                            <label class="field-label" id="channel-picker-label">Show Format &amp; Character Cast</label>
-                            <div class="tile-grid-2col" id="studio-channel-picker"></div>
+                            <div class="field-group">
+                                <label class="field-label" for="series-name-input">Episode or Series Title</label>
+                                <input id="series-name-input" class="clean-input" type="text" value="Anatomy Panic Daily" placeholder="e.g. Anatomy Panic Daily">
+                            </div>
+
+                            <div class="field-group" style="margin-bottom:0;">
+                                <label class="field-label" id="channel-picker-label">Show Format &amp; Character Cast</label>
+                                <div class="tile-grid-2col" id="studio-channel-picker"></div>
+                            </div>
                         </div>
 
                         <!-- Upgrade 6: Channel Voice Cast & Persona Audition Bar -->
-                        <div class="voice-audition-box">
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.45rem;gap:0.5rem;flex-wrap:wrap;">
-                                <label class="field-label" for="studio-voice-select" style="margin:0;">Voice Cast &amp; Persona Audition</label>
-                                <span id="voice-audition-status" style="font-family:var(--font-mono);font-size:0.68rem;color:var(--cerulean-bright);">Voice Preview Ready</span>
+                        <div class="director-module-box">
+                            <div class="director-module-title">
+                                <label for="studio-voice-select" style="margin:0;cursor:pointer;">Voice Cast &amp; Persona Audition</label>
+                                <span id="voice-audition-status" style="font-family:var(--font-mono);font-size:0.68rem;color:var(--cerulean-bright);text-transform:none;">Voice Preview Ready</span>
                             </div>
                             <div class="voice-audition-controls">
                                 <select id="studio-voice-select" class="clean-select" onchange="selectStudioVoicePersona(this.value)">
@@ -2891,10 +3309,10 @@
                                     <option value="Fenrir">Fenrir · Gritty Mechanical</option>
                                     <option value="Aoede">Aoede · Clear Analytical</option>
                                 </select>
-                                <button type="button" class="btn btn-secondary" id="btn-audition-en" style="height:34px;padding:0 0.75rem;font-size:0.76rem;" onclick="auditionStudioVoice('english')">
+                                <button type="button" class="btn btn-secondary" id="btn-audition-en" style="height:36px;padding:0 0.85rem;font-size:0.76rem;" onclick="auditionStudioVoice('english')">
                                     <span>🔊 Audition EN</span>
                                 </button>
-                                <button type="button" class="btn btn-secondary" id="btn-audition-ur" style="height:34px;padding:0 0.75rem;font-size:0.76rem;" onclick="auditionStudioVoice('urdu')">
+                                <button type="button" class="btn btn-secondary" id="btn-audition-ur" style="height:36px;padding:0 0.85rem;font-size:0.76rem;" onclick="auditionStudioVoice('urdu')">
                                     <span>🔊 Audition UR</span>
                                 </button>
                             </div>
@@ -2905,7 +3323,11 @@
                         </div>
 
                         <!-- Custom Prompt Director -->
-                        <div id="custom-director-pane" style="display:none;">
+                        <div id="custom-director-pane" class="director-module-box" style="display:none;">
+                            <div class="director-module-title">
+                                <span>Custom Storyline &amp; Visual Direction</span>
+                                <span style="font-family:var(--font-mono);font-size:0.68rem;color:var(--rose-soft);">AI Storyboard Compiler</span>
+                            </div>
                             <div class="field-group">
                                 <label class="field-label" for="custom-prompt-input">Custom Concept or Story Prompt</label>
                                 <textarea id="custom-prompt-input" class="clean-textarea" placeholder="Describe any story idea, mechanical breakdown, comedy skit, or topic. The AI Director will generate 4× 10-second 3D camera shots and dual-language voiceover lines."></textarea>
@@ -2930,8 +3352,8 @@
                                 <div class="tile-grid-2col" id="visual-style-picker"></div>
                             </div>
 
-                            <div style="display:flex;justify-content:space-between;align-items:center;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap;">
-                                <button type="button" class="btn btn-secondary" style="padding:0.55rem 0.95rem;font-size:0.8rem;" onclick="previewDirectorStoryboard()" id="btn-compile-preview">
+                            <div style="display:flex;justify-content:space-between;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+                                <button type="button" class="btn btn-secondary" style="padding:0 1rem;font-size:0.8rem;" onclick="previewDirectorStoryboard()" id="btn-compile-preview">
                                     <span>Preview 4-Scene Storyboard</span>
                                 </button>
                                 <span style="font-size:0.76rem;color:var(--text-muted);">Populates the interactive 4-Card Timeline on the right →</span>
@@ -2939,42 +3361,46 @@
                         </div>
 
                         <!-- 4-Scene Manual Editor -->
-                        <div id="manual-scenes-pane" style="display:none;margin-bottom:1.15rem;">
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.55rem;">
-                                <label class="field-label" style="margin:0;">4-Scene Camera &amp; Dialogue Editor (4 × 10s)</label>
+                        <div id="manual-scenes-pane" class="director-module-box" style="display:none;">
+                            <div class="director-module-title">
+                                <span>4-Scene Camera &amp; Dialogue Editor (4 × 10s)</span>
                                 <span style="font-family:var(--font-mono);font-size:0.7rem;color:var(--cerulean-bright);">Manual Mode</span>
                             </div>
                             <div id="manual-scenes-list"></div>
                         </div>
 
-                        <div class="field-group">
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.42rem;gap:0.5rem;flex-wrap:wrap;">
-                                <label class="field-label" for="studio-lang-select" style="margin:0;">Output Language</label>
+                        <div class="director-module-box" style="margin-bottom:0;">
+                            <div class="director-module-title">
+                                <span>Output Stream &amp; Render Execution</span>
                                 <span style="font-family:var(--font-mono);font-size:0.68rem;color:var(--emerald);">English + Urdu Dual-Stream Included Standard</span>
                             </div>
-                            <select id="studio-lang-select" class="clean-select">
-                                <option value="english">English</option>
-                                <option value="urdu">اردو (Urdu)</option>
-                                <option value="both" selected>Both (EN + UR Dual-Stream)</option>
-                            </select>
-                            <div style="margin-top:0.55rem;">
-                                <a href="mailto:ammar.akbar2002@gmail.com?subject=Custom%20Language%20Request" class="custom-lang-badge">
-                                    <span>Need Arabic, Spanish, Hindi, or French? Request a Custom Language →</span>
-                                </a>
+                            <div class="field-group">
+                                <label class="field-label" for="studio-lang-select">Output Language</label>
+                                <select id="studio-lang-select" class="clean-select">
+                                    <option value="english">English</option>
+                                    <option value="urdu">اردو (Urdu)</option>
+                                    <option value="both" selected>Both (EN + UR Dual-Stream)</option>
+                                </select>
+                                <div style="margin-top:0.55rem;">
+                                    <a href="mailto:ammar.akbar2002@gmail.com?subject=Custom%20Language%20Request" class="custom-lang-badge">
+                                        <span>Need Arabic, Spanish, Hindi, or French? Request a Custom Language →</span>
+                                    </a>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="field-group">
-                            <label class="field-label" for="studio-mode-select">Render Mode</label>
-                            <select id="studio-mode-select" class="clean-select">
-                                <option value="live" selected>Full 3D Cinema Render — 4 × 10s Scenes (1 Credit)</option>
-                                <option value="mock">Sandbox Preview (Uses Free Sandbox Quota)</option>
-                            </select>
+                            <div class="field-group" style="margin-bottom:0;">
+                                <label class="field-label" for="studio-mode-select">Render Mode</label>
+                                <select id="studio-mode-select" class="clean-select">
+                                    <option value="live" selected>Full 3D Cinema Render — 4 × 10s Scenes (1 Credit)</option>
+                                    <option value="mock">Sandbox Preview (Uses Free Sandbox Quota)</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div style="display:flex;gap:0.75rem;align-items:center;margin-top:1.35rem;flex-wrap:wrap;">
                             <button type="button" class="btn btn-primary" onclick="triggerEpisodeRender()">
                                 <span>Render Episode Now</span>
+                                <span class="cta-ring-arrow" aria-hidden="true">→</span>
                             </button>
                             <button type="button" class="btn btn-secondary" onclick="previewDirectorStoryboard()">
                                 <span>Compile 4-Card Timeline</span>
@@ -3704,10 +4130,68 @@
             }
         }
 
+        function initScrollReveals() {
+            const items = document.querySelectorAll('.reveal-on-scroll, .plan-card, .metric-card, .calc-card');
+            if (!('IntersectionObserver' in window)) {
+                items.forEach(el => el.classList.add('is-visible'));
+                return;
+            }
+            const obs = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        obs.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.12, rootMargin: '0px 0px -30px 0px' });
+            items.forEach(el => {
+                el.classList.add('reveal-on-scroll');
+                obs.observe(el);
+            });
+        }
+
+        function initCardSpotlightTracking() {
+            document.addEventListener('pointermove', (ev) => {
+                const card = ev.target.closest?.('.surface-card');
+                if (!card) return;
+                const rect = card.getBoundingClientRect();
+                card.style.setProperty('--mx', `${ev.clientX - rect.left}px`);
+                card.style.setProperty('--my', `${ev.clientY - rect.top}px`);
+            }, { passive: true });
+        }
+
+        function auditionLandingShowVoice(channelId, voiceId, lang) {
+            const langKey = lang === 'urdu' ? 'urdu' : 'english';
+            const cdnUrl = `https://ouqjlqqgnboytjvudylv.supabase.co/storage/v1/object/public/vault-videos/voice-previews/${voiceId}_${channelId}_${langKey}.mp3`;
+            if (!window._landingVoiceAudio) {
+                window._landingVoiceAudio = new Audio();
+            }
+            window._landingVoiceAudio.pause();
+            window._landingVoiceAudio.src = cdnUrl;
+            window._landingVoiceAudio.volume = 1.0;
+            window._landingVoiceAudio.play().then(() => {
+                showToast(`Playing ${voiceId} (${langKey.toUpperCase()}) — ${channelId.replace('_', ' ')}`);
+            }).catch(() => {
+                showToast(`Loading ${voiceId} (${langKey.toUpperCase()}) sample...`);
+            });
+        }
+
+        function previewShowOnHeroMonitor(channelId) {
+            selectedHeroChannel = channelId;
+            document.querySelectorAll('#hero-show-pills .chip-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('onclick')?.includes(`'${channelId}'`));
+            });
+            updateHeroMonitor();
+            jumpTo('#hero-sec');
+            showToast(`Loaded ${channelId.replace('_', ' ')} on 9:16 Cinema Monitor`);
+        }
+
         async function bootApp() {
             if (!document.body.getAttribute('data-ws-tab')) {
                 document.body.setAttribute('data-ws-tab', 'studio');
             }
+            initScrollReveals();
+            initCardSpotlightTracking();
             renderManualSceneInputs(DEFAULT_MANUAL_SCENES);
             renderStoryboardCards(DEFAULT_MANUAL_SCENES, 'Default 4-Scene Template');
             await initSupabaseAuth();
@@ -5117,7 +5601,12 @@ Credits  : ${data.credits_balance} 3D Episodes`;
                 tagEl.textContent = `Storyboard · ${titleLabel}`;
             }
             if (!grid) return;
-            const arcNames = ['Scene 01 · Hook', 'Scene 02 · Escalation', 'Scene 03 · Climax', 'Scene 04 · Payoff'];
+            const arcNames = [
+                '00:00–00:10 · HOOK',
+                '00:10–00:20 · ESCALATION',
+                '00:20–00:30 · CLIMAX',
+                '00:30–00:40 · PAYOFF'
+            ];
             grid.innerHTML = scenesArray.slice(0, 4).map((sc, i) => {
                 const fp = (sc.flow_prompt || sc.scene || '').replace(/"/g, '&quot;');
                 const sp = (sc.speaker || 'narrator').replace(/"/g, '&quot;');
@@ -5126,7 +5615,7 @@ Credits  : ${data.credits_balance} 3D Episodes`;
                 return `
                     <div class="storyboard-scene-card">
                         <div class="storyboard-scene-head">
-                            <span class="storyboard-scene-tag">${arcNames[i] || `Scene 0${i + 1}`}</span>
+                            <span class="storyboard-scene-tag">${arcNames[i] || `Scene ${i + 1}`}</span>
                             <input id="sb-card-speaker-${i}" class="clean-input" style="width:110px;padding:0.2rem 0.45rem;font-size:0.7rem;font-family:var(--font-mono);" value="${sp}" placeholder="Speaker">
                         </div>
                         <div>
